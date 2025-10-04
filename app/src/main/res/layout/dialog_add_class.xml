@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Division Select / Create -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutDivision"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Select or Type Division">
+
+        <AutoCompleteTextView
+            android:id="@+id/etDivision"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:inputType="textCapWords"
+            android:completionThreshold="1"
+
+            />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Class Name -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutClassName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="Class Name">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etClassName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionDone"
+            android:singleLine="true"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>
