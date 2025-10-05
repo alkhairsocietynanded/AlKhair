@@ -1,15 +1,37 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# === Gradle ===
+.gradle/
+build/
+*/build/
+!gradle/wrapper/gradle-wrapper.jar
+gradlew
+gradlew.bat
+
+# === Local Configuration ===
 local.properties
+*.log
+*.tmp
+
+# === Android Studio / IntelliJ ===
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# === Firebase / Google Services ===
+app/google-services.json
+**/google-services.json
+google-services.json
+
+# === Keystore and Signing Files ===
+*.jks
+*.keystore
+*.key
+*.pem
+
+# === Miscellaneous ===
+*.orig
+*.bak
+*.swp
+*.swo
