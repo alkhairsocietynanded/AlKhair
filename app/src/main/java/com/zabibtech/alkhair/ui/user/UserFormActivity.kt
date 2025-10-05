@@ -2,7 +2,6 @@ package com.zabibtech.alkhair.ui.user
 
 import android.os.Build
 import android.os.Bundle
-import android.util.Patterns
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -20,7 +19,10 @@ import com.zabibtech.alkhair.databinding.ActivityUserFormBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerViewModel
 import com.zabibtech.alkhair.ui.user.helper.DropdownHelper
 import com.zabibtech.alkhair.ui.user.helper.UserBuilder
-import com.zabibtech.alkhair.utils.*
+import com.zabibtech.alkhair.utils.DialogUtils
+import com.zabibtech.alkhair.utils.Modes
+import com.zabibtech.alkhair.utils.Roles
+import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
