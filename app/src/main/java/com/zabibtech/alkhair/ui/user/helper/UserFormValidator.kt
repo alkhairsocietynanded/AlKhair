@@ -17,8 +17,12 @@ object UserFormValidator {
             layoutClass.error = null
             layoutShift.error = null
             layoutSubject.error = null
+            layoutDob.error = null
+            layoutTotalFees.error = null
+            layoutSalary.error = null
 
             val name = etName.text.toString().trim()
+            val parentName = etParentName.text.toString().trim()
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString()
             val phone = etPhone.text.toString().trim()
@@ -27,10 +31,19 @@ object UserFormValidator {
             val className = etClass.text.toString().trim()
             val shift = etShift.text.toString().trim()
             val subject = etSubject.text.toString().trim()
+            val dob = etDob.text.toString().trim()
+            val totalFees = etTotalFees.text.toString().trim()
+            val salary = etSalary.text.toString().trim()
+
 
             return when {
                 name.isEmpty() -> {
                     layoutName.error = "Name is required"; etName.requestFocus(); false
+                }
+
+                parentName.isEmpty() -> {
+                    layoutParentName.error =
+                        "Parent Name is required"; etParentName.requestFocus(); false
                 }
 
                 email.isEmpty() -> {
@@ -74,6 +87,19 @@ object UserFormValidator {
                 shift.isEmpty() -> {
                     layoutShift.error = "Shift is required"; etShift.requestFocus(); false
                 }
+
+                role == Roles.STUDENT && dob.isEmpty() -> {
+                    layoutDob.error = "Date of Birth is required"; etDob.requestFocus(); false
+                }
+
+                role == Roles.STUDENT && totalFees.isEmpty() -> {
+                    layoutTotalFees.error = "Total Fees is required"; etTotalFees.requestFocus(); false
+                }
+
+                role == Roles.TEACHER && salary.isEmpty() -> {
+                    layoutSalary.error = "Salary is required"; etSalary.requestFocus(); false
+                }
+
 
                 else -> true
             }

@@ -22,9 +22,9 @@ class UserListUiController(
 ) {
 
     fun setupListeners(role: String, classId: String?) {
-        binding.swipeRefresh.setOnRefreshListener { viewModel.loadUsers(role) }
+        binding.swipeRefreshLayout.setOnRefreshListener { viewModel.loadUsers(role) }
 
-        binding.fabAdd.setOnClickListener {
+        binding.fabAddUser.setOnClickListener {
             val intent = Intent(activity, UserFormActivity::class.java).apply {
                 putExtra("role", role)
                 putExtra("mode", Modes.CREATE)
@@ -49,12 +49,12 @@ class UserListUiController(
         currentShift: String?
     ) {
         when (state) {
-            is UiState.Loading -> if (!binding.swipeRefresh.isRefreshing)
+            is UiState.Loading -> if (!binding.swipeRefreshLayout.isRefreshing)
                 DialogUtils.showLoading(activity.supportFragmentManager)
 
             is UiState.Success -> {
                 DialogUtils.hideLoading(activity.supportFragmentManager)
-                binding.swipeRefresh.isRefreshing = false
+                binding.swipeRefreshLayout.isRefreshing = false
 
                 // 🔹 filterUsers ka use yahan
                 val filtered = filterUsers(
@@ -73,7 +73,7 @@ class UserListUiController(
 
             is UiState.Error -> {
                 DialogUtils.hideLoading(activity.supportFragmentManager)
-                binding.swipeRefresh.isRefreshing = false
+                binding.swipeRefreshLayout.isRefreshing = false
                 DialogUtils.showAlert(activity, "Error", state.message)
             }
 

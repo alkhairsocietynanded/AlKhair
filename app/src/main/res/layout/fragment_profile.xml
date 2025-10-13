@@ -4,6 +4,7 @@
     android:id="@+id/contentLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipToPadding="false"
     android:fillViewport="true"
     android:padding="16dp">
 
@@ -13,143 +14,313 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
-        <!-- Profile Header Card -->
+        <!-- Header: Avatar + Edit badge + Name + Chips -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <FrameLayout
+                android:layout_width="144dp"
+                android:layout_height="144dp">
+
+                <!-- Circular Avatar -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/kausar_logo"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Material3.Corner.Full" />
+
+                <!-- Small edit FAB on avatar -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fabEditPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:contentDescription="Edit photo"
+                    app:fabCustomSize="40dp"
+                    app:srcCompat="@drawable/ic_edit" />
+
+            </FrameLayout>
+
+            <!-- Name -->
+            <TextView
+                android:id="@+id/tvName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Ethan Carter"
+                android:textColor="#0B1720"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <!-- Role chips -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:chipSpacingHorizontal="8dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipClass"
+                    style="@style/Widget.Material3.Chip.Assist.Elevated"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="جماعت اول"
+                    android:textColor="#001b3a"
+                    android:textStyle="bold"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    app:chipBackgroundColor="#cfe2ff"
+                    app:ensureMinTouchTargetSize="false"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Material3.Corner.Full" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipDivision"
+                    style="@style/Widget.Material3.Chip.Assist.Elevated"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="مدرسہ عائشہ صدیقہہ "
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textColor="#2b1800"
+                    android:textStyle="bold"
+                    app:chipBackgroundColor="#ffda7c"
+                    app:ensureMinTouchTargetSize="false"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Material3.Corner.Full" />
+
+            </com.google.android.material.chip.ChipGroup>
+        </LinearLayout>
+
+        <!-- Card 1: Role, Email, Phone, Address (with dividers) -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:elevation="4dp"
-            android:padding="16dp"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Material3.Corner.Bottom">
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="1dp"
+            app:contentPadding="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
                 android:orientation="vertical">
 
-                <!-- Profile Image -->
-                <ImageView
-                    android:id="@+id/ivProfile"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
-                    android:background="@drawable/bg_dialog_round"
-                    android:padding="4dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/app_icon" />
-
-                <!-- Name -->
+                <!-- Role -->
                 <TextView
-                    android:id="@+id/tvName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="User Name"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
+                    android:text="Role"
+                    android:textColor="#6B7280"
+                    android:textSize="13sp" />
 
-                <!-- Role -->
                 <TextView
                     android:id="@+id/tvRole"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Role: Student"
-                    android:textColor="?attr/colorSecondary"
-                    android:textSize="14sp" />
+                    android:layout_marginTop="2dp"
+                    android:text="Student"
+                    android:textColor="#111827"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Details Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:elevation="4dp"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="14dp"
+                    android:background="#E5E7EB" />
 
                 <!-- Email -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Email"
-                    android:textColor="?attr/colorPrimary"
-                    android:textStyle="bold" />
+                    android:textColor="#6B7280"
+                    android:textSize="13sp" />
 
                 <TextView
                     android:id="@+id/tvEmail"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="test@email.com" />
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="14dp"
+                    android:text="ethan.carter@example.com"
+                    android:textColor="#111827"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E5E7EB" />
 
                 <!-- Phone -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
                     android:text="Phone"
-                    android:textColor="?attr/colorPrimary"
-                    android:textStyle="bold" />
+                    android:textColor="#6B7280"
+                    android:textSize="13sp" />
 
                 <TextView
                     android:id="@+id/tvPhone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="1234567890" />
-
-                <!-- Class -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Class"
-                    android:textColor="?attr/colorPrimary"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="14dp"
+                    android:text="+1 (555) 123-4567"
+                    android:textColor="#111827"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvClass"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="10th" />
-
-                <!-- Shift -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Shift"
-                    android:textColor="?attr/colorPrimary"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvShift"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="Morning" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E5E7EB" />
 
                 <!-- Address -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
                     android:text="Address"
-                    android:textColor="?attr/colorPrimary"
-                    android:textStyle="bold" />
+                    android:textColor="#6B7280"
+                    android:textSize="13sp" />
 
                 <TextView
                     android:id="@+id/tvAddress"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:text="N/A" />
-
+                    android:layout_marginTop="2dp"
+                    android:text="123 Main St, Anytown, USA"
+                    android:textColor="#111827"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card 2: Department + Joined Date with big white + FAB on corner -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="#FFFFFF"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="1dp"
+                app:contentPadding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Department (reuse tvClass id to avoid breaking code) -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Division"
+                        android:textColor="#6B7280"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvDivision"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Mathematics"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="14dp"
+                        android:background="#E5E7EB" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Class"
+                        android:textColor="#6B7280"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvClass"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Mathematics"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="14dp"
+                        android:background="#E5E7EB" />
+
+                    <!-- Joined Date (reuse tvShift id to avoid breaking code) -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Shift"
+                        android:textColor="#6B7280"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvShift"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginBottom="4dp"
+                        android:text="August 15, 2020"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="14dp"
+                        android:background="#E5E7EB" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Joined Date"
+                        android:textColor="#6B7280"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvJoinedDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginBottom="4dp"
+                        android:text="August 15, 2020"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </FrameLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="16dp" />
 
         <!-- Loading -->
         <ProgressBar
@@ -168,6 +339,5 @@
             android:text="Error loading profile"
             android:textColor="@android:color/holo_red_dark"
             android:visibility="gone" />
-
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

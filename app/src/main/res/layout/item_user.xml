@@ -1,55 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginVertical="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:strokeColor="@android:color/darker_gray"
+    app:cardElevation="3dp"
+    app:strokeColor="@color/md_theme_outlineVariant"
     app:strokeWidth="1dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
-
-        <!-- User Info -->
-        <TextView
-            android:id="@+id/tvName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="User Name"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-            android:textColor="@android:color/black" />
-
-        <TextView
-            android:id="@+id/tvEmail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="user@email.com"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@android:color/darker_gray" />
-
-        <TextView
-            android:id="@+id/tvRole"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="4dp"
-            android:text="Student"
-            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-            android:textColor="@android:color/holo_blue_dark" />
+        android:padding="16dp">
 
         <!-- 3-Dot Menu -->
         <ImageView
             android:id="@+id/btnMore"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:layout_gravity="end"
             android:contentDescription="More options"
             android:padding="4dp"
             android:src="@drawable/ic_more_vert_24"
-            app:tint="?attr/colorPrimary" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorOnSurfaceVariant" />
 
-    </LinearLayout>
+        <!-- Left Column (User Info) -->
+        <LinearLayout
+            android:id="@+id/leftColumn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toStartOf="@id/rightColumn"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tvName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="User Name"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="2dp"
+                android:text="user@email.com"
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/tvPhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="2dp"
+                android:text="+91 9876543210"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/tvRole"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="2dp"
+                android:text="Student"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorPrimary" />
+        </LinearLayout>
+
+        <!-- Right Column (Class/Division Info) -->
+        <LinearLayout
+            android:id="@+id/rightColumn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toStartOf="@id/btnMore"
+            app:layout_constraintStart_toEndOf="@id/leftColumn"
+            app:layout_constraintTop_toTopOf="@id/leftColumn">
+
+            <TextView
+                android:id="@+id/tvDivisionName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Madarsa Mohammadiya"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/tvClassName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jamat Awwal"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/tvShift"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Subah"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Active"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorPrimary" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

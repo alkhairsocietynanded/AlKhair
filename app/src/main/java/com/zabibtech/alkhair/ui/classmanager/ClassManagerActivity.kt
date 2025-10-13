@@ -122,7 +122,7 @@ class ClassManagerActivity : AppCompatActivity() {
                     when (state) {
                         is UiState.Success -> {
                             divisions = state.data
-                            val names = listOf("All") + divisions.map { it.name }
+                            val names = listOf("Select Division") + divisions.map { it.name }
                             val spinnerAdapter = ArrayAdapter(
                                 this@ClassManagerActivity,
                                 android.R.layout.simple_spinner_item,

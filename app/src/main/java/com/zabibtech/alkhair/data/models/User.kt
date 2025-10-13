@@ -16,5 +16,20 @@ data class User(
     val phone: String = "",
     val password: String = "",
     val address: String = "",
-    val shift: String = ""
+    val shift: String = "",
+    val isActive: Boolean = true,
+
+    // 🔹 Common extra fields
+    val parentName: String = "",
+    val dateOfBirth: String = "",
+
+    // 🔹 Fee-related (for Students)
+    val totalFees: String = "",
+    val paidFees: String = "",
+    val dueFees: String = "",
+
+    // 🔹 Salary-related (for Teachers)
+    val salary: String = "",
+    val paidSalary: String = "",
+    val dueSalary: String = ""
 ) : Parcelable

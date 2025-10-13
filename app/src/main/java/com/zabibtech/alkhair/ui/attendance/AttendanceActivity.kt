@@ -47,6 +47,7 @@ class AttendanceActivity : AppCompatActivity() {
         setupObservers()
         setupDateNavigation() // ✅ Add this
         updateDateText() // Set initial date
+        reloadAttendanceForSelectedDate()
 
         binding.swipeRefresh.setOnRefreshListener { userViewModel.loadUsers(role) }
 

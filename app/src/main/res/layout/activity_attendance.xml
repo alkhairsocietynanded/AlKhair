@@ -146,6 +146,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:text="Save"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
         app:icon="@drawable/ic_done_24" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

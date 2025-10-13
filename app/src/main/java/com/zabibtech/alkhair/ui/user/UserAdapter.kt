@@ -2,8 +2,6 @@ package com.zabibtech.alkhair.ui.user
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -12,6 +10,8 @@ import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ItemUserBinding
 import java.util.Locale
+import android.widget.Filter
+import android.widget.Filterable
 
 class UserAdapter(
     private val onEdit: (User) -> Unit,
@@ -24,34 +24,41 @@ class UserAdapter(
     inner class UserViewHolder(private val binding: ItemUserBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(user: User) {
-            binding.apply {
-                tvName.text = user.name
-                tvEmail.text = user.email
-                tvRole.text = user.role
+        fun bind(user: User) = with(binding) {
+            // Basic info
+            tvName.text = user.name
+            tvEmail.text = user.email
+            tvPhone.text = user.phone
+            tvRole.text = user.role
 
-                // Context menu (edit/delete)
-                btnMore.setOnClickListener { view ->
-                    val popup = PopupMenu(view.context, view)
-                    popup.menuInflater.inflate(R.menu.menu_user_item, popup.menu)
-                    popup.setOnMenuItemClickListener { item ->
-                        when (item.itemId) {
-                            R.id.action_edit -> {
-                                onEdit(user); true
-                            }
+            // Academic info
+            tvClassName.text = "${user.className ?: "-"}"
+            tvDivisionName.text = "${user.divisionName ?: "-"}"
+            tvShift.text = "${user.shift ?: "-"}"
+            tvStatus.text = "${if (user.isActive) "Active" else "Inactive"}"
 
-                            R.id.action_delete -> {
-                                onDelete(user); true
-                            }
-
-                            else -> false
+            // 3-dot menu
+            btnMore.setOnClickListener { view ->
+                val popup = PopupMenu(view.context, view)
+                popup.menuInflater.inflate(R.menu.menu_user_item, popup.menu)
+                popup.setOnMenuItemClickListener { item ->
+                    when (item.itemId) {
+                        R.id.action_edit -> {
+                            onEdit(user)
+                            true
                         }
+                        R.id.action_delete -> {
+                            onDelete(user)
+                            true
+                        }
+                        else -> false
                     }
-                    popup.show()
                 }
-
-                root.setOnClickListener { onClick(user) }
+                popup.show()
             }
+
+            // Item click
+            root.setOnClickListener { onClick(user) }
         }
     }
 
@@ -73,8 +80,7 @@ class UserAdapter(
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
                 val query = constraint?.toString()?.lowercase(Locale.getDefault()) ?: ""
-                val filtered = if (query.isEmpty()) fullList
-                else fullList.filter {
+                val filtered = if (query.isEmpty()) fullList else fullList.filter {
                     it.name.lowercase(Locale.getDefault()).contains(query) ||
                             it.email.lowercase(Locale.getDefault()).contains(query) ||
                             it.phone.contains(query)

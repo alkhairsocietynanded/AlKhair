@@ -54,7 +54,7 @@
         <item name="cornerSize">16dp</item>
 
         <!-- Background color -->
-        <item name="android:background">@color/white</item>
+<!--        <item name="android:background">@color/white</item>-->
 
         <!-- Button text color -->
         <item name="buttonBarPositiveButtonStyle">@style/CustomDialogButton</item>
@@ -85,5 +85,19 @@
         <!-- Elevation -->
         <item name="android:elevation">6dp</item>
     </style>
+
+    <style name="TransparentDialog" parent="Theme.Material3.Light.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+
+        <item name="android:windowNoTitle">true</item>
+
+        <item name="android:windowIsFloating">true</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.Material3.Corner.Full" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item> <!-- or any dp value -->
+    </style>
+
 
 </resources>

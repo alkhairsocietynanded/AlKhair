@@ -56,6 +56,10 @@ class ProfileFragment : Fragment() {
             binding.tvClass.text = it.className
             binding.tvShift.text = it.shift
             binding.tvAddress.text = it.address
+            binding.tvDivision.text = it.divisionName
+            binding.chipClass.text = it.className
+            binding.chipDivision.text = it.divisionName
+//            binding.tvJoinedDate.text = it.joinedDate
             // Load profile image using Glide/Picasso if you have URL
         }
     }

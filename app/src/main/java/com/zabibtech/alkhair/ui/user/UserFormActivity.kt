@@ -19,6 +19,7 @@ import com.zabibtech.alkhair.databinding.ActivityUserFormBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerViewModel
 import com.zabibtech.alkhair.ui.user.helper.DropdownHelper
 import com.zabibtech.alkhair.ui.user.helper.UserBuilder
+import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
@@ -26,6 +27,7 @@ import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 @AndroidEntryPoint
 class UserFormActivity : AppCompatActivity() {
@@ -84,6 +86,14 @@ class UserFormActivity : AppCompatActivity() {
     }
 
     private fun setupUi() = with(binding) {
+        // set date picker to dob
+        var selectedDate = Calendar.getInstance()
+        etDob.setOnClickListener {
+            DateUtils.showDatePicker(this@UserFormActivity, selectedDate) { cal ->
+                selectedDate = cal
+                binding.etDob.setText(DateUtils.formatDate(selectedDate))
+            }
+        }
         // Password handling
         layoutPassword.apply {
             visibility = when {
@@ -95,7 +105,8 @@ class UserFormActivity : AppCompatActivity() {
         }
 
         // Role-specific UI
-        layoutSubject.visibility = if (role == Roles.TEACHER) View.VISIBLE else View.GONE
+        layoutTeacherFields.visibility = if (role == Roles.TEACHER) View.VISIBLE else View.GONE
+        etTotalFees.visibility = if (role == Roles.STUDENT) View.VISIBLE else View.GONE
 
         // Title & button
         btnSave.text = if (mode == Modes.UPDATE) "Update" else "Create"
@@ -108,11 +119,18 @@ class UserFormActivity : AppCompatActivity() {
         // Prefill if update
         userToEdit?.let { user ->
             etName.setText(user.name)
+            etParentName.setText(user.parentName)
             etEmail.setText(user.email)
             etPhone.setText(user.phone)
             etPassword.setText(user.password)
             etAddress.setText(user.address)
             etShift.setText(user.shift, false)
+            etSubject.setText(user.subject)
+            etSalary.setText(user.salary)
+            etDivision.setText(user.divisionName, false)
+            etClass.setText(user.className, false)
+            etDob.setText(user.dateOfBirth)
+            etTotalFees.setText(user.totalFees)
             selectedClassId = user.classId
         }
 
@@ -148,10 +166,12 @@ class UserFormActivity : AppCompatActivity() {
                             setResult(RESULT_OK)
                             finish()
                         }
+
                         is UiState.Error -> {
                             hideLoading()
                             DialogUtils.showAlert(this@UserFormActivity, "Error", state.message)
                         }
+
                         else -> {}
                     }
                 }

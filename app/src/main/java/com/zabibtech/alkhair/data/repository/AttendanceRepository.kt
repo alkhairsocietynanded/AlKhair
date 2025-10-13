@@ -54,5 +54,4 @@ class AttendanceRepository @Inject constructor() {
         }
         return result
     }
-
 }

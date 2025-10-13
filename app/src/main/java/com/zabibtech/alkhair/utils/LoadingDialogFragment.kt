@@ -22,7 +22,7 @@ class LoadingDialogFragment : DialogFragment() {
 
         binding.tvMessage.text = message ?: "Please wait..."
 
-        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
+        val dialog = AlertDialog.Builder(requireContext(), R.style.TransparentDialog)
             .setView(binding.root)
             .create()
 

@@ -53,20 +53,25 @@ class LoginActivity : AppCompatActivity() {
         viewModel.state.observe(this, Observer { state ->
             when (state) {
                 is UiState.Loading -> {
-                    Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show()
+                    DialogUtils.showLoading(supportFragmentManager, "Logging in...")
                 }
 
                 is UiState.Success -> {
+                    DialogUtils.hideLoading(supportFragmentManager)
                     val user = state.data
                     routeToDashboard(user)
                 }
 
                 is UiState.Error -> {
+                    DialogUtils.hideLoading(supportFragmentManager)
 //                    Toast.makeText(this, state.message, Toast.LENGTH_SHORT).show()
                     DialogUtils.showAlert(this, "Error", state.message)
                 }
 
-                else -> {}
+                else -> {
+                    DialogUtils.hideLoading(supportFragmentManager)
+                }
             }
         })
     }

@@ -6,6 +6,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -46,6 +48,13 @@ class UserListActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityUserListBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // ✅ Insets handle karo
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
 
         role = intent.getStringExtra("role") ?: Roles.STUDENT
         classId = intent.getStringExtra("classId")

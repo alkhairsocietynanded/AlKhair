@@ -8,9 +8,23 @@ import java.util.Locale
 
 object DateUtils {
 
-    // --- Current Date / Month Strings ---
+    // --- Current Date / Month / Year Strings ---
     fun today(): String = formatDate(Calendar.getInstance(), "yyyy-MM-dd")
-    fun currentMonth(): String = formatDate(Calendar.getInstance(), "yyyy-MM")
+
+    // 🔹 Updated: Returns "October 2025" (used in fee spinner)
+    fun currentMonth(): String {
+        val calendar = Calendar.getInstance()
+        val monthName = SimpleDateFormat("MMMM", Locale.getDefault()).format(calendar.time)
+        val year = calendar.get(Calendar.YEAR)
+        return "$monthName $year"
+    }
+
+    fun currentYear(): String = formatDate(Calendar.getInstance(), "yyyy")
+
+    // --- Helper: Current month index (0 = Jan, 11 = Dec) ---
+    fun getCurrentMonthIndex(): Int {
+        return Calendar.getInstance().get(Calendar.MONTH)
+    }
 
     // --- Format Calendar to String ---
     fun formatDate(calendar: Calendar, pattern: String = "yyyy-MM-dd"): String {

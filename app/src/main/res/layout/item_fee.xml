@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
-    android:layout_marginBottom="8dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
     app:strokeColor="@android:color/darker_gray"
@@ -13,34 +13,52 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <!-- Class Info -->
+        <!-- Fee Info -->
         <LinearLayout
             android:id="@+id/layoutInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toStartOf="@id/btnMore"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_toStartOf="@id/btnMore">
 
             <TextView
-                android:id="@+id/tvClassName"
+                android:id="@+id/tvMonth"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Class Name"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="@android:color/black"
+                android:text="Month"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvDivisionName"
+                android:id="@+id/tvMonthlyFees"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingTop="2dp"
-                android:text="Division Name"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="@android:color/holo_green_dark" />
+                android:text="Monthly Fees: ₹0.0" />
 
+            <TextView
+                android:id="@+id/tvPaidAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Paid: ₹0.0" />
+
+            <TextView
+                android:id="@+id/tvDueAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Due: ₹0.0" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status: Unpaid" />
+
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date: -" />
         </LinearLayout>
 
         <!-- 3-Dot Menu -->

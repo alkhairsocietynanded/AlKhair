@@ -2,6 +2,7 @@ package com.zabibtech.alkhair.utils
 
 import android.content.Context
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.zabibtech.alkhair.R
 
@@ -24,7 +25,6 @@ object DialogUtils {
             .show()
     }
 
-    // ✅ Confirmation Dialog (OK + Cancel)
     fun showConfirmation(
         context: Context,
         title: String = "Confirm",
@@ -48,19 +48,43 @@ object DialogUtils {
             .show()
     }
 
-    // 🔹 Show Loading with custom message
-    fun showLoading(manager: FragmentManager, message: String = "Please wait...") {
-        val existing = manager.findFragmentByTag(LoadingDialogFragment.TAG)
-        if (existing == null) {
-            LoadingDialogFragment.newInstance(message)
-                .show(manager, LoadingDialogFragment.TAG)
+    // 🔹 Show Loading (safe for fragment/activity)
+    fun showLoading(target: Any, message: String = "Please wait...") {
+        when (target) {
+            is FragmentManager -> {
+                val existing = target.findFragmentByTag(LoadingDialogFragment.TAG)
+                if (existing == null) {
+                    LoadingDialogFragment.newInstance(message)
+                        .show(target, LoadingDialogFragment.TAG)
+                }
+            }
+            is Fragment -> {
+                val fm = target.childFragmentManager
+                if (target.isAdded && target.isResumed) {
+                    val existing = fm.findFragmentByTag(LoadingDialogFragment.TAG)
+                    if (existing == null) {
+                        LoadingDialogFragment.newInstance(message)
+                            .show(fm, LoadingDialogFragment.TAG)
+                    }
+                }
+            }
         }
     }
 
-    // 🔹 Hide Loading
-    fun hideLoading(manager: FragmentManager) {
-        val dialog = manager.findFragmentByTag(LoadingDialogFragment.TAG) as? LoadingDialogFragment
-        dialog?.dismissAllowingStateLoss()
+    fun hideLoading(target: Any) {
+        when (target) {
+            is FragmentManager -> {
+                val dialog = target.findFragmentByTag(LoadingDialogFragment.TAG) as? LoadingDialogFragment
+                dialog?.dismissAllowingStateLoss()
+            }
+            is Fragment -> {
+                val fm = target.childFragmentManager
+                if (target.isAdded && target.isResumed) {
+                    val dialog = fm.findFragmentByTag(LoadingDialogFragment.TAG) as? LoadingDialogFragment
+                    dialog?.dismissAllowingStateLoss()
+                }
+            }
+        }
     }
 
     fun showAddClassDialog(
