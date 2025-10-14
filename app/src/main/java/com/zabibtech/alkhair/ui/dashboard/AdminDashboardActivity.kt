@@ -9,6 +9,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.databinding.ActivityAdminDashboardBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
+import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.utils.LogoutManager
 import com.zabibtech.alkhair.utils.Modes
@@ -75,7 +76,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
 
         binding.cardFees.setOnClickListener {
-            // TODO: open Fees Management Activity
+            startActivity(Intent(this, FeesActivity::class.java))
         }
 
         binding.cardLogout.setOnClickListener {

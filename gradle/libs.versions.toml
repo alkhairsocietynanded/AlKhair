@@ -19,6 +19,7 @@ lifecycleViewmodelKtx = "2.9.4"
 material = "1.13.0"
 activity = "1.11.0"
 constraintlayout = "2.2.1"
+mpandroidchart = "v3.1.0"
 recyclerview = "1.4.0"
 swiperefreshlayout = "1.1.0"
 view = "2.9.0"
@@ -47,6 +48,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 view = { module = "com.kizitonwose.calendar:view", version.ref = "view" }
 
 [plugins]

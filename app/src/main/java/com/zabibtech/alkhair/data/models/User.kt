@@ -23,7 +23,7 @@ data class User(
     val parentName: String = "",
     val dateOfBirth: String = "",
 
-    // 🔹 Fee-related (for Students)
+    // 🔹 FeesModel-related (for Students)
     val totalFees: String = "",
     val paidFees: String = "",
     val dueFees: String = "",

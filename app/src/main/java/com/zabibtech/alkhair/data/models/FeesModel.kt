@@ -1,6 +1,6 @@
 package com.zabibtech.alkhair.data.models
 
-data class Fee(
+data class FeesModel(
     val id: String = "",
     val studentId: String = "",
     val month: String = "",

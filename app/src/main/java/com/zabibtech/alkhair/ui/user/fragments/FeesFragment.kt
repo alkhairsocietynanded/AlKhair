@@ -13,10 +13,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.zabibtech.alkhair.data.models.Fee
+import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.FragmentFeesBinding
-import com.zabibtech.alkhair.ui.fees.FeeViewModel
+import com.zabibtech.alkhair.ui.fees.FeesViewModel
 import com.zabibtech.alkhair.ui.user.adapters.FeesAdapter
 import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
@@ -32,7 +32,7 @@ class FeesFragment : Fragment() {
     private var _binding: FragmentFeesBinding? = null
     private val binding get() = _binding!!
 
-    private val feeViewModel: FeeViewModel by viewModels()
+    private val feesViewModel: FeesViewModel by viewModels()
     private lateinit var adapter: FeesAdapter
 
     private var studentId: String? = null
@@ -78,7 +78,7 @@ class FeesFragment : Fragment() {
 
         studentId = user?.uid
         studentId?.let {
-            feeViewModel.loadFeesByStudent(it)
+            feesViewModel.loadFeesByStudent(it)
         } ?: DialogUtils.showAlert(requireContext(), message = "Invalid student ID")
     }
 
@@ -87,9 +87,9 @@ class FeesFragment : Fragment() {
             onDeleteClick = { fee ->
                 DialogUtils.showConfirmation(
                     requireContext(),
-                    title = "Delete Fee",
+                    title = "Delete FeesModel",
                     message = "Are you sure you want to delete this fee record?",
-                    onConfirmed = { feeViewModel.deleteFee(fee.id) }
+                    onConfirmed = { feesViewModel.deleteFee(fee.id) }
                 )
             },
             onEditClick = { fee ->
@@ -102,10 +102,10 @@ class FeesFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        // 🔹 Collect Fee List
+        // 🔹 Collect FeesModel List
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                feeViewModel.feeListState.collectLatest { state ->
+                feesViewModel.feesModelListState.collectLatest { state ->
                     when (state) {
                         is UiState.Idle -> Unit
                         is UiState.Loading -> DialogUtils.showLoading(parentFragmentManager)
@@ -132,7 +132,7 @@ class FeesFragment : Fragment() {
         // 🔹 Collect Save/Delete States
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                feeViewModel.feeState.collectLatest { state ->
+                feesViewModel.feeState.collectLatest { state ->
                     when (state) {
                         is UiState.Idle -> Unit
                         is UiState.Loading -> DialogUtils.showLoading(parentFragmentManager)
@@ -143,7 +143,7 @@ class FeesFragment : Fragment() {
                                 "Operation completed successfully",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            studentId?.let { feeViewModel.loadFeesByStudent(it) } // Refresh list
+                            studentId?.let { feesViewModel.loadFeesByStudent(it) } // Refresh list
                         }
 
                         is UiState.Error -> {
@@ -156,9 +156,9 @@ class FeesFragment : Fragment() {
         }
     }
 
-    private fun updateFeeDashboard(fees: List<Fee>) {
+    private fun updateFeeDashboard(feesModels: List<FeesModel>) {
         val totalFees = user?.totalFees?.toDoubleOrNull() ?: 0.0
-        val totalPaid = fees.sumOf { it.paidAmount }
+        val totalPaid = feesModels.sumOf { it.paidAmount }
         val totalDue = totalFees - totalPaid
 
         // Prevent negative due (in case of overpayment)
@@ -169,7 +169,7 @@ class FeesFragment : Fragment() {
         binding.tvTotalDueAmount.text = "₹$adjustedDue"
     }
 
-    private fun showAddFeeDialog(feeToEdit: Fee? = null) {
+    private fun showAddFeeDialog(feesModelToEdit: FeesModel? = null) {
         val dialogBinding =
             com.zabibtech.alkhair.databinding.DialogAddFeeBinding.inflate(layoutInflater)
 
@@ -191,7 +191,7 @@ class FeesFragment : Fragment() {
         dialogBinding.spinnerMonth.setSelection(DateUtils.getCurrentMonthIndex())
 
         // If editing, pre-fill values
-        feeToEdit?.let { fee ->
+        feesModelToEdit?.let { fee ->
             dialogBinding.etTotalAmount.setText(fee.totalAmount.toString())
             dialogBinding.etPaidAmount.setText(fee.paidAmount.toString())
             val index = months.indexOf(fee.month)
@@ -254,8 +254,8 @@ class FeesFragment : Fragment() {
                 else -> "Unpaid"
             }
 
-            val fee = Fee(
-                id = feeToEdit?.id ?: "",
+            val feesModel = FeesModel(
+                id = feesModelToEdit?.id ?: "",
                 studentId = studentId ?: "",
                 month = month, // Already includes "January 2025"
                 totalAmount = total,
@@ -265,7 +265,7 @@ class FeesFragment : Fragment() {
                 paymentDate = if (paid > 0) DateUtils.today() else "-"
             )
 
-            feeViewModel.saveFee(fee)
+            feesViewModel.saveFee(feesModel)
             dialog.dismiss()
         }
 
