@@ -14,24 +14,22 @@ local.properties
 # === Android Studio / IntelliJ ===
 .idea/
 *.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
-captures/
-.externalNativeBuild/
-.cxx/
-
-# === Firebase / Google Services ===
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
 app/google-services.json
-**/google-services.json
-google-services.json
-
-# === Keystore and Signing Files ===
-*.jks
-*.keystore
-*.key
-*.pem
-
-# === Miscellaneous ===
-*.orig
-*.bak
-*.swp
-*.swo
+app/google-services.json
+app/google-services.json
+app/google-services.json
+app/google-services.json
