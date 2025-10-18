@@ -26,7 +26,7 @@
         <activity
             android:name=".ui.user.UserFormActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan|adjustResize" />
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ui.auth.StudentSignupActivity"
             android:exported="false" />
@@ -45,7 +45,7 @@
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustPan|adjustResize" />
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="true">

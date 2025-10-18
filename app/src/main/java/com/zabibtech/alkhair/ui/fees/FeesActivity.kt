@@ -184,7 +184,6 @@ class FeesActivity : AppCompatActivity() {
 
         barChart.animateY(1000)
 
-
         barChart.setExtraBottomOffset(40f) // make sure labels have space below
         barChart.setFitBars(true)
         barChart.invalidate()
