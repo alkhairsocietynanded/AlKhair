@@ -5,23 +5,26 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class User(
+    //personal details
     val uid: String = "",
     val name: String = "",
+    val parentName: String = "",
     val email: String = "",
+    val password: String = "",
+    val phone: String = "",
+    val address: String = "",
+    val dateOfBirth: String = "",
+
+    // Academic details
     val role: String = "",
     val classId: String = "",
     val className: String = "",
     val divisionName: String = "",
     val subject: String = "",
-    val phone: String = "",
-    val password: String = "",
-    val address: String = "",
     val shift: String = "",
     val isActive: Boolean = true,
+    val dateOfJoining: String = "",
 
-    // 🔹 Common extra fields
-    val parentName: String = "",
-    val dateOfBirth: String = "",
 
     // 🔹 FeesModel-related (for Students)
     val totalFees: String = "",

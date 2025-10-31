@@ -130,15 +130,15 @@ class AttendanceFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 attendanceViewModel.userAttendance.collectLatest { state ->
                     when (state) {
                         UiState.Loading -> {
-                            DialogUtils.showLoading(parentFragmentManager)
+                            DialogUtils.showLoading(childFragmentManager)
                         }
 
                         is UiState.Success -> {
-                            DialogUtils.hideLoading(parentFragmentManager)
+                            DialogUtils.hideLoading(childFragmentManager)
                             val attendanceMap = mutableMapOf<LocalDate, String>()
 
                             // Flatten data: merge all classes for this user
@@ -186,8 +186,15 @@ class AttendanceFragment : Fragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        DialogUtils.hideLoading(childFragmentManager)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        // Hide any active loading dialog to prevent window leaks when navigating away
+        DialogUtils.hideLoading(parentFragmentManager)
         _binding = null
     }
 

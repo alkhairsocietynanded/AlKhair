@@ -104,24 +104,24 @@ class FeesFragment : Fragment() {
     private fun setupObservers() {
         // 🔹 Collect FeesModel List
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+            // ✅ CHANGE: Use RESUMED state to only process UI events when the fragment is visible
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 feesViewModel.feesModelListState.collectLatest { state ->
                     when (state) {
                         is UiState.Idle -> Unit
-                        is UiState.Loading -> DialogUtils.showLoading(parentFragmentManager)
+                        // Use childFragmentManager for dialogs within a fragment for better lifecycle management
+                        is UiState.Loading -> DialogUtils.showLoading(childFragmentManager)
                         is UiState.Success -> {
-                            DialogUtils.hideLoading(parentFragmentManager)
+                            DialogUtils.hideLoading(childFragmentManager)
                             val fees = state.data
                             adapter.submitList(fees)
                             binding.emptyView.visibility =
                                 if (fees.isEmpty()) View.VISIBLE else View.GONE
-
-                            // 🔹 Update summary
                             updateFeeDashboard(fees)
                         }
 
                         is UiState.Error -> {
-                            DialogUtils.hideLoading(parentFragmentManager)
+                            DialogUtils.hideLoading(childFragmentManager)
                             DialogUtils.showAlert(requireContext(), message = state.message)
                         }
                     }
@@ -131,13 +131,14 @@ class FeesFragment : Fragment() {
 
         // 🔹 Collect Save/Delete States
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+            // ✅ CHANGE: Also use RESUMED state here
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 feesViewModel.feeState.collectLatest { state ->
                     when (state) {
                         is UiState.Idle -> Unit
-                        is UiState.Loading -> DialogUtils.showLoading(parentFragmentManager)
+                        is UiState.Loading -> DialogUtils.showLoading(childFragmentManager)
                         is UiState.Success -> {
-                            DialogUtils.hideLoading(parentFragmentManager)
+                            DialogUtils.hideLoading(childFragmentManager)
                             Toast.makeText(
                                 requireContext(),
                                 "Operation completed successfully",
@@ -147,7 +148,7 @@ class FeesFragment : Fragment() {
                         }
 
                         is UiState.Error -> {
-                            DialogUtils.hideLoading(parentFragmentManager)
+                            DialogUtils.hideLoading(childFragmentManager)
                             DialogUtils.showAlert(requireContext(), message = state.message)
                         }
                     }
@@ -272,8 +273,15 @@ class FeesFragment : Fragment() {
         dialog.show()
     }
 
+    override fun onPause() {
+        super.onPause()
+        DialogUtils.hideLoading(childFragmentManager)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        // Hide any active loading dialog to prevent window leaks when navigating away
+        DialogUtils.hideLoading(parentFragmentManager)
         _binding = null
     }
 }

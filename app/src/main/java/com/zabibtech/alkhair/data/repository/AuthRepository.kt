@@ -16,6 +16,11 @@ class AuthRepository @Inject constructor() {
         return res.user?.uid ?: throw Exception("Login failed: UID null")
     }
 
+    suspend fun resetPassword(email: String) {
+        auth.sendPasswordResetEmail(email).await()
+    }
+
+
     fun currentUserUid(): String? = auth.currentUser?.uid
 
     fun logout() = auth.signOut()

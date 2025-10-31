@@ -20,6 +20,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAppDataStore(
+        @ApplicationContext context: Context,
+        gson: Gson
+    ): AppDataStore {
+        return AppDataStore(context, gson)
+    }
+
+    @Provides
+    @Singleton
     fun provideGson(): Gson = Gson()
 
     @Provides
@@ -28,16 +37,7 @@ object AppModule {
         appDataStore: AppDataStore,
         gson: Gson
     ): UserStore {
-        return UserStore(appDataStore, gson)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAppDataStore(
-        @ApplicationContext context: Context,
-        gson: Gson
-    ): AppDataStore {
-        return AppDataStore(context, gson)
+        return UserStore(appDataStore)
     }
 
     @Provides

@@ -58,9 +58,9 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.database)
     implementation(libs.firebase.auth)
-
+    implementation(libs.firebase.database)
+    implementation(libs.firebase.storage)
     // MVVM + Coroutines
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)

@@ -1,6 +1,5 @@
 package com.zabibtech.alkhair.ui.user
 
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +23,7 @@ import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
+import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -77,12 +77,7 @@ class UserFormActivity : AppCompatActivity() {
         role = intent.getStringExtra("role") ?: Roles.STUDENT
         mode = intent.getStringExtra("mode") ?: Modes.CREATE
 
-        @Suppress("DEPRECATION")
-        userToEdit = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra("user", User::class.java)
-        } else {
-            intent.getParcelableExtra("user")
-        }
+        userToEdit = intent.extras?.getParcelableCompat("user", User::class.java)
     }
 
     private fun setupUi() = with(binding) {
@@ -161,10 +156,12 @@ class UserFormActivity : AppCompatActivity() {
                             DialogUtils.showAlert(
                                 this@UserFormActivity,
                                 "Success",
-                                "User saved successfully"
+                                "User saved successfully",
+                                onPositiveClick = {
+                                    setResult(RESULT_OK)
+                                    finish()
+                                }
                             )
-                            setResult(RESULT_OK)
-                            finish()
                         }
 
                         is UiState.Error -> {

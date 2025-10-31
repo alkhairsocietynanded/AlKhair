@@ -13,6 +13,8 @@ import com.zabibtech.alkhair.ui.user.adapters.UserDetailPagerAdapter
 import com.zabibtech.alkhair.ui.user.fragments.AttendanceFragment
 import com.zabibtech.alkhair.ui.user.fragments.FeesFragment
 import com.zabibtech.alkhair.ui.user.fragments.ProfileFragment
+import com.zabibtech.alkhair.utils.Roles
+import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -34,12 +36,7 @@ class UserDetailActivity : AppCompatActivity() {
             insets
         }
 
-        @Suppress("DEPRECATION")
-        val user = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra("user", User::class.java)
-        } else {
-            intent.getParcelableExtra("user")
-        }
+        val user = intent.extras?.getParcelableCompat("user", User::class.java)
         // Get user details from intent
 
         // Setup Toolbar
@@ -47,11 +44,15 @@ class UserDetailActivity : AppCompatActivity() {
         supportActionBar?.title = user?.name
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val fragments = listOf(
-            "Profile" to ProfileFragment.newInstance(user!!),
-            "Attendance" to AttendanceFragment.newInstance(user!!),
-            "Fees" to FeesFragment.newInstance(user!!)
-        )
+        val fragments = if (user?.role == Roles.STUDENT) {
+            listOf(
+                "Profile" to ProfileFragment.newInstance(user!!),
+                "Attendance" to AttendanceFragment.newInstance(user!!),
+                "Fees" to FeesFragment.newInstance(user!!)
+            )
+        } else {
+            listOf("Profile" to ProfileFragment.newInstance(user!!), "Attendance" to AttendanceFragment.newInstance(user!!), "Salary" to FeesFragment.newInstance(user!!))
+        }
 
         pagerAdapter = UserDetailPagerAdapter(this, fragments)
         binding.viewPager.adapter = pagerAdapter

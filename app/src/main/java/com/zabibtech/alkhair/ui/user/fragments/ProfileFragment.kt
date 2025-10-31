@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.FragmentProfileBinding
+import com.zabibtech.alkhair.utils.DialogUtils
 
 class ProfileFragment : Fragment() {
 
@@ -64,8 +65,15 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        DialogUtils.hideLoading(childFragmentManager)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        // Hide any active loading dialog to prevent window leaks when navigating away
+        DialogUtils.hideLoading(parentFragmentManager)
         _binding = null
     }
 }

@@ -10,6 +10,7 @@ import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.databinding.ActivityAdminDashboardBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
 import com.zabibtech.alkhair.ui.fees.FeesActivity
+import com.zabibtech.alkhair.ui.homework.HomeworkActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.utils.LogoutManager
 import com.zabibtech.alkhair.utils.Modes
@@ -50,13 +51,16 @@ class AdminDashboardActivity : AppCompatActivity() {
                     .putExtra("mode", "create")
             )
         }
-        /*  binding.cardUsers.setOnClickListener {
-              startActivity(Intent(this, UserListActivity::class.java))
-          }*/
 
         binding.cardClasses.setOnClickListener {
             startActivity(Intent(this, ClassManagerActivity::class.java))
         }
+
+        binding.cardHomework.setOnClickListener {
+            val intent = Intent(this@AdminDashboardActivity, HomeworkActivity::class.java)
+            startActivity(intent)
+        }
+
         binding.cardAttendance.setOnClickListener {
             // Attendance mode ke liye ClassManagerActivity khole
             val intent = Intent(this, ClassManagerActivity::class.java).apply {
@@ -74,15 +78,12 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-
         binding.cardFees.setOnClickListener {
             startActivity(Intent(this, FeesActivity::class.java))
         }
 
         binding.cardLogout.setOnClickListener {
-
             logoutManager.logout(this)
         }
-
     }
 }

@@ -1,14 +1,12 @@
 package com.zabibtech.alkhair.data.datastore
 
-import com.google.gson.Gson
 import com.zabibtech.alkhair.data.models.User
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class UserStore @Inject constructor(
-    private val appDataStore: AppDataStore,
-    val gson: Gson
+    private val appDataStore: AppDataStore
 ) {
     companion object {
         private const val USER_KEY = "user_data"
