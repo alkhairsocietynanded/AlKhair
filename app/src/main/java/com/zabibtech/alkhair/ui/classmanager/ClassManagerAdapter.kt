@@ -3,58 +3,109 @@ package com.zabibtech.alkhair.ui.classmanager
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.databinding.ItemClassBinding
+import com.zabibtech.alkhair.databinding.ItemDivisionHeaderBinding
+
+sealed class ClassListItem {
+    data class Header(val divisionName: String) : ClassListItem()
+    data class ClassItem(val classModel: ClassModel) : ClassListItem()
+}
 
 class ClassManagerAdapter(
-    private var items: List<ClassModel>,
     private val onEdit: (ClassModel) -> Unit,
     private val onDelete: (ClassModel) -> Unit,
     private val onClick: (ClassModel) -> Unit
-) : RecyclerView.Adapter<ClassManagerAdapter.ClassViewHolder>() {
+) : ListAdapter<ClassListItem, RecyclerView.ViewHolder>(ClassDiffCallback()) {
 
-    inner class ClassViewHolder(val binding: ItemClassBinding) :
-        RecyclerView.ViewHolder(binding.root)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ClassViewHolder {
-        val binding = ItemClassBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return ClassViewHolder(binding)
+    companion object {
+        const val VIEW_TYPE_HEADER = 0
+        const val VIEW_TYPE_ITEM = 1
     }
 
-    override fun onBindViewHolder(holder: ClassViewHolder, position: Int) {
-        val item = items[position]
-        holder.binding.apply {
-            tvClassName.text = item.className
-            tvDivisionName.text = item.division
+    inner class ClassViewHolder(private val binding: ItemClassBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(classItem: ClassListItem.ClassItem) {
+            val classModel = classItem.classModel
+            binding.tvClassName.text = classModel.className
 
-            // 🔹 3-dot menu popup
-            btnMore.setOnClickListener { view ->
+            // Regular click for navigation
+            binding.root.setOnClickListener { onClick(classModel) }
+
+            // Long click for context menu (edit/delete)
+            binding.root.setOnLongClickListener { view ->
                 val popup = PopupMenu(view.context, view)
-                popup.menuInflater.inflate(R.menu.menu_class_item, popup.menu)
+                popup.menuInflater.inflate(R.menu.menu_item_actions, popup.menu)
                 popup.setOnMenuItemClickListener { menuItem ->
                     when (menuItem.itemId) {
-                        R.id.action_edit -> { onEdit(item); true }
-                        R.id.action_delete -> { onDelete(item); true }
+                        R.id.action_edit -> {
+                            onEdit(classModel)
+                            true
+                        }
+                        R.id.action_delete -> {
+                            onDelete(classModel)
+                            true
+                        }
                         else -> false
                     }
                 }
                 popup.show()
+                true // Indicate the long press was handled
             }
-
-            root.setOnClickListener { onClick(item) }
         }
     }
 
-    override fun getItemCount(): Int = items.size
+    inner class HeaderViewHolder(private val binding: ItemDivisionHeaderBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(headerItem: ClassListItem.Header) {
+            binding.tvDivisionName.text = headerItem.divisionName
+        }
+    }
 
-    fun updateList(newList: List<ClassModel>) {
-        items = newList
-        notifyDataSetChanged()
+    override fun getItemViewType(position: Int): Int {
+        return when (getItem(position)) {
+            is ClassListItem.Header -> VIEW_TYPE_HEADER
+            is ClassListItem.ClassItem -> VIEW_TYPE_ITEM
+        }
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            VIEW_TYPE_HEADER -> {
+                val binding = ItemDivisionHeaderBinding.inflate(inflater, parent, false)
+                HeaderViewHolder(binding)
+            }
+            VIEW_TYPE_ITEM -> {
+                val binding = ItemClassBinding.inflate(inflater, parent, false)
+                ClassViewHolder(binding)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = getItem(position)) {
+            is ClassListItem.Header -> (holder as HeaderViewHolder).bind(item)
+            is ClassListItem.ClassItem -> (holder as ClassViewHolder).bind(item)
+        }
+    }
+
+    class ClassDiffCallback : DiffUtil.ItemCallback<ClassListItem>() {
+        override fun areItemsTheSame(oldItem: ClassListItem, newItem: ClassListItem): Boolean {
+            return when {
+                oldItem is ClassListItem.Header && newItem is ClassListItem.Header -> oldItem.divisionName == newItem.divisionName
+                oldItem is ClassListItem.ClassItem && newItem is ClassListItem.ClassItem -> oldItem.classModel.id == newItem.classModel.id
+                else -> false
+            }
+        }
+
+        override fun areContentsTheSame(oldItem: ClassListItem, newItem: ClassListItem): Boolean {
+            return oldItem == newItem
+        }
     }
 }

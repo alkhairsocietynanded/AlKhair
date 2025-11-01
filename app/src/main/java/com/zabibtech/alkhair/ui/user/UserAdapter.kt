@@ -2,6 +2,8 @@ package com.zabibtech.alkhair.ui.user
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -10,8 +12,6 @@ import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ItemUserBinding
 import java.util.Locale
-import android.widget.Filter
-import android.widget.Filterable
 
 class UserAdapter(
     private val onEdit: (User) -> Unit,
@@ -21,23 +21,26 @@ class UserAdapter(
 
     private var fullList: List<User> = emptyList()
 
+    // This method is called from the UI Controller to set the base list for filtering.
+    fun setFullList(list: List<User>?) {
+        fullList = list ?: emptyList()
+        submitList(list) // Update the displayed list.
+    }
+
     inner class UserViewHolder(private val binding: ItemUserBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(user: User) = with(binding) {
-            // Basic info
             tvName.text = user.name
             tvEmail.text = user.email
             tvPhone.text = user.phone
             tvRole.text = user.role
 
-            // Academic info
-            tvClassName.text = "${user.className ?: "-"}"
-            tvDivisionName.text = "${user.divisionName ?: "-"}"
-            tvShift.text = "${user.shift ?: "-"}"
-            tvStatus.text = "${if (user.isActive) "Active" else "Inactive"}"
+            tvClassName.text = user.className
+            tvDivisionName.text = user.divisionName
+            tvShift.text = user.shift
+            tvStatus.text = if (user.isActive) "Active" else "Inactive"
 
-            // 3-dot menu
             btnMore.setOnClickListener { view ->
                 val popup = PopupMenu(view.context, view)
                 popup.menuInflater.inflate(R.menu.menu_user_item, popup.menu)
@@ -57,7 +60,6 @@ class UserAdapter(
                 popup.show()
             }
 
-            // Item click
             root.setOnClickListener { onClick(user) }
         }
     }

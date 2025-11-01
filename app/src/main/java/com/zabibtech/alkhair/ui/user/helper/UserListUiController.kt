@@ -2,7 +2,6 @@ package com.zabibtech.alkhair.ui.user.helper
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityUserListBinding
 import com.zabibtech.alkhair.ui.user.UserAdapter
@@ -32,14 +31,6 @@ class UserListUiController(
             }
             userFormLauncher(intent)
         }
-
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) =
-                false.also { adapter.filter.filter(query) }
-
-            override fun onQueryTextChange(newText: String?) =
-                false.also { adapter.filter.filter(newText) }
-        })
     }
 
     fun handleListState(
@@ -56,19 +47,22 @@ class UserListUiController(
                 DialogUtils.hideLoading(activity.supportFragmentManager)
                 binding.swipeRefreshLayout.isRefreshing = false
 
-                // 🔹 filterUsers ka use yahan
-                val filtered = filterUsers(
+                // Primary filtering (role, class, shift)
+                val filteredList = filterUsers(
                     users = state.data,
                     role = role,
                     classId = classId,
                     shift = currentShift ?: "All"
                 )
 
-                adapter.submitList(filtered)
+                // Provide the full, pre-filtered list to the adapter.
+                // The adapter will then handle the search filtering internally.
+                adapter.setFullList(filteredList)
+
                 binding.recyclerView.visibility =
-                    if (filtered.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
+                    if (filteredList.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
                 binding.emptyView.visibility =
-                    if (filtered.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+                    if (filteredList.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
             }
 
             is UiState.Error -> {
@@ -77,7 +71,7 @@ class UserListUiController(
                 DialogUtils.showAlert(activity, "Error", state.message)
             }
 
-            else -> {}
+            else -> DialogUtils.hideLoading(activity.supportFragmentManager)
         }
     }
 

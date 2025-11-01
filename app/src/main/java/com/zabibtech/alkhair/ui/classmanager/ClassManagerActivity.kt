@@ -2,18 +2,16 @@ package com.zabibtech.alkhair.ui.classmanager
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.databinding.ActivityClassManagerBinding
 import com.zabibtech.alkhair.ui.attendance.AttendanceActivity
@@ -23,6 +21,7 @@ import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -32,7 +31,6 @@ class ClassManagerActivity : AppCompatActivity() {
     private val viewModel: ClassManagerViewModel by viewModels()
     private lateinit var adapter: ClassManagerAdapter
 
-    private var currentDivision: String? = null
     private var divisions: List<DivisionModel> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +39,8 @@ class ClassManagerActivity : AppCompatActivity() {
         binding = ActivityClassManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ✅ Insets handle karo
+        setSupportActionBar(binding.toolbar)
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -51,18 +50,14 @@ class ClassManagerActivity : AppCompatActivity() {
         setupRecyclerView()
         setupFab()
 
-        // 🔹 Load initial data
-        viewModel.loadDivisions()
-        // Initial load of classes will be "All". ViewModel's currentDivisionFilterForRefresh defaults to null.
-        viewModel.loadClasses()
+        observeViewModel()
 
-        observeDivisions()
-        observeClasses()
+        viewModel.loadDivisions()
+        viewModel.loadClasses()
     }
 
     private fun setupRecyclerView() {
         adapter = ClassManagerAdapter(
-            items = emptyList(),
             onEdit = { classModel ->
                 DialogUtils.showAddClassDialog(
                     this,
@@ -74,13 +69,12 @@ class ClassManagerActivity : AppCompatActivity() {
                     viewModel.updateClass(updated)
                 }
             },
-
             onDelete = { classModel ->
                 DialogUtils.showConfirmation(
                     context = this,
                     title = "Delete Class",
                     message = "Are you sure you want to delete ${classModel.className}?",
-                    onConfirmed = { viewModel.deleteClass(classModel.id) } // Pass only classId
+                    onConfirmed = { viewModel.deleteClass(classModel.id) }
                 )
             },
             onClick = { classModel ->
@@ -100,7 +94,19 @@ class ClassManagerActivity : AppCompatActivity() {
                 startActivity(targetIntent)
             }
         )
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+
+        val gridLayoutManager = GridLayoutManager(this, 2)
+        gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return when (adapter.getItemViewType(position)) {
+                    ClassManagerAdapter.VIEW_TYPE_HEADER -> 2
+                    ClassManagerAdapter.VIEW_TYPE_ITEM -> 1
+                    else -> 1
+                }
+            }
+        }
+
+        binding.recyclerView.layoutManager = gridLayoutManager
         binding.recyclerView.adapter = adapter
     }
 
@@ -115,79 +121,47 @@ class ClassManagerActivity : AppCompatActivity() {
         }
     }
 
-    private fun observeDivisions() {
+    private fun observeViewModel() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.divisions.collect { state ->
-                    when (state) {
-                        is UiState.Success -> {
-                            divisions = state.data
-                            val names = listOf("Select Division") + divisions.map { it.name }
-                            val spinnerAdapter = ArrayAdapter(
-                                this@ClassManagerActivity,
-                                android.R.layout.simple_spinner_item,
-                                names
-                            )
-                            spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                            binding.spinnerDivisionFilter.adapter = spinnerAdapter
+                viewModel.divisions.combine(viewModel.classes) { divisionsState, classesState ->
+                    Pair(divisionsState, classesState)
+                }.collect { (divisionsState, classesState) ->
 
-                            // Restore previous selection if any, or default to "All"
-                            val previousSelection = currentDivision
-                            val selectionIndex =
-                                if (previousSelection == null) 0 else names.indexOf(
-                                    previousSelection
-                                ).takeIf { it != -1 } ?: 0
-                            binding.spinnerDivisionFilter.setSelection(selectionIndex)
+                    // Determine the overall state
+                    val isError = divisionsState is UiState.Error || classesState is UiState.Error
+                    val isSuccess = divisionsState is UiState.Success && classesState is UiState.Success
+                    // Show loading only if not in success or error, and the list is empty
+                    val isLoading = !isSuccess && !isError && adapter.itemCount == 0
 
-                            binding.spinnerDivisionFilter.onItemSelectedListener =
-                                object : AdapterView.OnItemSelectedListener {
-                                    override fun onItemSelected(
-                                        parent: AdapterView<*>?,
-                                        view: View?,
-                                        position: Int,
-                                        id: Long
-                                    ) {
-                                        currentDivision =
-                                            if (position == 0) null else divisions[position - 1].name
+                    binding.progressBar.isVisible = isLoading
 
-                                        // Inform ViewModel of the filter change
-                                        viewModel.setCurrentDivisionFilter(currentDivision)
-                                    }
+                    if (isError) {
+                        val errorMessage = (divisionsState as? UiState.Error)?.message
+                            ?: (classesState as? UiState.Error)?.message
+                        binding.emptyView.text = errorMessage
+                        binding.emptyView.isVisible = true
+                        adapter.submitList(emptyList()) // Clear previous data
+                    } else if (isSuccess) {
+                        val divisionsList = (divisionsState as UiState.Success).data
+                        val classesList = (classesState as UiState.Success).data
+                        this@ClassManagerActivity.divisions = divisionsList
 
-                                    override fun onNothingSelected(parent: AdapterView<*>?) {
-                                        // Do nothing
-                                    }
+                        val items = mutableListOf<ClassListItem>()
+                        if (classesList.isNotEmpty() && divisionsList.isNotEmpty()) {
+                            val groupedByDivision = classesList.groupBy { it.division }
+                            divisionsList.forEach { division ->
+                                val classesInDivision = groupedByDivision[division.name]
+                                if (!classesInDivision.isNullOrEmpty()) {
+                                    items.add(ClassListItem.Header(division.name))
+                                    items.addAll(classesInDivision.map { ClassListItem.ClassItem(it) })
                                 }
+                            }
                         }
 
-                        is UiState.Error -> {
-                            DialogUtils.showConfirmation(
-                                this@ClassManagerActivity,
-                                "Error",
-                                state.message
-                            )
-                        }
-
-                        else -> {}
-                    }
-                }
-            }
-        }
-    }
-
-    private fun observeClasses() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.classes.collect { state ->
-                    when (state) {
-                        is UiState.Success -> adapter.updateList(state.data)
-                        is UiState.Error -> DialogUtils.showConfirmation(
-                            this@ClassManagerActivity,
-                            "Error",
-                            state.message
-                        )
-
-                        else -> {}
+                        adapter.submitList(items)
+                        binding.emptyView.isVisible = items.isEmpty()
+                        binding.emptyView.text = "No classes found"
                     }
                 }
             }

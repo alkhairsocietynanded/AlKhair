@@ -2,16 +2,20 @@ package com.zabibtech.alkhair.ui.user
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.chip.Chip
+import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.databinding.ActivityUserListBinding
 import com.zabibtech.alkhair.ui.user.helper.UserListUiController
 import com.zabibtech.alkhair.utils.DialogUtils
@@ -49,7 +53,8 @@ class UserListActivity : AppCompatActivity() {
         binding = ActivityUserListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ✅ Insets handle karo
+        setSupportActionBar(binding.toolbar)
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -62,7 +67,6 @@ class UserListActivity : AppCompatActivity() {
 
         setupRecyclerView()
 
-        // 🔹 Init UI Controller
         uiController = UserListUiController(
             this,
             binding,
@@ -72,10 +76,32 @@ class UserListActivity : AppCompatActivity() {
 
         uiController.setupListeners(role, classId)
         setupObservers()
+        setupChipFilterListeners()
+        binding.chipGroupShift.check(R.id.chipAll)
 
-        // Default shift = All
-        binding.radioGroupShift.check(com.zabibtech.alkhair.R.id.radioAll)
         userViewModel.loadUsers(role)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.user_list_menu, menu)
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem.actionView as SearchView
+        searchView.queryHint = "Search by name..."
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // The adapter's filter will handle the search
+                adapter.filter.filter(query)
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                // The adapter's filter will handle the search
+                adapter.filter.filter(newText)
+                return true
+            }
+        })
+        return true
     }
 
     private fun setupRecyclerView() {
@@ -92,12 +118,12 @@ class UserListActivity : AppCompatActivity() {
             },
             onDelete = { user ->
                 if (mode == Modes.CREATE) {
-                    DialogUtils.showAlert(
+                    DialogUtils.showConfirmation(
                         this,
-                        "Confirm",
-                        "Delete ${user.name}?",
-                        "Yes"
-                    ) { userViewModel.deleteUser(user.uid) }
+                        title = "Confirm Deletion",
+                        message = "Are you sure you want to delete ${user.name}?",
+                        onConfirmed = { userViewModel.deleteUser(user.uid) }
+                    )
                 }
             },
             onClick = { user ->
@@ -112,10 +138,27 @@ class UserListActivity : AppCompatActivity() {
         binding.recyclerView.adapter = adapter
     }
 
+    private fun setupChipFilterListeners() {
+        binding.chipGroupShift.setOnCheckedStateChangeListener { group, checkedIds ->
+            // Since singleSelection is true, we can safely take the first ID.
+            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
+
+            currentShift = when (checkedIds.first()) {
+                R.id.chipSubah -> "Subah"
+                R.id.chipDopahar -> "Dopahar"
+                R.id.chipShaam -> "Shaam"
+                else -> "All"
+            }
+            // Trigger a reload of the user list with the new filter
+            userViewModel.loadUsers(role)
+        }
+    }
+
     private fun setupObservers() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userViewModel.userListState.collectLatest { state ->
+                    // The UI controller will now correctly handle the state
                     uiController.handleListState(state, role, classId, currentShift)
                 }
             }
@@ -127,17 +170,6 @@ class UserListActivity : AppCompatActivity() {
                     uiController.handleUserState(state, role)
                 }
             }
-        }
-
-        binding.radioGroupShift.setOnCheckedChangeListener { _, checkedId ->
-            currentShift = when (checkedId) {
-                com.zabibtech.alkhair.R.id.radioSubah -> "Subah"
-                com.zabibtech.alkhair.R.id.radioDopahar -> "Dopahar"
-                com.zabibtech.alkhair.R.id.radioShaam -> "Shaam"
-                else -> "All"
-            }
-            adapter.submitList(emptyList())
-            userViewModel.loadUsers(role)
         }
     }
 }

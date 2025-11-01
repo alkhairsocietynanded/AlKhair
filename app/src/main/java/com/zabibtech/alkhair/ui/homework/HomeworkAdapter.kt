@@ -1,5 +1,6 @@
 package com.zabibtech.alkhair.ui.homework
 
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
@@ -51,6 +52,17 @@ class HomeworkAdapter(
                         }
                     }
                     popup.show()
+                }
+
+                // Toggle description maxLines on click
+                tvDescription.setOnClickListener {
+                    if (tvDescription.maxLines == 2) {
+                        tvDescription.maxLines = Integer.MAX_VALUE
+                        tvDescription.ellipsize = null
+                    } else {
+                        tvDescription.maxLines = 2
+                        tvDescription.ellipsize = TextUtils.TruncateAt.END
+                    }
                 }
             }
         }
