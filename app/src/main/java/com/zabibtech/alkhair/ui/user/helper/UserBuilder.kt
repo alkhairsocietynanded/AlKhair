@@ -25,6 +25,7 @@ object UserBuilder {
         val dateOfBirth = binding.etDob.text.toString().trim()
         val totalFees = binding.etTotalFees.text.toString().trim()
         val salary = binding.etSalary.text.toString().trim()
+        val doj = binding.etDoj.text.toString().trim()
 //        val paidFees = binding.etPaidFees.text.toString().trim()
 //        val paidSalary = binding.etPaidSalary.text.toString().trim()
 
@@ -53,6 +54,7 @@ object UserBuilder {
                     parentName = parentName,
                     dateOfBirth = dateOfBirth,
                     salary = salary,
+                    dateOfJoining = doj
 //                    paidSalary = paidSalary,
 //                    dueSalary = dueSalary
                 )
@@ -79,6 +81,7 @@ object UserBuilder {
                     parentName = parentName,
                     dateOfBirth = dateOfBirth,
                     totalFees = totalFees,
+                    dateOfJoining = doj
 //                    paidFees = paidFees,
 //                    dueFees = dueValue
                 )

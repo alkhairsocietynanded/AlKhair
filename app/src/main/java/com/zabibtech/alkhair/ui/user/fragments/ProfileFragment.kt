@@ -1,11 +1,11 @@
 package com.zabibtech.alkhair.ui.user.fragments
 
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.zabibtech.alkhair.utils.getParcelableCompat
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.FragmentProfileBinding
 import com.zabibtech.alkhair.utils.DialogUtils
@@ -29,12 +29,7 @@ class ProfileFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        @Suppress("DEPRECATION")
-        user = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arguments?.getParcelable(ARG_USER, User::class.java)
-        } else {
-            arguments?.getParcelable(ARG_USER)
-        }
+        user = arguments?.getParcelableCompat(ARG_USER, User::class.java)
     }
 
     override fun onCreateView(
@@ -60,6 +55,7 @@ class ProfileFragment : Fragment() {
             binding.tvDivision.text = it.divisionName
             binding.chipClass.text = it.className
             binding.chipDivision.text = it.divisionName
+            binding.tvJoinedDate.text = it.dateOfJoining
 //            binding.tvJoinedDate.text = it.joinedDate
             // Load profile image using Glide/Picasso if you have URL
         }

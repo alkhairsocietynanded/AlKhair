@@ -82,6 +82,10 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, FeesActivity::class.java))
         }
 
+        binding.cardSalary.setOnClickListener {
+            //Todo
+        }
+
         binding.cardLogout.setOnClickListener {
             logoutManager.logout(this)
         }

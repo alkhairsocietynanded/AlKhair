@@ -122,8 +122,10 @@ class UserListActivity : AppCompatActivity() {
             title = buildString {
                 if (!className.isNullOrEmpty() && role == Roles.STUDENT) {
                     append(className)
-                } else {
+                } else if (role == Roles.TEACHER) {
                     append("Teachers")
+                } else {
+                    append("User List")
                 }
             }
             subtitle = division ?: ""

@@ -2,6 +2,7 @@ package com.zabibtech.alkhair.ui.main
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import androidx.activity.enableEdgeToEdge
@@ -85,12 +86,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun routeToDashboard(user: User) {
-        val destination = when (user.role) {
+        // 1. Role ko saaf karein
+        val cleanRole = user.role.trim().lowercase()
+
+        Log.d("com.zabibtech.alkhair", "Routing user. Role from ViewModel is: '${user.role}'")
+
+        // 2. Pehle check karein ke role valid hai ya nahi
+        if (cleanRole !in listOf("admin", "teacher", "student")) {
+            // Agar role in teeno mein se koi nahi hai, to foran Login par bhejein
+            goToLogin()
+            finish() // MainActivity ko band karna na bhoolein
+            return   // Function se bahar nikal jayein
+        }
+
+        // 3. Agar role valid hai, tab hi aage barhein
+        val destination = when (cleanRole) {
             "admin" -> AdminDashboardActivity::class.java
             "teacher" -> TeacherDashboardActivity::class.java
             "student" -> StudentDashboardActivity::class.java
-            else -> LoginActivity::class.java
+            else -> LoginActivity::class.java // Ye ab sirf ek fallback hai
         }
         startActivity(Intent(this, destination))
     }
+
 }

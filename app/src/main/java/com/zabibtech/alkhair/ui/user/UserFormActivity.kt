@@ -97,6 +97,12 @@ class UserFormActivity : AppCompatActivity() {
                 binding.etDob.setText(DateUtils.formatDate(selectedDate))
             }
         }
+        etDoj.setOnClickListener {
+            DateUtils.showDatePicker(this@UserFormActivity, selectedDate) { cal ->
+                selectedDate = cal
+                binding.etDoj.setText(DateUtils.formatDate(selectedDate))
+            }
+        }
         // Password handling
         layoutPassword.apply {
             visibility = when {

@@ -1,5 +1,6 @@
 package com.zabibtech.alkhair.ui.dashboard
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -7,6 +8,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.databinding.ActivityStudentDashboardBinding
+import com.zabibtech.alkhair.ui.user.UserDetailActivity
+import com.zabibtech.alkhair.ui.user.UserFormActivity
 import com.zabibtech.alkhair.utils.LogoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -38,7 +41,7 @@ class StudentDashboardActivity : AppCompatActivity() {
         }
 
         binding.btnProfile.setOnClickListener {
-            // TODO: open profile activity
+            startActivity(Intent(this, UserDetailActivity::class.java))
         }
 
         binding.btnLogout.setOnClickListener {

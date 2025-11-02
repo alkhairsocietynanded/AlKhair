@@ -25,7 +25,6 @@ data class User(
     val isActive: Boolean = true,
     val dateOfJoining: String = "",
 
-
     // 🔹 FeesModel-related (for Students)
     val totalFees: String = "",
     val paidFees: String = "",

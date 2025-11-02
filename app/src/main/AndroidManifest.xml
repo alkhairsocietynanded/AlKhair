@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
+            android:name=".ui.salary.SalaryActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.homework.HomeworkActivity"
             android:exported="false" />
         <activity
