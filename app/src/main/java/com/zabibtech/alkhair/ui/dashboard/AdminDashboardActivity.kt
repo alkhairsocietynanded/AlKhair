@@ -11,6 +11,7 @@ import com.zabibtech.alkhair.databinding.ActivityAdminDashboardBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
 import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.homework.HomeworkActivity
+import com.zabibtech.alkhair.ui.salary.SalaryActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.utils.LogoutManager
 import com.zabibtech.alkhair.utils.Modes
@@ -83,7 +84,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
         binding.cardSalary.setOnClickListener {
-            //Todo
+            startActivity(Intent(this, SalaryActivity::class.java))
         }
 
         binding.cardLogout.setOnClickListener {
