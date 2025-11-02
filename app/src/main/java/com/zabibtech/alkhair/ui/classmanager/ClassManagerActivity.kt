@@ -80,6 +80,8 @@ class ClassManagerActivity : AppCompatActivity() {
             onClick = { classModel ->
                 val mode = intent.getStringExtra("mode") ?: Modes.CREATE
                 val role = intent.getStringExtra("role") ?: Roles.STUDENT
+//                val classId = intent.getStringExtra("classId")
+//                val division = intent.getStringExtra("division")
                 val targetIntent = if (mode == Modes.ATTENDANCE) {
                     Intent(this@ClassManagerActivity, AttendanceActivity::class.java)
                 } else {
@@ -90,6 +92,8 @@ class ClassManagerActivity : AppCompatActivity() {
                     putExtra("mode", mode)
                     putExtra("role", role)
                     putExtra("classId", classModel.id)
+                    putExtra("className", classModel.className)
+                    putExtra("division", classModel.division)
                 }
                 startActivity(targetIntent)
             }
@@ -130,11 +134,12 @@ class ClassManagerActivity : AppCompatActivity() {
 
                     // Determine the overall state
                     val isError = divisionsState is UiState.Error || classesState is UiState.Error
-                    val isSuccess = divisionsState is UiState.Success && classesState is UiState.Success
+                    val isSuccess =
+                        divisionsState is UiState.Success && classesState is UiState.Success
                     // Show loading only if not in success or error, and the list is empty
-                    val isLoading = !isSuccess && !isError && adapter.itemCount == 0
+//                    val isLoading = !isSuccess && !isError && adapter.itemCount == 0
 
-                    binding.progressBar.isVisible = isLoading
+//                    binding.progressBar.isVisible = isLoading
 
                     if (isError) {
                         val errorMessage = (divisionsState as? UiState.Error)?.message

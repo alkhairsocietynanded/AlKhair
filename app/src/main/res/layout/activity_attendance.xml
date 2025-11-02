@@ -70,7 +70,7 @@
             </LinearLayout>
 
             <!-- Shift filter -->
-            <RadioGroup
+          <!--  <RadioGroup
                 android:id="@+id/radioGroupShift"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -103,7 +103,55 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Shaam" />
-            </RadioGroup>
+            </RadioGroup>-->
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupShift"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:chipSpacingHorizontal="6dp"
+                app:singleLine="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAll"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="80dp"
+                    android:checked="true"
+                    android:text="All"
+                    android:textAlignment="center" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSubah"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="80dp"
+                    android:text="Subah"
+                    android:textAlignment="center" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipDopahar"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="80dp"
+                    android:text="Dopahar"
+                    android:textAlignment="center" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipShaam"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="80dp"
+                    android:text="Shaam"
+                    android:textAlignment="center" />
+
+            </com.google.android.material.chip.ChipGroup>
 
             <!-- RecyclerView inside SwipeRefreshLayout -->
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

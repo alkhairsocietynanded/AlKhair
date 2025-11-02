@@ -33,7 +33,7 @@ class HomeworkActivity : AppCompatActivity() {
         // Apply window insets to handle system bars
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(v.paddingLeft, systemBars.top, v.paddingRight, v.paddingBottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
@@ -93,7 +93,6 @@ class HomeworkActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.homeworkState.collect { state ->
                     binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
-                    binding.progressBar.isVisible = state is UiState.Loading && !binding.swipeRefreshLayout.isRefreshing
 
                     when (state) {
                         is UiState.Success -> {
@@ -125,16 +124,13 @@ class HomeworkActivity : AppCompatActivity() {
                 viewModel.mutationState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
-                            binding.progressBar.isVisible = true
                         }
                         is UiState.Success -> {
-                            binding.progressBar.isVisible = false
                             Toast.makeText(this@HomeworkActivity, "Operation successful", Toast.LENGTH_SHORT).show()
                             viewModel.loadAllHomework() // Refresh the list
                             viewModel.resetMutationState() // Reset state to prevent re-triggering
                         }
                         is UiState.Error -> {
-                            binding.progressBar.isVisible = false
                             Toast.makeText(this@HomeworkActivity, state.message, Toast.LENGTH_LONG).show()
                             viewModel.resetMutationState()
                         }

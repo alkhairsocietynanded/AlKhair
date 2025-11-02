@@ -42,6 +42,10 @@ class UserFormActivity : AppCompatActivity() {
     private var userToEdit: User? = null
     private var selectedClassId: String? = null
 
+    private var classId: String? = null
+    private var division: String? = null
+    private var currentShift: String? = "All"
+
     private var allDivisions: List<DivisionModel> = emptyList()
     private var allClasses: List<ClassModel> = emptyList()
 
@@ -76,6 +80,10 @@ class UserFormActivity : AppCompatActivity() {
     private fun extractIntentData() {
         role = intent.getStringExtra("role") ?: Roles.STUDENT
         mode = intent.getStringExtra("mode") ?: Modes.CREATE
+        classId = intent.getStringExtra("classId")
+        division = intent.getStringExtra("division")
+        currentShift = intent.getStringExtra("currentShift") ?: "All"
+
 
         userToEdit = intent.extras?.getParcelableCompat("user", User::class.java)
     }
@@ -138,6 +146,17 @@ class UserFormActivity : AppCompatActivity() {
                 shifts
             )
         )
+
+// ✅ Prefill shift correctly after adapter is set
+        val shiftToSet = when {
+            mode == Modes.UPDATE && userToEdit?.shift?.isNotEmpty() == true -> userToEdit?.shift
+            !currentShift.isNullOrEmpty() && currentShift != "All" -> currentShift
+            else -> null
+        }
+        shiftToSet?.let {
+            val matchedShift = shifts.firstOrNull { s -> s.equals(it, ignoreCase = true) }
+            matchedShift?.let { valid -> etShift.setText(valid, false) }
+        }
     }
 
     private fun observeViewModels() {
@@ -211,16 +230,37 @@ class UserFormActivity : AppCompatActivity() {
     private fun setupDropdowns() {
         if (allDivisions.isEmpty() || allClasses.isEmpty()) return
 
-        // Use DropdownHelper with pre-selected values
-        dropdownHelper.setupDivisionDropdown(
-            binding.etDivision,
-            binding.etClass,
-            allDivisions,
-            allClasses,
-            preSelectedDivision = userToEdit?.divisionName,
-            preSelectedClass = userToEdit?.className
-        ) { selectedClassId ->
-            this.selectedClassId = selectedClassId
+        // 🔹 Agar update mode hai (edit user)
+        if (mode == Modes.UPDATE && userToEdit != null) {
+            dropdownHelper.setupDivisionDropdown(
+                binding.etDivision,
+                binding.etClass,
+                allDivisions,
+                allClasses,
+                preSelectedDivision = userToEdit?.divisionName,
+                preSelectedClass = userToEdit?.className
+            ) { selectedClassId ->
+                this.selectedClassId = selectedClassId
+            }
+//            binding.etShift.setText(userToEdit?.shift, false)
+        }
+        // 🔹 Agar create mode hai (naya user add kar rahe)
+        else {
+            dropdownHelper.setupDivisionDropdown(
+                binding.etDivision,
+                binding.etClass,
+                allDivisions,
+                allClasses,
+                preSelectedDivision = division,
+                preSelectedClass = allClasses.find { it.id == classId }?.className
+            ) { selectedClassId ->
+                this.selectedClassId = selectedClassId
+            }
+
+//            // 🔹 Shift bhi prefill karo
+//            if (!currentShift.isNullOrEmpty() && currentShift != "All") {
+//                binding.etShift.setText(currentShift, false)
+//            }
         }
     }
 

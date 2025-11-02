@@ -14,16 +14,17 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.chip.Chip
 import com.zabibtech.alkhair.R
+import com.zabibtech.alkhair.data.datastore.ShiftDataStore
 import com.zabibtech.alkhair.databinding.ActivityUserListBinding
 import com.zabibtech.alkhair.ui.user.helper.UserListUiController
-import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
+import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class UserListActivity : AppCompatActivity() {
@@ -31,12 +32,17 @@ class UserListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityUserListBinding
     private val userViewModel: UserViewModel by viewModels()
 
+    @Inject
+    lateinit var shiftDataStore: ShiftDataStore
+
     private lateinit var adapter: UserAdapter
     private lateinit var uiController: UserListUiController
 
     private lateinit var mode: String
     private var role: String = Roles.STUDENT
     private var classId: String? = null
+    private var className: String? = null
+    private var division: String? = null
     private var currentShift: String? = "All"
 
     private val userFormLauncher = registerForActivityResult(
@@ -53,7 +59,7 @@ class UserListActivity : AppCompatActivity() {
         binding = ActivityUserListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.toolbar)
+        setupToolbar()
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -61,10 +67,7 @@ class UserListActivity : AppCompatActivity() {
             insets
         }
 
-        role = intent.getStringExtra("role") ?: Roles.STUDENT
-        classId = intent.getStringExtra("classId")
-        mode = intent.getStringExtra("mode") ?: Modes.CREATE
-
+        extractIntentData()
         setupRecyclerView()
 
         uiController = UserListUiController(
@@ -74,12 +77,57 @@ class UserListActivity : AppCompatActivity() {
             userViewModel
         ) { intent -> userFormLauncher.launch(intent) }
 
-        uiController.setupListeners(role, classId)
         setupObservers()
         setupChipFilterListeners()
-        binding.chipGroupShift.check(R.id.chipAll)
 
-        userViewModel.loadUsers(role)
+        lifecycleScope.launch {
+            val savedShift = shiftDataStore.getShift()
+            val chipId = when (savedShift) {
+                "Subah" -> R.id.chipSubah
+                "Dopahar" -> R.id.chipDopahar
+                "Shaam" -> R.id.chipShaam
+                else -> R.id.chipAll
+            }
+            binding.chipGroupShift.check(chipId)
+
+            uiController.setupListeners(role, classId, division, currentShift)
+
+            // Initialize SwipeRefreshLayout
+            binding.swipeRefreshLayout.setColorSchemeResources(
+                R.color.md_theme_primary,
+                R.color.md_theme_onSurfaceVariant
+            )
+
+            // First-time load
+            userViewModel.loadUsers(role)
+        }
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+    }
+
+    private fun extractIntentData() {
+        mode = intent.getStringExtra("mode") ?: Modes.CREATE
+        role = intent.getStringExtra("role") ?: Roles.STUDENT
+        classId = intent.getStringExtra("classId")
+        className = intent.getStringExtra("className")
+        division = intent.getStringExtra("division")
+
+        supportActionBar?.apply {
+            title = buildString {
+                if (!className.isNullOrEmpty() && role == Roles.STUDENT) {
+                    append(className)
+                } else {
+                    append("Teachers")
+                }
+            }
+            subtitle = division ?: ""
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -90,13 +138,11 @@ class UserListActivity : AppCompatActivity() {
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                // The adapter's filter will handle the search
                 adapter.filter.filter(query)
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                // The adapter's filter will handle the search
                 adapter.filter.filter(newText)
                 return true
             }
@@ -118,12 +164,7 @@ class UserListActivity : AppCompatActivity() {
             },
             onDelete = { user ->
                 if (mode == Modes.CREATE) {
-                    DialogUtils.showConfirmation(
-                        this,
-                        title = "Confirm Deletion",
-                        message = "Are you sure you want to delete ${user.name}?",
-                        onConfirmed = { userViewModel.deleteUser(user.uid) }
-                    )
+                    uiController.confirmDelete(user)
                 }
             },
             onClick = { user ->
@@ -139,8 +180,7 @@ class UserListActivity : AppCompatActivity() {
     }
 
     private fun setupChipFilterListeners() {
-        binding.chipGroupShift.setOnCheckedStateChangeListener { group, checkedIds ->
-            // Since singleSelection is true, we can safely take the first ID.
+        binding.chipGroupShift.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
 
             currentShift = when (checkedIds.first()) {
@@ -149,7 +189,12 @@ class UserListActivity : AppCompatActivity() {
                 R.id.chipShaam -> "Shaam"
                 else -> "All"
             }
-            // Trigger a reload of the user list with the new filter
+
+            lifecycleScope.launch {
+                shiftDataStore.saveShift(currentShift ?: "All")
+            }
+
+            uiController.setupListeners(role, classId, division, currentShift)
             userViewModel.loadUsers(role)
         }
     }
@@ -158,7 +203,7 @@ class UserListActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userViewModel.userListState.collectLatest { state ->
-                    // The UI controller will now correctly handle the state
+                    binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
                     uiController.handleListState(state, role, classId, currentShift)
                 }
             }

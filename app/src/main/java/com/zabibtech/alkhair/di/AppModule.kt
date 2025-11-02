@@ -3,6 +3,7 @@ package com.zabibtech.alkhair.di
 import android.content.Context
 import com.google.gson.Gson
 import com.zabibtech.alkhair.data.datastore.AppDataStore
+import com.zabibtech.alkhair.data.datastore.ShiftDataStore
 import com.zabibtech.alkhair.data.datastore.ClassDivisionStore
 import com.zabibtech.alkhair.data.datastore.UserStore
 import com.zabibtech.alkhair.data.repository.ClassManagerRepository
@@ -47,5 +48,13 @@ object AppModule {
         classManagerRepository: ClassManagerRepository
     ): ClassDivisionStore {
         return ClassDivisionStore(appDataStore, classManagerRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideShiftDataStore(
+        appDataStore: AppDataStore
+    ): ShiftDataStore {
+        return ShiftDataStore(appDataStore)
     }
 }

@@ -78,7 +78,10 @@ class AttendanceActivity : AppCompatActivity() {
         }
 
         // ✅ Default shift filter = All
-        binding.radioGroupShift.check(R.id.radioAll)
+//        binding.radioGroupShift.check(R.id.radioAll)
+
+        setupChipFilterListeners()
+        binding.chipGroupShift.check(R.id.chipAll)
         userViewModel.loadUsers(role)
     }
 
@@ -187,17 +190,34 @@ class AttendanceActivity : AppCompatActivity() {
         }
 
         // ✅ Shift filter change
-        binding.radioGroupShift.setOnCheckedChangeListener { _, checkedId ->
-            currentShift = when (checkedId) {
-                R.id.radioSubah -> "Subah"
-                R.id.radioDopahar -> "Dopahar"
-                R.id.radioShaam -> "Shaam"
+        /*   binding.radioGroupShift.setOnCheckedChangeListener { _, checkedId ->
+               currentShift = when (checkedId) {
+                   R.id.radioSubah -> "Subah"
+                   R.id.radioDopahar -> "Dopahar"
+                   R.id.radioShaam -> "Shaam"
+                   else -> "All"
+               }
+               // list refresh with filter
+               userViewModel.loadUsers(role)
+           }*/
+    }
+
+    private fun setupChipFilterListeners() {
+        binding.chipGroupShift.setOnCheckedStateChangeListener { group, checkedIds ->
+            // Since singleSelection is true, we can safely take the first ID.
+            if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
+
+            currentShift = when (checkedIds.first()) {
+                R.id.chipSubah -> "Subah"
+                R.id.chipDopahar -> "Dopahar"
+                R.id.chipShaam -> "Shaam"
                 else -> "All"
             }
-            // list refresh with filter
+            // Trigger a reload of the user list with the new filter
             userViewModel.loadUsers(role)
         }
     }
+
 
     private fun setupDateNavigation() {
         // Previous Date button

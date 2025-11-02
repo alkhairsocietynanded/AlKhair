@@ -43,6 +43,25 @@ class AppDataStore @Inject constructor(
     }
 
     // -----------------------------
+    // Save a string
+    // -----------------------------
+    suspend fun saveString(keyName: String, value: String) {
+        val key = stringPreferencesKey(keyName)
+        dataStore.edit { prefs -> prefs[key] = value }
+    }
+
+    // -----------------------------
+    // Get a string
+    // -----------------------------
+    suspend fun getString(keyName: String, defaultValue: String = ""): String {
+        val key = stringPreferencesKey(keyName)
+        return dataStore.data.map { prefs -> prefs[key] ?: defaultValue }.first()
+    }
+
+
+
+
+    // -----------------------------
     // Save a list of objects
     // -----------------------------
     suspend fun <T> saveList(keyName: String, list: List<T>) {

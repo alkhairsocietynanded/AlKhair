@@ -8,7 +8,7 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.storage.FirebaseStorage
@@ -31,7 +31,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class AddHomeworkDialog : DialogFragment() {
 
-    private val viewModel: HomeworkViewModel by viewModels()
+    private val viewModel: HomeworkViewModel by activityViewModels()
     private var attachmentUri: Uri? = null
     private var _binding: DialogAddHomeworkBinding? = null
     private val binding get() = _binding!!
