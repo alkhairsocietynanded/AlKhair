@@ -54,4 +54,21 @@ object DateUtils {
             onDateSelected(calendar)
         }, year, month, day).show()
     }
+
+    fun generateMonthListForPicker(): List<String> {
+        val monthList = mutableListOf("All Months")
+        val calendar = Calendar.getInstance()
+        val monthFormat = SimpleDateFormat("MMM", Locale.getDefault())
+        val currentYear = calendar.get(Calendar.YEAR)
+
+        // Generate for previous, current, and next year
+        for (year in (currentYear)..(currentYear + 2)) {
+            for (month in 0..11) {
+                calendar.set(year, month, 1)
+                val monthName = monthFormat.format(calendar.time)
+                monthList.add("$year-$monthName")
+            }
+        }
+        return monthList
+    }
 }

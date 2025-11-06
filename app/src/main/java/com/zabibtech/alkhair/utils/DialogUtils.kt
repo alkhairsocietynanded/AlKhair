@@ -48,24 +48,30 @@ object DialogUtils {
             .show()
     }
 
-    // 🔹 Show Loading (safe for fragment/activity)
+    // -------------------------------
+    // 🔹 Safe Loading Dialog Controls
+    // -------------------------------
+    private var isDialogShowing = false
+
     fun showLoading(target: Any, message: String = "Please wait...") {
+        if (isDialogShowing) return // avoid multiple instances
+
         when (target) {
             is FragmentManager -> {
-                val existing = target.findFragmentByTag(LoadingDialogFragment.TAG)
-                if (existing == null) {
+                if (target.findFragmentByTag(LoadingDialogFragment.TAG) == null) {
                     LoadingDialogFragment.newInstance(message)
-                        .show(target, LoadingDialogFragment.TAG)
+                        .showNow(target, LoadingDialogFragment.TAG)
+                    isDialogShowing = true
                 }
             }
             is Fragment -> {
                 val fm = target.childFragmentManager
-                if (target.isAdded && target.isResumed) {
-                    val existing = fm.findFragmentByTag(LoadingDialogFragment.TAG)
-                    if (existing == null) {
-                        LoadingDialogFragment.newInstance(message)
-                            .show(fm, LoadingDialogFragment.TAG)
-                    }
+                if (target.isAdded && target.isResumed &&
+                    fm.findFragmentByTag(LoadingDialogFragment.TAG) == null
+                ) {
+                    LoadingDialogFragment.newInstance(message)
+                        .showNow(fm, LoadingDialogFragment.TAG)
+                    isDialogShowing = true
                 }
             }
         }
@@ -74,17 +80,18 @@ object DialogUtils {
     fun hideLoading(target: Any) {
         when (target) {
             is FragmentManager -> {
-                val dialog = target.findFragmentByTag(LoadingDialogFragment.TAG) as? LoadingDialogFragment
+                val dialog =
+                    target.findFragmentByTag(LoadingDialogFragment.TAG) as? LoadingDialogFragment
                 dialog?.dismissAllowingStateLoss()
             }
             is Fragment -> {
                 val fm = target.childFragmentManager
-                if (target.isAdded && target.isResumed) {
-                    val dialog = fm.findFragmentByTag(LoadingDialogFragment.TAG) as? LoadingDialogFragment
-                    dialog?.dismissAllowingStateLoss()
-                }
+                val dialog =
+                    fm.findFragmentByTag(LoadingDialogFragment.TAG) as? LoadingDialogFragment
+                dialog?.dismissAllowingStateLoss()
             }
         }
+        isDialogShowing = false
     }
 
     fun showAddClassDialog(
