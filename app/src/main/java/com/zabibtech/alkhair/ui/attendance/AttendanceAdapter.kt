@@ -1,6 +1,7 @@
 package com.zabibtech.alkhair.ui.attendance
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -15,7 +16,7 @@ class AttendanceAdapter(
     private val attendanceMap = mutableMapOf<String, String>() // uid -> status
     private var fullList: List<User> = emptyList()
 
-    // Listener to notify when all attendance marked
+    // Listener to notify when all attendance is marked
     var attendanceCompleteListener: ((Boolean) -> Unit)? = null
 
     inner class AttendanceViewHolder(val binding: ItemAttendanceBinding) :
@@ -24,87 +25,51 @@ class AttendanceAdapter(
             binding.apply {
                 tvName.text = user.name
                 tvEmail.text = user.email
-                tvRole.text = user.role
+                chipRole.text = user.role // Updated to use Chip
 
-                // Clear old listener
-                rgAttendance.setOnCheckedChangeListener(null)
+                // Clear previous listener to avoid multiple triggers on recycled views
+                toggleButtonGroup.clearOnButtonCheckedListeners()
 
-                // Restore selection if exists
+                // Restore selection state without triggering the listener
                 when (attendanceMap[user.uid]) {
-                    "Present" -> {
-                        rbPresent.isChecked = true
-                        setRadioColors("Present")
-                    }
-
-                    "Absent" -> {
-                        rbAbsent.isChecked = true
-                        setRadioColors("Absent")
-                    }
-
-                    "Leave" -> {
-                        rbLeave.isChecked = true
-                        setRadioColors("Leave")
-                    }
-
-                    else -> {
-                        rgAttendance.clearCheck()
-                        resetRadioColors()
-                    }
+                    "Present" -> toggleButtonGroup.check(btnPresent.id)
+                    "Absent" -> toggleButtonGroup.check(btnAbsent.id)
+                    "Leave" -> toggleButtonGroup.check(btnLeave.id)
+                    else -> toggleButtonGroup.clearChecked()
                 }
 
-                // Update map on change
-                rgAttendance.setOnCheckedChangeListener { _, checkedId ->
-                    val status = when (checkedId) {
-                        rbPresent.id -> "Present"
-                        rbAbsent.id -> "Absent"
-                        rbLeave.id -> "Leave"
-                        else -> null
+                // Set the listener for user interactions
+                toggleButtonGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
+                    if (isChecked) {
+                        // A button was checked
+                        val status = when (checkedId) {
+                            btnPresent.id -> "Present"
+                            btnAbsent.id -> "Absent"
+                            btnLeave.id -> "Leave"
+                            else -> null
+                        }
+                        status?.let { attendanceMap[user.uid] = it }
+                    } else {
+                        // A button was unchecked. If no button is selected now, remove from map.
+                        if (group.checkedButtonId == View.NO_ID) {
+                            attendanceMap.remove(user.uid)
+                        }
                     }
-                    if (status != null) {
-                        attendanceMap[user.uid] = status
-                        setRadioColors(status) // ✅ Color change here
-                        attendanceCompleteListener?.invoke(isAttendanceComplete())
-                    }
+                    // Notify the activity/fragment that the attendance state might have changed
+                    attendanceCompleteListener?.invoke(isAttendanceComplete())
                 }
 
                 root.setOnClickListener { onClick(user) }
             }
         }
-
-        // --- Helper functions ---
-        private fun ItemAttendanceBinding.setRadioColors(status: String) {
-            when (status) {
-                "Present" -> {
-                    rbPresent.setTextColor(root.context.getColor(android.R.color.holo_green_dark))
-                    rbAbsent.setTextColor(root.context.getColor(android.R.color.darker_gray))
-                    rbLeave.setTextColor(root.context.getColor(android.R.color.darker_gray))
-                }
-
-                "Absent" -> {
-                    rbPresent.setTextColor(root.context.getColor(android.R.color.darker_gray))
-                    rbAbsent.setTextColor(root.context.getColor(android.R.color.holo_red_dark))
-                    rbLeave.setTextColor(root.context.getColor(android.R.color.darker_gray))
-                }
-
-                "Leave" -> {
-                    rbPresent.setTextColor(root.context.getColor(android.R.color.darker_gray))
-                    rbAbsent.setTextColor(root.context.getColor(android.R.color.darker_gray))
-                    rbLeave.setTextColor(root.context.getColor(android.R.color.holo_orange_dark))
-                }
-            }
-        }
-
-        private fun ItemAttendanceBinding.resetRadioColors() {
-            rbPresent.setTextColor(root.context.getColor(android.R.color.black))
-            rbAbsent.setTextColor(root.context.getColor(android.R.color.black))
-            rbLeave.setTextColor(root.context.getColor(android.R.color.black))
-        }
     }
+
+    // --- Public helper functions ---
 
     fun clearAttendance() {
         attendanceMap.clear()
-        notifyDataSetChanged() // ✅ Taaki UI se bhi radio clear ho jaye
-        attendanceCompleteListener?.invoke(false) // ✅ FAB hide karne ke liye
+        notifyDataSetChanged() // To update the UI and clear selections
+        attendanceCompleteListener?.invoke(false) // Hide FAB
     }
 
     fun setAttendanceMap(prefilled: Map<String, String>) {
@@ -115,10 +80,13 @@ class AttendanceAdapter(
     }
 
     fun isAttendanceComplete(): Boolean {
+        if (fullList.isEmpty()) return false
         return fullList.all { user -> attendanceMap.containsKey(user.uid) }
     }
 
     fun getAttendanceMap(): Map<String, String> = attendanceMap
+
+    // --- ViewHolder and DiffUtil boilerplate ---
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AttendanceViewHolder {
         val binding =
@@ -133,6 +101,7 @@ class AttendanceAdapter(
     override fun submitList(list: List<User>?) {
         super.submitList(list)
         if (list != null) fullList = list
+        // Initial check when the list is submitted
         attendanceCompleteListener?.invoke(isAttendanceComplete())
     }
 

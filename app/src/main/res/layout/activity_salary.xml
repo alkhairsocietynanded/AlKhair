@@ -8,21 +8,25 @@
     android:background="?attr/colorSurface"
     tools:context=".ui.salary.SalaryActivity">
 
+    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true"
-        app:elevation="0dp">
+        android:background="?attr/colorPrimary"
+        app:liftOnScroll="true"
+        app:liftOnScrollColor="?attr/colorPrimary">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorSurface"
-            app:navigationIconTint="?attr/colorOnSurface"
+            app:layout_scrollFlags="scroll|enterAlways|snap"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnPrimary"
             app:title="@string/salary"
-            app:titleTextColor="?attr/colorOnSurface" />
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:titleTextColor="?attr/colorOnPrimary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

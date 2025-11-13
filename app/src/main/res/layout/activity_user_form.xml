@@ -1,307 +1,328 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/main"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground"
-    android:fillViewport="true">
+    tools:context=".ui.user.UserFormActivity">
 
-    <LinearLayout
+    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:background="?attr/colorPrimary"
+        app:liftOnScroll="true"
+        app:liftOnScrollColor="?attr/colorPrimary">
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginBottom="20dp"
-            android:text="Add User"
-            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-            android:textColor="?attr/colorOnBackground" />
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:layout_scrollFlags="scroll|enterAlways|snap"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnPrimary"
+            app:title="Add User"
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:titleTextColor="?attr/colorOnPrimary" />
 
-        <!-- Form Card -->
-        <com.google.android.material.card.MaterialCardView
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?android:attr/colorBackground"
+        android:fillViewport="true"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
-            app:strokeColor="@color/md_theme_outlineVariant"
-            app:strokeWidth="1dp">
+            android:orientation="vertical">
 
-            <LinearLayout
+
+            <!-- Form Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                android:orientation="vertical">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/md_theme_light_outlineVariant"
+                app:strokeWidth="1dp">
 
-                <!-- Full Name -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutName"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Full Name">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textCapWords" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Parent Name -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutParentName"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Parent Name">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etParentName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textCapWords" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Date of Birth -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutDob"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Date of Birth"
-                    app:endIconDrawable="@drawable/ic_calendar"
-                    app:endIconMode="custom">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etDob"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Phone Number -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutPhone"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Phone Number">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPhone"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="phone"
-                        android:maxLength="10" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Address -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutAddress"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Address">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etAddress"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textCapWords" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Email -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutEmail"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Email">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etEmail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Password -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutPassword"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Password"
-                    app:endIconMode="password_toggle">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Division  -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutDivision"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Division">
-
-                    <AutoCompleteTextView
-                        android:id="@+id/etDivision"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Class & Shift -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:baselineAligned="false"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
-
-                    <!-- Class -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layoutClass"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        android:hint="Class">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/etClass"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:focusable="false"
-                            android:inputType="none" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- Shift -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layoutShift"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:hint="Shift">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/etShift"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:focusable="false"
-                            android:inputType="none" />
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
-
-
-                <!-- Date of Joining -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutDoj"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Date of Joining"
-                    app:endIconDrawable="@drawable/ic_calendar"
-                    app:endIconMode="custom">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etDoj"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:focusable="false"
-                        android:inputType="none" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Total Fees -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/layoutTotalFees"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="Total Fees (₹)">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etTotalFees"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="numberDecimal" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Teacher Fields -->
-                <LinearLayout
-                    android:id="@+id/layoutTeacherFields"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
                     android:orientation="vertical">
 
+                    <!-- Full Name -->
                     <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layoutSubject"
+                        android:id="@+id/layoutName"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:hint="Subject">
+                        android:hint="Full Name">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etSubject"
+                            android:id="@+id/etName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="textCapWords" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Parent Name -->
                     <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/layoutSalary"
+                        android:id="@+id/layoutParentName"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="Salary (₹)">
+                        android:hint="Parent Name">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etSalary"
+                            android:id="@+id/etParentName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Date of Birth -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutDob"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Date of Birth"
+                        app:endIconDrawable="@drawable/ic_calendar"
+                        app:endIconMode="custom">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDob"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="false"
+                            android:inputType="none" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Phone Number -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutPhone"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Phone Number">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etPhone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="phone"
+                            android:maxLength="10" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Address -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutAddress"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Address">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Email -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutEmail"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Email">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textEmailAddress" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Password -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutPassword"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Password"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Division  -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutDivision"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Division">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/etDivision"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="false"
+                            android:inputType="none" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Class & Shift -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal"
+                        android:weightSum="2">
+
+                        <!-- Class -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/layoutClass"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:hint="Class">
+
+                            <AutoCompleteTextView
+                                android:id="@+id/etClass"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:focusable="false"
+                                android:inputType="none" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <!-- Shift -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/layoutShift"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:hint="Shift">
+
+                            <AutoCompleteTextView
+                                android:id="@+id/etShift"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:focusable="false"
+                                android:inputType="none" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+
+                    <!-- Date of Joining -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutDoj"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Date of Joining"
+                        app:endIconDrawable="@drawable/ic_calendar"
+                        app:endIconMode="custom">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDoj"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="false"
+                            android:inputType="none" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Total Fees -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/layoutTotalFees"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Total Fees (₹)">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTotalFees"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="numberDecimal" />
                     </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <!-- Save Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSave"
-            style="@style/Widget.Material3.Button.IconButton.Filled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginVertical="24dp"
-            android:text="Save"
-            android:textAllCaps="false"
-            app:cornerRadius="12dp" />
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+                    <!-- Teacher Fields -->
+                    <LinearLayout
+                        android:id="@+id/layoutTeacherFields"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/layoutSubject"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:hint="Subject">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etSubject"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textCapWords" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/layoutSalary"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:hint="Salary (₹)">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etSalary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Save Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="24dp"
+                android:text="Save"
+                android:textAllCaps="false"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

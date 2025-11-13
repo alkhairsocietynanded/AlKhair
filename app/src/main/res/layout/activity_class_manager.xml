@@ -5,24 +5,36 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     tools:context=".ui.classmanager.ClassManagerActivity">
 
+    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        app:liftOnScroll="true"
+        app:liftOnScrollColor="?attr/colorPrimary">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Class Manager" />
+            app:layout_scrollFlags="scroll|enterAlways|snap"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnPrimary"
+            app:title="Class Manager"
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:titleTextColor="?attr/colorOnPrimary" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <FrameLayout
@@ -48,7 +60,7 @@
                 android:textAppearance="?attr/textAppearanceHeadlineSmall"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:visibility="gone"
-                tools:visibility="visible"/>
+                tools:visibility="visible" />
 
         </FrameLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
@@ -61,8 +73,8 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="@string/add"
-        app:srcCompat="@drawable/ic_add"
+        app:backgroundTint="?attr/colorTertiaryContainer"
         app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:tint="?attr/colorOnPrimary" />
+        app:srcCompat="@drawable/ic_add" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

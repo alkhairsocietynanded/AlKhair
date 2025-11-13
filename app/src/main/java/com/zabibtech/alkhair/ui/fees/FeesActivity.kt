@@ -1,6 +1,7 @@
 package com.zabibtech.alkhair.ui.fees
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -12,6 +13,7 @@ import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.utils.ColorTemplate
 import com.zabibtech.alkhair.data.models.FeesOverviewData
 import com.zabibtech.alkhair.databinding.ActivityFeeBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
@@ -26,7 +28,7 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class FeesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFeeBinding
-    private val viewModel: FeesViewModel by viewModels()
+    val viewModel: FeesViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,9 +43,19 @@ class FeesActivity : AppCompatActivity() {
             insets
         }
 
+        setupToolbar()
+
         setupListeners()
         observeFeesData()
         viewModel.loadAllFeesOverview() // custom method for summary
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
     }
 
     private fun setupListeners() {
@@ -71,10 +83,12 @@ class FeesActivity : AppCompatActivity() {
                     is UiState.Success -> {
                         DialogUtils.hideLoading(supportFragmentManager)
                         val data = state.data
+                        // Update all TextViews including the new discount field
                         binding.tvTotalStudents.text = data.totalStudents.toString()
-                        binding.tvTotalFees.text = "₹${data.totalFees}"
-                        binding.tvTotalCollected.text = "₹${data.totalCollected}"
-                        binding.tvTotalDue.text = "₹${data.totalDue}"
+                        binding.tvTotalFees.text = String.format("₹%,.0f", data.totalFees)
+                        binding.tvTotalCollected.text = String.format("₹%,.0f", data.totalCollected)
+                        binding.tvTotalDiscount.text = String.format("₹%,.0f", data.totalDiscount)
+                        binding.tvTotalDue.text = String.format("₹%,.0f", data.totalDue)
                         binding.tvUnpaidCount.text = data.unpaidCount.toString()
 
                         // Pie chart 1: Overall
@@ -97,16 +111,20 @@ class FeesActivity : AppCompatActivity() {
     }
 
     private fun setupPieChart(pieChart: PieChart, data: FeesOverviewData) {
+        // Add Discount to the pie chart entries
         val entries = listOf(
             PieEntry(data.totalCollected.toFloat(), "Collected"),
             PieEntry(data.totalDue.toFloat(), "Due"),
+            PieEntry(data.totalDiscount.toFloat(), "Discount")
         )
 
-        val dataSet = PieDataSet(entries, "")
-        dataSet.colors = listOf(
-            getColor(android.R.color.holo_green_light),
-            getColor(android.R.color.holo_red_light)
-        )
+        val dataSet = PieDataSet(entries, "").apply {
+            // BUG FIX: Use ColorTemplate for reliable and modern colors
+            colors = ColorTemplate.MATERIAL_COLORS.toList()
+            valueTextSize = 12f
+            valueTextColor = Color.WHITE
+        }
+
         val pieData = PieData(dataSet)
         pieChart.data = pieData
         pieChart.centerText = "Fees"
@@ -136,37 +154,36 @@ class FeesActivity : AppCompatActivity() {
             index++
         }
 
-        val dataSet = com.github.mikephil.charting.data.BarDataSet(entries, "Collected Fees by Class")
-        dataSet.colors = listOf(
-            getColor(android.R.color.holo_blue_light),
-            getColor(android.R.color.holo_green_light),
-            getColor(android.R.color.holo_orange_light),
-            getColor(android.R.color.holo_red_light),
-            getColor(android.R.color.holo_purple)
-        ).take(entries.size)
+        val dataSet =
+            com.github.mikephil.charting.data.BarDataSet(entries, "Collected Fees by Class").apply {
+                // BUG FIX: Use ColorTemplate for a vibrant and consistent color scheme
+                colors = ColorTemplate.MATERIAL_COLORS.toList()
 
-        // Show amount on top of bars
-        dataSet.valueTextSize = 14f
-        dataSet.valueTextColor = getColor(android.R.color.black)
-        dataSet.valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
-            override fun getBarLabel(barEntry: com.github.mikephil.charting.data.BarEntry?): String {
-                val amount = barEntry?.y?.toInt() ?: 0
-                return "₹$amount"
+                // Show amount on top of bars
+                valueTextSize = 14f
+                valueTextColor = Color.BLACK
+                valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+                    override fun getBarLabel(barEntry: com.github.mikephil.charting.data.BarEntry?): String {
+                        val amount = barEntry?.y?.toInt() ?: 0
+                        return "₹$amount"
+                    }
+                }
             }
-        }
 
-        val barData = com.github.mikephil.charting.data.BarData(dataSet)
-        barData.barWidth = 0.6f
+        val barData = com.github.mikephil.charting.data.BarData(dataSet).apply {
+            barWidth = 0.6f
+        }
         barChart.data = barData
 
         // X-axis = class names below bars
-        val xAxis = barChart.xAxis
-        xAxis.valueFormatter = com.github.mikephil.charting.formatter.IndexAxisValueFormatter(labels)
-        xAxis.position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
-        xAxis.setDrawGridLines(false)
-        xAxis.granularity = 1f
-        xAxis.textSize = 12f
-        xAxis.labelRotationAngle = -30f // optional, avoid overlapping
+        barChart.xAxis.apply {
+            valueFormatter = com.github.mikephil.charting.formatter.IndexAxisValueFormatter(labels)
+            position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
+            setDrawGridLines(false)
+            granularity = 1f
+            textSize = 12f
+            labelRotationAngle = -30f // optional, avoid overlapping
+        }
 
         // Y-axis setup
         barChart.axisRight.isEnabled = false
@@ -185,7 +202,6 @@ class FeesActivity : AppCompatActivity() {
         barChart.animateY(1000)
 
         barChart.setExtraBottomOffset(40f) // make sure labels have space below
-        barChart.setFitBars(true)
         barChart.invalidate()
     }
 }

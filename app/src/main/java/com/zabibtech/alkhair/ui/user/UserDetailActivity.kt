@@ -30,17 +30,17 @@ class UserDetailActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // ✅ Insets handle karo
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        setupToolbar()
 
         val user = intent.extras?.getParcelableCompat("user", User::class.java)
         // Get user details from intent
 
-        // Setup Toolbar
-        setSupportActionBar(binding.toolbar)
+
         supportActionBar?.title = user?.name
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
@@ -51,7 +51,11 @@ class UserDetailActivity : AppCompatActivity() {
                 "Fees" to FeesFragment.newInstance(user!!)
             )
         } else {
-            listOf("Profile" to ProfileFragment.newInstance(user!!), "Attendance" to AttendanceFragment.newInstance(user!!), "Salary" to FeesFragment.newInstance(user!!))
+            listOf(
+                "Profile" to ProfileFragment.newInstance(user!!),
+                "Attendance" to AttendanceFragment.newInstance(user!!),
+                "Salary" to FeesFragment.newInstance(user!!)
+            )
         }
 
         pagerAdapter = UserDetailPagerAdapter(this, fragments)
@@ -60,6 +64,14 @@ class UserDetailActivity : AppCompatActivity() {
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.text = pagerAdapter.getTitle(position)
         }.attach()
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

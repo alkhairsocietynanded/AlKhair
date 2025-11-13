@@ -64,6 +64,7 @@ class UserFormActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        setupToolbar()
 
         extractIntentData()
         setupUi()
@@ -75,6 +76,14 @@ class UserFormActivity : AppCompatActivity() {
         classVm.loadClasses()
 
         binding.btnSave.setOnClickListener { handleSave() }
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
     }
 
     private fun extractIntentData() {
@@ -119,7 +128,7 @@ class UserFormActivity : AppCompatActivity() {
 
         // Title & button
         btnSave.text = if (mode == Modes.UPDATE) "Update" else "Create"
-        tvTitle.text = when (role) {
+        toolbar.title = when (role) {
             Roles.STUDENT -> if (mode == Modes.UPDATE) "Update Student" else "Add Student"
             Roles.TEACHER -> if (mode == Modes.UPDATE) "Update Teacher" else "Add Teacher"
             else -> if (mode == Modes.UPDATE) "Update Admin" else "Add Admin"

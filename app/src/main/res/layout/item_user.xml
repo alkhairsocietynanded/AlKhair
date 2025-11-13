@@ -1,12 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!-- User Item Layout - v2 - Ultra-Modern with Filled Card Style -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="?attr/materialCardViewOutlinedStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="3dp"
-    app:strokeColor="@color/md_theme_outlineVariant"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -14,107 +17,120 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- 3-Dot Menu -->
-        <ImageView
-            android:id="@+id/btnMore"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:contentDescription="More options"
-            android:padding="4dp"
-            android:src="@drawable/ic_more_vert_24"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="?attr/colorOnSurfaceVariant" />
-
-        <!-- Left Column (User Info) -->
-        <LinearLayout
-            android:id="@+id/leftColumn"
+        <!-- User Info -->
+        <TextView
+            android:id="@+id/tvName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:orientation="vertical"
-            app:layout_constraintEnd_toStartOf="@id/rightColumn"
+            android:fontFamily="@font/roboto_bold"
+            android:layoutDirection="ltr"
+            android:textDirection="ltr"
+            android:textAlignment="viewStart"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintEnd_toStartOf="@+id/tvDivisionName"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="عبدالاعلیٰ" />
 
-            <TextView
-                android:id="@+id/tvName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="User Name"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvEmail"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="2dp"
-                android:text="user@email.com"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-            <TextView
-                android:id="@+id/tvPhone"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="2dp"
-                android:text="+91 9876543210"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-            <TextView
-                android:id="@+id/tvRole"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="2dp"
-                android:text="Student"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorPrimary" />
-        </LinearLayout>
-
-        <!-- Right Column (Class/Division Info) -->
-        <LinearLayout
-            android:id="@+id/rightColumn"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvEmail"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:layout_constraintEnd_toStartOf="@id/btnMore"
-            app:layout_constraintStart_toEndOf="@id/leftColumn"
-            app:layout_constraintTop_toTopOf="@id/leftColumn">
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvName"
+            tools:text="user.long.email.address@email.com" />
 
-            <TextView
-                android:id="@+id/tvDivisionName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Madarsa Mohammadiya"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+        <TextView
+            android:id="@+id/tvPhone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvEmail"
+            tools:text="+91 9876543210" />
 
-            <TextView
-                android:id="@+id/tvClassName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Jamat Awwal"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+        <TextView
+            android:id="@+id/tvRole"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvPhone"
+            tools:text="Student" />
 
-            <TextView
-                android:id="@+id/tvShift"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Subah"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+        <!-- Status Chip for better visual representation -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSecondaryContainer"
+            app:chipBackgroundColor="?attr/colorPrimaryContainer"
+            app:chipMinHeight="24dp"
+            app:layout_constraintBottom_toBottomOf="@+id/tvRole"
+            app:layout_constraintStart_toEndOf="@+id/tvRole"
+            app:layout_constraintTop_toTopOf="@+id/tvRole"
+            tools:text="Active" />
 
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Active"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorPrimary" />
-        </LinearLayout>
+        <!-- Class/Division Info -->
+        <TextView
+            android:id="@+id/tvDivisionName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Madarsa Mohammadiya" />
+
+        <TextView
+            android:id="@+id/tvClassName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="end"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDivisionName"
+            tools:text="Jamat Awwal" />
+
+        <TextView
+            android:id="@+id/tvShift"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvClassName"
+            tools:text="Subah" />
+
+        <!-- More Options Menu -->
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="More options"
+            android:focusable="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:srcCompat="@drawable/ic_more_vert_24"
+            app:tint="?attr/colorOnSurfaceVariant" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

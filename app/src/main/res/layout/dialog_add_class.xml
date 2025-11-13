@@ -1,44 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="?attr/materialCardViewOutlinedStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_margin="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="6dp"
+    app:strokeColor="@color/md_theme_light_primary"
+    app:strokeWidth="1dp">
 
-    <!-- Division Select / Create -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/layoutDivision"
+    <LinearLayout
+        style="?attr/materialCardViewOutlinedStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Select or Type Division">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <AutoCompleteTextView
-            android:id="@+id/etDivision"
+        <!-- Division Select / Create -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutDivision"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:inputType="textCapWords"
-            android:completionThreshold="1"
+            android:hint="Select or Type Division">
 
-            />
-    </com.google.android.material.textfield.TextInputLayout>
+            <AutoCompleteTextView
+                android:id="@+id/etDivision"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:completionThreshold="1"
+                android:inputType="textCapWords"
+                android:padding="16dp"
 
-    <!-- Class Name -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/layoutClassName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:hint="Class Name">
+                />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etClassName"
+        <!-- Class Name -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutClassName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:imeOptions="actionDone"
-            android:singleLine="true"/>
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="12dp"
+            android:hint="Class Name">
 
-</LinearLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etClassName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionDone"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

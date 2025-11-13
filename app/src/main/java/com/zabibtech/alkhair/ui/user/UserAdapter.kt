@@ -39,7 +39,7 @@ class UserAdapter(
             tvClassName.text = user.className
             tvDivisionName.text = user.divisionName
             tvShift.text = user.shift
-            tvStatus.text = if (user.isActive) "Active" else "Inactive"
+            chipStatus.text = if (user.isActive) "Active" else "Inactive"
 
             btnMore.setOnClickListener { view ->
                 val popup = PopupMenu(view.context, view)
@@ -50,10 +50,12 @@ class UserAdapter(
                             onEdit(user)
                             true
                         }
+
                         R.id.action_delete -> {
                             onDelete(user)
                             true
                         }
+
                         else -> false
                     }
                 }

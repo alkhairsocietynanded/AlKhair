@@ -27,33 +27,18 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="20dp"
-                android:text="@string/add_salary"
+                android:text="@string/add_fees"
                 android:textColor="?attr/colorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <!-- Teacher Name -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilTeacherName"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:hint="Teacher Name">
-
-                <AutoCompleteTextView
-                    android:id="@+id/etTeacherName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none" />
-
-            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Month and Year Row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
+                android:baselineAligned="false"
                 android:orientation="horizontal"
                 android:weightSum="2">
 
@@ -95,18 +80,18 @@
 
             </LinearLayout>
 
-            <!-- Base Salary -->
+            <!-- Base Fees -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilBaseSalary"
+                android:id="@+id/tilBaseAmount"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:hint="Base Salary"
+                android:hint="Base Fees"
                 app:prefixText="₹">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etBaseSalary"
+                    android:id="@+id/etBaseAmount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="numberDecimal" />
@@ -115,16 +100,16 @@
 
             <!-- Allowances -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilAllowances"
+                android:id="@+id/tilPaidAmount"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:hint="Allowances"
+                android:hint="Paid Amount"
                 app:prefixText="₹">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etAllowances"
+                    android:id="@+id/etPaidAmount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="numberDecimal" />
@@ -133,31 +118,31 @@
 
             <!-- Deductions -->
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/tilDeductions"
+                android:id="@+id/tilDiscounts"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:hint="Deductions"
+                android:hint="Discounts"
                 app:prefixText="₹">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etDeductions"
+                    android:id="@+id/etDiscounts"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="numberDecimal" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Calculated Net Salary Display -->
+            <!-- Calculated Net Fees Display -->
             <TextView
-                android:id="@+id/tvCalculatedNetSalary"
+                android:id="@+id/tvCalculatedNetFees"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="16dp"
-                android:text="Calculated: ₹0.00"
-                android:textColor="?attr/colorTertiary"
+                android:text="Due Amount: ₹0.00"
+                android:textColor="?attr/colorOnTertiaryContainer"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -186,7 +171,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="@string/add_salary"
+                android:text="@string/add_fees"
                 android:textSize="16sp" />
 
             <!-- Loading Button -->

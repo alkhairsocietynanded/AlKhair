@@ -4,156 +4,222 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".ui.user.fragments.FeesFragment">
 
-    <!-- 🔹 FeesModel Summary -->
-    <!-- 🔹 FeesModel Summary Dashboard -->
-    <LinearLayout
-        android:id="@+id/feeSummaryLayout"
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:weightSum="3">
+        android:background="?attr/colorSurface"
+        app:liftOnScroll="true">
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
+        <!-- Fees Summary Dashboard (MD3 & Performance Optimized) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/feeSummaryCard"
+            style="@style/Widget.Material3.CardView.Elevated"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:layout_weight="1"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+            android:layout_margin="10dp"
+            app:layout_scrollFlags="scroll|enterAlways|snap">
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/feeSummaryLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvTotalFees"
-                    android:layout_width="match_parent"
+                <!-- Total Fees -->
+                <LinearLayout
+                    android:id="@+id/totalFeesContainer"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Total Fees"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toStartOf="@+id/divider1"
+                    app:layout_constraintHorizontal_chainStyle="spread_inside"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                <TextView
-                    android:id="@+id/tvTotalFeesAmount"
-                    android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/tvTotalFees"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Fees"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/tvTotalFeesAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="₹0"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="?attr/colorPrimary"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:id="@+id/divider1"
+                    android:layout_width="1dp"
+                    android:layout_height="0dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/totalPaidContainer"
+                    app:layout_constraintStart_toEndOf="@+id/totalFeesContainer"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- Total Paid -->
+                <LinearLayout
+                    android:id="@+id/totalPaidContainer"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="₹0"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toStartOf="@+id/divider2"
+                    app:layout_constraintStart_toEndOf="@+id/divider1"
+                    app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:layout_weight="1"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+                    <TextView
+                        android:id="@+id/tvTotalPaid"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Paid"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
+                    <TextView
+                        android:id="@+id/tvTotalPaidAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="₹0"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="@color/design_default_color_primary"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvTotalPaid"
-                    android:layout_width="match_parent"
+                <com.google.android.material.divider.MaterialDivider
+                    android:id="@+id/divider2"
+                    android:layout_width="1dp"
+                    android:layout_height="0dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/discountContainer"
+                    app:layout_constraintStart_toEndOf="@+id/totalPaidContainer"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- Discounts -->
+                <LinearLayout
+                    android:id="@+id/discountContainer"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Total Paid"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toStartOf="@+id/divider3"
+                    app:layout_constraintStart_toEndOf="@+id/divider2"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                <TextView
-                    android:id="@+id/tvTotalPaidAmount"
-                    android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/tvTotalDiscount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Discounts"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <TextView
+                        android:id="@+id/tvTotalDiscountAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="₹0"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="@color/design_default_color_secondary"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:id="@+id/divider3"
+                    android:layout_width="1dp"
+                    android:layout_height="0dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/totalDueContainer"
+                    app:layout_constraintStart_toEndOf="@+id/discountContainer"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- Total Due -->
+                <LinearLayout
+                    android:id="@+id/totalDueContainer"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="₹0"
-                    android:textColor="@android:color/holo_green_light"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/divider3"
+                    app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:layout_weight="1"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+                    <TextView
+                        android:id="@+id/tvTotalDue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Due"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
+                    <TextView
+                        android:id="@+id/tvTotalDueAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="₹0"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="?attr/colorError"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvTotalDue"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Total Due"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    android:id="@+id/tvTotalDueAmount"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="₹0"
-                    android:textColor="@android:color/holo_red_light"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+    </com.google.android.material.appbar.AppBarLayout>
 
-    </LinearLayout>
-
-
-    <LinearLayout
+    <!-- Content Area -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="72dp"
-        android:orientation="vertical"
-        android:padding="12dp"> <!-- leave space for summary -->
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone" />
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="32dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/emptyView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="20dp"
-            android:text="No feesModel records found"
-            android:textAppearance="?attr/textAppearanceBody1"
-            android:visibility="gone" />
+            android:layout_gravity="center"
+            android:text="No fees records found"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:visibility="gone"
+            tools:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewFees"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="8dp"
+            android:clipToPadding="false"
+            android:padding="8dp"
             tools:listitem="@layout/item_fee" />
-    </LinearLayout>
+
+    </FrameLayout>
 
     <!-- Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -163,9 +229,9 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="Add Fee"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="?attr/colorPrimary"
+        app:backgroundTint="?attr/colorPrimaryContainer"
         app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:tint="@android:color/white" />
+        app:srcCompat="@drawable/ic_add"
+        app:tint="?attr/colorOnPrimaryContainer" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

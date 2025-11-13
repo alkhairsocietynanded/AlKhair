@@ -2,15 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="24dp"
     android:background="@drawable/bg_dialog_round"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="24dp">
 
     <ProgressBar
+        style="?android:attr/progressBarStyleLarge"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        style="?android:attr/progressBarStyleLarge"
         android:indeterminate="true" />
 
     <TextView
@@ -19,6 +19,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="Please wait..."
-        android:textSize="16sp"
-        android:textColor="@color/black" />
+        android:textColor="@color/md_theme_light_primary"
+        android:textSize="16sp" />
 </LinearLayout>

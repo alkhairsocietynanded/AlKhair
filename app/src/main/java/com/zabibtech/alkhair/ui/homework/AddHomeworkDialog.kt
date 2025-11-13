@@ -1,16 +1,17 @@
 package com.zabibtech.alkhair.ui.homework
 
-import android.app.Dialog
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.firebase.storage.FirebaseStorage
 import com.zabibtech.alkhair.data.datastore.ClassDivisionStore
 import com.zabibtech.alkhair.data.datastore.UserStore
@@ -29,7 +30,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class AddHomeworkDialog : DialogFragment() {
+class AddHomeworkDialog : BottomSheetDialogFragment() {
 
     private val viewModel: HomeworkViewModel by activityViewModels()
     private var attachmentUri: Uri? = null
@@ -63,15 +64,20 @@ class AddHomeworkDialog : DialogFragment() {
         isEditMode = existingHomework != null
     }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        _binding = DialogAddHomeworkBinding.inflate(layoutInflater)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = DialogAddHomeworkBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         setupDropdowns()
         prefillDataForEdit()
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(binding.root)
-            .create()
 
         binding.btnUploadAttachment.setOnClickListener {
             filePickerLauncher.launch("*/*")
@@ -86,8 +92,6 @@ class AddHomeworkDialog : DialogFragment() {
                 createOrUpdateHomework()
             }
         }
-
-        return dialog
     }
 
     private fun prefillDataForEdit() {

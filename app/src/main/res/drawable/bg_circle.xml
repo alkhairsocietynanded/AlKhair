@@ -9,5 +9,5 @@
         android:top="24dp" />
     <stroke
         android:width="10dp"
-        android:color="@color/md_theme_primary" />
+        android:color="@color/md_theme_light_primary" />
 </shape>

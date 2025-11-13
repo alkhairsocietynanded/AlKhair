@@ -7,17 +7,25 @@
     android:layout_height="match_parent"
     tools:context=".ui.homework.HomeworkActivity">
 
+    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        >
+        android:background="?attr/colorPrimary"
+        app:liftOnScroll="true"
+        app:liftOnScrollColor="?attr/colorPrimary">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Homework" />
+            app:layout_scrollFlags="scroll|enterAlways|snap"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnPrimary"
+            app:title="Homework"
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:titleTextColor="?attr/colorOnPrimary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

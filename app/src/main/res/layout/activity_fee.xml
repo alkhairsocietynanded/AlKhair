@@ -1,264 +1,307 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="?attr/colorSurface">
 
-    <LinearLayout
+    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:background="?attr/colorPrimary"
+        app:liftOnScroll="true"
+        app:liftOnScrollColor="?attr/colorPrimary">
 
-        <!-- ===== Header ===== -->
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingBottom="8dp"
-            android:text="Fees Overview"
-            android:textColor="@color/black"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <!-- ===== Summary Cards Grid ===== -->
-        <GridLayout
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:alignmentMode="alignMargins"
-            android:columnCount="2"
-            android:columnOrderPreserved="false"
-            android:rowCount="3"
-            android:rowOrderPreserved="false">
+            android:layout_height="?attr/actionBarSize"
+            app:layout_scrollFlags="scroll|enterAlways|snap"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnPrimary"
+            app:title="Fees Overview"
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:titleTextColor="?attr/colorOnPrimary" />
 
-            <!-- Total Students -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:layout_margin="8dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
+    </com.google.android.material.appbar.AppBarLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Total Students"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvTotalStudents"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textColor="@android:color/holo_blue_dark"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Total Fees -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:layout_margin="8dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Total Fees"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvTotalFees"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="₹0"
-                        android:textColor="@android:color/holo_orange_dark"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Total Collected -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:layout_margin="8dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Collected"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvTotalCollected"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="₹0"
-                        android:textColor="@android:color/holo_green_dark"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Total Due -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:layout_margin="8dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Due"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvTotalDue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="₹0"
-                        android:textColor="@android:color/holo_red_dark"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Unpaid Students -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_columnSpan="2"
-                android:layout_margin="8dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Unpaid Students"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvUnpaidCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textColor="@android:color/holo_red_dark"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </GridLayout>
-
-        <!-- ===== Pie Charts Section ===== -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Overall Fees Summary"
-            android:textColor="@color/black"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <com.github.mikephil.charting.charts.PieChart
-            android:id="@+id/pieChartFees"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:layout_marginTop="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Class-wise Collected Fees"
-            android:textColor="@color/black"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/barChartClassFees"
-            android:layout_width="match_parent"
-            android:layout_height="400dp"
-            android:layout_marginTop="16dp" />
-
-
-        <!-- ===== Buttons ===== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnViewDetails"
-                style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
+            <!-- ===== Summary Cards Grid (MD3 Optimized) ===== -->
+            <GridLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="View Details" />
+                android:layout_marginTop="8dp"
+                android:alignmentMode="alignMargins"
+                android:columnCount="2"
+                android:columnOrderPreserved="false"
+                android:rowCount="3"
+                android:rowOrderPreserved="false">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDownloadReport"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
+                <!-- Total Students -->
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewElevatedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total Students"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/tvTotalStudents"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                            android:textStyle="bold"
+                            tools:text="150" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Total Fees -->
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewElevatedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Total Fees"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/tvTotalFees"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                            android:textColor="?attr/colorPrimary"
+                            android:textStyle="bold"
+                            tools:text="₹1,50,000" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Total Collected -->
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewElevatedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Collected"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/tvTotalCollected"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                            android:textColor="@android:color/holo_green_dark"
+                            android:textStyle="bold"
+                            tools:text="₹1,20,000" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Total Due -->
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewElevatedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Due"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/tvTotalDue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                            android:textColor="?attr/colorError"
+                            android:textStyle="bold"
+                            tools:text="₹25,000" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Total Discount -->
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewElevatedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Discount"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/tvTotalDiscount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                            android:textColor="@android:color/holo_blue_dark"
+                            android:textStyle="bold"
+                            tools:text="₹5,000" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Unpaid Students -->
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewElevatedStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Unpaid Students"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/tvUnpaidCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                            android:textColor="?attr/colorError"
+                            android:textStyle="bold"
+                            tools:text="10" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </GridLayout>
+
+            <!-- ===== Pie Charts Section ===== -->
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Download Report" />
+                android:layout_marginTop="16dp"
+                android:text="Overall Fees Summary"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/pieChartFees"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Class-wise Collected Fees"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/barChartClassFees"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                android:layout_marginTop="8dp" />
+
+            <!-- ===== Buttons ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnViewDetails"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:text="View Details" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDownloadReport"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Download Report" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

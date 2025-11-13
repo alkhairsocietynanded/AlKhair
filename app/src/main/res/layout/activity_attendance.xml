@@ -1,116 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Attendance Activity Layout - ULTRA-MODERN with Dynamic Toolbar -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
 
-    <!-- Scrollable content -->
+    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        app:liftOnScroll="true"
+        app:liftOnScrollColor="?attr/colorPrimary">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:layout_scrollFlags="scroll|enterAlways|snap"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnPrimary"
+            app:title="Mark Attendance"
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:titleTextColor="?attr/colorOnPrimary" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Main content area with NestedScrollView for proper scrolling behavior -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="10dp">
 
-            <!-- Title -->
-            <TextView
-                android:id="@+id/tvAttendanceTitle"
+            <!-- Modern Date Selector Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/dateSelectorCard"
+                style="?attr/materialCardViewOutlinedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:paddingBottom="8dp"
-                android:text="Mark Attendance"
-                android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginBottom="16dp"
+                app:cardElevation="6dp">
 
-            <!-- Date selector -->
-            <LinearLayout
-                android:id="@+id/dateSelector"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:background="?attr/colorPrimaryFixed"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
-
-                <ImageView
-                    android:id="@+id/btnPrevDate"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:contentDescription="Previous Date"
-                    android:padding="4dp"
-                    android:src="@drawable/ic_prev"
-                    app:tint="?attr/colorPrimary" />
-
-                <TextView
-                    android:id="@+id/tvSelectedDate"
-                    android:layout_width="wrap_content"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginEnd="16dp"
-                    android:text="23 Sep 2025"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                    android:textStyle="bold" />
+                    android:paddingVertical="8dp"
+                    android:background="@color/md_theme_light_primaryContainer">
 
-                <ImageView
-                    android:id="@+id/btnNextDate"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:contentDescription="Next Date"
-                    android:padding="4dp"
-                    android:src="@drawable/ic_next"
-                    app:tint="?attr/colorPrimary" />
-            </LinearLayout>
+                    <ImageButton
+                        android:id="@+id/btnPrevDate"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="Previous Date"
+                        android:src="@drawable/ic_prev"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/tvSelectedDate"
+                        app:layout_constraintHorizontal_chainStyle="packed"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
 
-            <!-- Shift filter -->
-          <!--  <RadioGroup
-                android:id="@+id/radioGroupShift"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
+                    <TextView
+                        android:id="@+id/tvSelectedDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:minWidth="150dp"
+                        android:textAlignment="center"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toStartOf="@+id/btnNextDate"
+                        app:layout_constraintStart_toEndOf="@+id/btnPrevDate"
+                        app:layout_constraintTop_toTopOf="parent"
+                        tools:text="23 Sep 2025" />
 
-                <RadioButton
-                    android:id="@+id/radioAll"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:text="All" />
+                    <ImageButton
+                        android:id="@+id/btnNextDate"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="Next Date"
+                        android:src="@drawable/ic_next"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@+id/tvSelectedDate"
+                        app:layout_constraintTop_toTopOf="parent" />
 
-                <RadioButton
-                    android:id="@+id/radioSubah"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Subah" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <RadioButton
-                    android:id="@+id/radioDopahar"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Dopahar" />
-
-                <RadioButton
-                    android:id="@+id/radioShaam"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Shaam" />
-            </RadioGroup>-->
-
+            <!-- Shift Filter Chips -->
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupShift"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                app:chipSpacingHorizontal="6dp"
+                android:layout_gravity="center_horizontal"
+                app:chipSpacingHorizontal="8dp"
                 app:singleLine="true"
                 app:singleSelection="true">
 
@@ -119,74 +116,68 @@
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minWidth="80dp"
                     android:checked="true"
-                    android:text="All"
-                    android:textAlignment="center" />
+                    android:text="All" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipSubah"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minWidth="80dp"
-                    android:text="Subah"
-                    android:textAlignment="center" />
+                    android:text="Subah" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipDopahar"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minWidth="80dp"
-                    android:text="Dopahar"
-                    android:textAlignment="center" />
+                    android:text="Dopahar" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipShaam"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minWidth="80dp"
-                    android:text="Shaam"
-                    android:textAlignment="center" />
+                    android:text="Shaam" />
 
             </com.google.android.material.chip.ChipGroup>
 
-            <!-- RecyclerView inside SwipeRefreshLayout -->
+            <!-- RecyclerView inside SwipeRefreshLayout for pull-to-refresh -->
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                 android:id="@+id/swipeRefresh"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="0dp"
+                android:layout_marginTop="16dp"
+                android:layout_weight="1">
 
-                <LinearLayout
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_height="match_parent">
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recyclerView"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:paddingBottom="80dp"
                         tools:listitem="@layout/item_attendance" />
 
                     <TextView
                         android:id="@+id/emptyView"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:padding="16dp"
+                        android:layout_gravity="center"
                         android:text="No users found"
-                        android:textColor="@android:color/darker_gray"
-                        android:textStyle="bold"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:visibility="gone" />
-                </LinearLayout>
+                </FrameLayout>
             </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- FloatingActionButton -->
+    <!-- Extended FAB for saving attendance -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabSaveAttendance"
         android:layout_width="wrap_content"
@@ -194,7 +185,10 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:text="Save"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:icon="@drawable/ic_done_24" />
+        android:textColor="?attr/colorOnSecondaryContainer"
+        app:backgroundTint="?attr/colorTertiaryContainer"
+        app:icon="@drawable/ic_done_24"
+        app:iconTint="?attr/colorOnSecondaryContainer"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

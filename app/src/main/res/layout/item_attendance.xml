@@ -1,88 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Attendance Item Layout - ULTRA-MODERN with Outlined Card Style -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="?attr/materialCardViewOutlinedStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="6dp"
     app:cardElevation="4dp"
-    app:strokeColor="@android:color/darker_gray"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="16dp">
+
+        <!-- Profile Avatar -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/profile_avatar_card"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
+
+            <ImageView
+                android:id="@+id/ivProfile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/profile_picture"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_profile"
+                app:tint="?attr/colorPrimary" />
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- User Info -->
         <TextView
             android:id="@+id/tvName"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="User Name"
-            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-            android:textColor="@android:color/black" />
+            android:layout_marginStart="16dp"
+            android:layoutDirection="ltr"
+            android:textAlignment="viewStart"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textDirection="ltr"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/profile_avatar_card"
+            app:layout_constraintTop_toTopOf="@+id/profile_avatar_card"
+            tools:text="Ammar Khan" />
 
         <TextView
             android:id="@+id/tvEmail"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="user@email.com"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@android:color/darker_gray"
-            android:paddingTop="2dp"/>
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="@+id/tvName"
+            app:layout_constraintStart_toStartOf="@+id/tvName"
+            app:layout_constraintTop_toBottomOf="@+id/tvName"
+            tools:text="ammar.khan@example.com" />
 
-        <TextView
-            android:id="@+id/tvRole"
+        <!-- Role Chip -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipRole"
+            style="@style/Widget.Material3.Chip.Assist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingTop="4dp"
+            android:layout_marginTop="8dp"
             android:text="Student"
-            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@android:color/holo_blue_dark" />
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            app:chipIcon="@drawable/ic_students"
+            app:chipIconSize="18dp"
+            app:layout_constraintStart_toStartOf="@+id/tvEmail"
+            app:layout_constraintTop_toBottomOf="@+id/tvEmail" />
 
         <com.google.android.material.divider.MaterialDivider
-            android:layout_width="match_parent"
+            android:id="@+id/divider"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginTop="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/chipRole" />
 
-        <!-- Attendance Options -->
-        <RadioGroup
-            android:id="@+id/rgAttendance"
-            android:layout_width="match_parent"
+        <!-- Modern Segmented Buttons for Attendance -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggle_button_group"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingTop="4dp">
+            android:layout_marginTop="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/divider"
+            app:singleSelection="true">
 
-            <RadioButton
-                android:id="@+id/rbPresent"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPresent"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center"
+                android:backgroundTint="?attr/colorPrimaryContainer"
                 android:text="Present"
-                android:contentDescription="Mark as Present" />
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
 
-            <RadioButton
-                android:id="@+id/rbAbsent"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAbsent"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center"
+                android:backgroundTint="?attr/colorPrimaryContainer"
                 android:text="Absent"
-                android:contentDescription="Mark as Absent" />
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
 
-            <RadioButton
-                android:id="@+id/rbLeave"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLeave"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center"
+                android:backgroundTint="?attr/colorPrimaryContainer"
                 android:text="Leave"
-                android:contentDescription="Mark as Leave" />
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
 
-        </RadioGroup>
+        </com.google.android.material.button.MaterialButtonToggleGroup>
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

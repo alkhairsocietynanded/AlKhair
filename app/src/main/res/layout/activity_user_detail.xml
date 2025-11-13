@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- AppBarLayout with background color -->
+    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        android:background="?attr/colorPrimary"
+        app:liftOnScroll="true"
+        app:liftOnScrollColor="?attr/colorPrimary">
 
-        <!-- Toolbar -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:title="User Details"
-            app:titleTextColor="@android:color/white"
-            app:navigationIconTint="@android:color/white"
-            app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light" />
+            app:layout_scrollFlags="scroll|enterAlways|snap"
+            app:navigationIcon="@drawable/ic_arrow_back"
+            app:navigationIconTint="?attr/colorOnPrimary"
+            app:title="User Detail"
+            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:titleTextColor="?attr/colorOnPrimary" />
 
         <!-- TabLayout -->
         <com.google.android.material.tabs.TabLayout
@@ -30,11 +31,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?attr/colorPrimary"
-            app:tabMode="fixed"
             app:tabGravity="fill"
-            app:tabTextColor="@android:color/white"
-            app:tabIndicatorColor="@android:color/white"
-            app:tabIndicatorFullWidth="true" />
+            app:tabIndicatorColor="?attr/colorOnPrimary"
+            app:tabIndicatorFullWidth="true"
+            app:tabMode="fixed"
+            app:tabTextColor="?attr/colorOnPrimary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -43,6 +44,6 @@
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

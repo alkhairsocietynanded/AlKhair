@@ -5,9 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingStart="16dp"
-    android:paddingEnd="16dp"
     android:paddingTop="24dp"
+    android:paddingEnd="16dp"
     android:paddingBottom="8dp"
     android:textAppearance="?attr/textAppearanceTitleLarge"
+    android:textColor="?attr/colorPrimary"
     android:textStyle="bold"
     tools:text="Division A" />

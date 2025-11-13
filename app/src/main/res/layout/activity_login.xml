@@ -69,8 +69,7 @@
             style="@style/Widget.Material3.Button.IconButton.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Login"
-            android:textColor="@color/white" />
+            android:text="Login" />
 
         <TextView
             android:id="@+id/tvSignupRedirect"

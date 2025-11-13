@@ -79,6 +79,11 @@ class FeesViewModel @Inject constructor(
         }
     }
 
+    // ✅ Reset fee mutation state
+    fun resetFeeState() {
+        _feesModelState.value = UiState.Idle
+    }
+
     fun loadAllFeesOverview() {
         _feesOverviewState.value = UiState.Loading
         viewModelScope.launch {
@@ -90,36 +95,45 @@ class FeesViewModel @Inject constructor(
                 // ✅ 2. Get all fees records
                 val allFees = feeRepo.getAllFees()
 
-                // ✅ 3. Calculate totals from existing fee records
-                val totalFees = allFees.sumOf { it.totalAmount }
+                // ✅ 3. Calculate totals from fee records
+                val totalFees = allFees.sumOf { it.baseAmount }
                 val totalCollected = allFees.sumOf { it.paidAmount }
-                val totalDue = allFees.sumOf { it.dueAmount }
+                val totalDiscount = allFees.sumOf { it.discounts } // Calculate total discount
+                // BUG FIX: Calculate totalDue with discount
+                val totalDue = totalFees - totalCollected - totalDiscount
 
                 // ✅ 4. Identify unpaid students
+                // For performance, group fees by studentId once
+                val feesByStudentId = allFees.groupBy { it.studentId }
+
+                // BUG FIX: A student is unpaid if they have no fee record OR their total due amount is > 0
                 val unpaidStudentsCount = allStudents.count { student ->
-                    val studentFees = allFees.filter { it.studentId == student.uid }
-                    if (studentFees.isEmpty()) {
-                        true // no fee record = unpaid
+                    val studentFees = feesByStudentId[student.uid]
+                    if (studentFees.isNullOrEmpty()) {
+                        true // Consider students with no fee records as unpaid
                     } else {
-                        studentFees.all { it.status == "Unpaid" || it.status.isBlank() }
+                        // A student is unpaid if their total due is greater than zero
+                        (studentFees.sumOf { it.baseAmount } - studentFees.sumOf { it.paidAmount } - studentFees.sumOf { it.discounts }) > 0
                     }
                 }
 
                 // ✅ 5. Compute collected fees by class
                 val collectedByClass = allStudents
-                    .groupBy { it.className } // assumes userRepo model has className
-                    .mapValues { (className, students) ->
+                    .filter { it.className.isNotBlank() } // Ensure className is not blank
+                    .groupBy { it.className }
+                    .mapValues { (_, students) ->
                         val studentIds = students.map { it.uid }
                         allFees
                             .filter { it.studentId in studentIds }
                             .sumOf { it.paidAmount }
                     }
 
-                // ✅ 6. Create overview data including classWiseCollected
+                // ✅ 6. Create overview data
                 val overview = FeesOverviewData(
                     totalStudents = totalStudents,
                     totalFees = totalFees,
                     totalCollected = totalCollected,
+                    totalDiscount = totalDiscount,
                     totalDue = totalDue,
                     unpaidCount = unpaidStudentsCount,
                     classWiseCollected = collectedByClass
@@ -133,4 +147,3 @@ class FeesViewModel @Inject constructor(
         }
     }
 }
-

@@ -1,76 +1,173 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:strokeColor="@android:color/darker_gray"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
-    <RelativeLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="16dp">
 
-        <!-- FeesModel Info -->
-        <LinearLayout
-            android:id="@+id/layoutInfo"
-            android:layout_width="match_parent"
+        <!-- Month and Year -->
+        <TextView
+            android:id="@+id/tvMonthYear"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_toStartOf="@id/btnMore">
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            app:layout_constraintEnd_toStartOf="@+id/chipStatus"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="January 2024" />
 
-            <TextView
-                android:id="@+id/tvMonth"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Month"
-                android:textStyle="bold" />
+        <!-- Status Chip -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipStatus"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/md_theme_light_onPrimary"
+            app:layout_constraintBaseline_toBaselineOf="@id/tvMonthYear"
+            app:layout_constraintEnd_toStartOf="@+id/btnMore"
+            tools:text="Pending"
+            tools:textColor="@color/md_theme_light_onPrimary" />
 
-            <TextView
-                android:id="@+id/tvMonthlyFees"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Monthly Fees: ₹0.0" />
 
-            <TextView
-                android:id="@+id/tvPaidAmount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Paid: ₹0.0" />
-
-            <TextView
-                android:id="@+id/tvDueAmount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Due: ₹0.0" />
-
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Status: Unpaid" />
-
-            <TextView
-                android:id="@+id/tvDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Date: -" />
-        </LinearLayout>
-
-        <!-- 3-Dot Menu -->
+        <!-- More Options Menu -->
         <ImageView
             android:id="@+id/btnMore"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_alignParentEnd="true"
-            android:contentDescription="More options"
-            android:padding="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/more_options"
+            android:padding="8dp"
             android:src="@drawable/ic_more_vert_24"
-            app:tint="?attr/colorPrimary" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorOnSurface" />
 
-    </RelativeLayout>
+        <!-- Fee Details -->
+        <TextView
+            android:id="@+id/labelBaseAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Base Amount:"
+            android:textAppearance="?attr/textAppearanceBody2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvMonthYear" />
+
+        <TextView
+            android:id="@+id/tvBaseAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/labelBaseAmount"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="₹1,500" />
+
+        <TextView
+            android:id="@+id/labelPaidAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Paid Amount:"
+            android:textAppearance="?attr/textAppearanceBody2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelBaseAmount" />
+
+        <TextView
+            android:id="@+id/tvPaidAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/labelPaidAmount"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="₹1,000" />
+
+        <TextView
+            android:id="@+id/labelDiscounts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Discount:"
+            android:textAppearance="?attr/textAppearanceBody2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelPaidAmount" />
+
+        <TextView
+            android:id="@+id/tvDiscounts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textStyle="bold"
+            app:layout_constraintBaseline_toBaselineOf="@id/labelDiscounts"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="₹0" />
+
+        <com.google.android.material.divider.MaterialDivider
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelDiscounts" />
+
+        <TextView
+            android:id="@+id/labelNetFees"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Net Due:"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider" />
+
+        <TextView
+            android:id="@+id/tvNetFees"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:textColor="?attr/colorError"
+            app:layout_constraintBaseline_toBaselineOf="@id/labelNetFees"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="₹500" />
+
+        <TextView
+            android:id="@+id/labelRemarks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Remarks:"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textStyle="italic"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelNetFees" />
+
+        <TextView
+            android:id="@+id/tvRemarks"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:gravity="end"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textStyle="italic"
+            app:layout_constraintBaseline_toBaselineOf="@id/labelRemarks"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/labelRemarks"
+            tools:text="Late fee applied for last month." />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

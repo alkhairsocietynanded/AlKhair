@@ -36,8 +36,8 @@ class HomeworkActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
         setupToolbar()
+
         setupRecyclerView()
         setupListeners()
         observeViewModel()
@@ -57,14 +57,7 @@ class HomeworkActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         homeworkAdapter = HomeworkAdapter(
             onEdit = { homework ->
-                // Show the dialog with existing data to edit.
-                // Note: Your AddHomeworkDialog will need a `newInstance` method that
-                // accepts a Homework object (ideally as a Parcelable argument).
-                val dialog = AddHomeworkDialog() // Replace with your newInstance if available
-                val args = Bundle().apply {
-                    putParcelable("homework_to_edit", homework)
-                }
-                dialog.arguments = args
+                val dialog = AddHomeworkDialog.newInstance(homework)
                 dialog.show(supportFragmentManager, "EditHomeworkDialog")
             },
             onDelete = { homework ->
@@ -79,7 +72,8 @@ class HomeworkActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         binding.fabAddHomework.setOnClickListener {
-            AddHomeworkDialog().show(supportFragmentManager, "AddHomeworkDialog")
+            val dialog = AddHomeworkDialog.newInstance()
+            dialog.show(supportFragmentManager, "AddHomeworkDialog")
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {

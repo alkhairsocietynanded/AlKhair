@@ -59,13 +59,12 @@ class UserListActivity : AppCompatActivity() {
         binding = ActivityUserListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupToolbar()
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        setupToolbar()
 
         extractIntentData()
         setupRecyclerView()
@@ -94,8 +93,8 @@ class UserListActivity : AppCompatActivity() {
 
             // Initialize SwipeRefreshLayout
             binding.swipeRefreshLayout.setColorSchemeResources(
-                R.color.md_theme_primary,
-                R.color.md_theme_onSurfaceVariant
+                R.color.md_theme_light_primary,
+                R.color.md_theme_light_onSurface
             )
 
             // First-time load

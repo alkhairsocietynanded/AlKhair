@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -14,6 +16,7 @@ import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.utils.ColorTemplate
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.data.models.User
@@ -47,6 +50,15 @@ class SalaryActivity : AppCompatActivity() {
         binding = ActivitySalaryBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Apply window insets to handle system bars
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
+        setupToolbar()
+
         setupRecyclerView()
         setupMonthDropdown()
         setupObservers()
@@ -55,6 +67,14 @@ class SalaryActivity : AppCompatActivity() {
         // Initial Load with no filters
         reloadData()
         userViewModel.loadUsers(Roles.TEACHER)
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -136,11 +156,13 @@ class SalaryActivity : AppCompatActivity() {
                         is UiState.Loading -> {
                             DialogUtils.showLoading(supportFragmentManager, "Loading salaries...")
                         }
+
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             salaryAdapter.submitList(state.data)
                             updateSummary(state.data)
                         }
+
                         is UiState.Error -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             DialogUtils.showAlert(
@@ -148,6 +170,7 @@ class SalaryActivity : AppCompatActivity() {
                                 message = state.message
                             )
                         }
+
                         is UiState.Idle -> {
                             // Do nothing on Idle
                         }
@@ -164,6 +187,7 @@ class SalaryActivity : AppCompatActivity() {
                         is UiState.Loading -> {
                             DialogUtils.showLoading(supportFragmentManager, "Saving...")
                         }
+
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             DialogUtils.showAlert(
@@ -173,11 +197,13 @@ class SalaryActivity : AppCompatActivity() {
                             reloadData()
                             viewModel.resetMutationState()
                         }
+
                         is UiState.Error -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             DialogUtils.showAlert(this@SalaryActivity, message = state.message)
                             viewModel.resetMutationState()
                         }
+
                         is UiState.Idle -> {
                             // Do nothing on Idle
                         }
@@ -198,6 +224,7 @@ class SalaryActivity : AppCompatActivity() {
                                 message = state.message
                             )
                         }
+
                         else -> {}
                     }
                 }
@@ -207,36 +234,44 @@ class SalaryActivity : AppCompatActivity() {
 
 
     private fun setupChart(data: Map<String, Double>) {
-        val entries = ArrayList<BarEntry>()
-        val months = ArrayList<String>()
-        var index = 0f
-        data.forEach { (month, amount) ->
-            entries.add(BarEntry(index, amount.toFloat()))
-            months.add(month)
-            index++
+        val barChart = binding.salaryChart
+
+        // Prepare entries and labels from the data map
+        val chartEntries = data.entries.mapIndexed { index, entry ->
+            BarEntry(index.toFloat(), entry.value.toFloat())
+        }
+        val monthLabels = data.keys.toList()
+
+        // Create DataSet
+        val dataSet = BarDataSet(chartEntries, "Monthly Salary Summary").apply {
+            valueTextSize = 10f
+            // BUG FIX: Use ColorTemplate for reliable and modern colors
+            colors = ColorTemplate.MATERIAL_COLORS.toList()
         }
 
-        val dataSet = BarDataSet(entries, "Monthly Salary Summary")
-        dataSet.valueTextSize = 10f
-        dataSet.color = getColor(R.color.md_theme_primary)
+        // Create BarData
+        val barData = BarData(dataSet).apply {
+            barWidth = 0.4f
+        }
 
-        val barData = BarData(dataSet)
-        barData.barWidth = 0.4f
+        // Configure BarChart
+        barChart.apply {
+            this.data = barData
+            description.isEnabled = false
+            setFitBars(true)
+            axisRight.isEnabled = false
+            animateY(1000)
 
-        val chart: BarChart = binding.salaryChart
-        chart.data = barData
-        chart.description.isEnabled = false
-        chart.setFitBars(true)
-        chart.axisRight.isEnabled = false
-        chart.animateY(1000)
+            // Configure X-axis
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                granularity = 1f
+                valueFormatter = IndexAxisValueFormatter(monthLabels)
+                labelRotationAngle = -45f
+            }
 
-        val xAxis = chart.xAxis
-        xAxis.position = XAxis.XAxisPosition.BOTTOM
-        xAxis.granularity = 1f
-        xAxis.valueFormatter = IndexAxisValueFormatter(months)
-        xAxis.labelRotationAngle = -45f
-
-        chart.invalidate()
+            invalidate()
+        }
     }
 
     private fun updateSummary(list: List<SalaryModel>) {
