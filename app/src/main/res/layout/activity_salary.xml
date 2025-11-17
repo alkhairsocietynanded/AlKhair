@@ -83,11 +83,13 @@
                             android:layout_marginEnd="4dp"
                             android:layout_weight="1"
                             android:hint="@string/select_staff"
+                            app:boxBackgroundColor="?attr/colorSecondaryContainer"
                             app:boxCornerRadiusBottomEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusTopEnd="12dp"
                             app:boxCornerRadiusTopStart="12dp"
-                            app:endIconTint="?attr/colorOnSurfaceVariant">
+                            app:endIconTint="?attr/colorOnSurfaceVariant"
+                            app:boxStrokeWidth="0dp">
 
                             <AutoCompleteTextView
                                 android:id="@+id/spinnerStaff"
@@ -107,11 +109,13 @@
                             android:layout_marginStart="4dp"
                             android:layout_weight="1"
                             android:hint="@string/select_month"
+                            app:boxBackgroundColor="?attr/colorSecondaryContainer"
                             app:boxCornerRadiusBottomEnd="12dp"
                             app:boxCornerRadiusBottomStart="12dp"
                             app:boxCornerRadiusTopEnd="12dp"
                             app:boxCornerRadiusTopStart="12dp"
-                            app:endIconTint="?attr/colorOnSurfaceVariant">
+                            app:endIconTint="?attr/colorOnSurfaceVariant"
+                            app:boxStrokeWidth="0dp">
 
                             <AutoCompleteTextView
                                 android:id="@+id/spinnerMonth"
@@ -324,12 +328,15 @@
         android:layout_margin="16dp"
         android:contentDescription="@string/add_salary"
         android:text="Add Salary"
-        android:textColor="?attr/colorOnPrimaryContainer"
-        app:backgroundTint="?attr/colorPrimaryContainer"
-        app:cornerRadius="16dp"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnPrimary"
+        app:backgroundTint="?attr/colorPrimary"
         app:elevation="6dp"
         app:icon="@drawable/ic_add"
-        app:iconTint="?attr/colorOnPrimaryContainer"
-        app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" />
+        app:iconTint="?attr/colorOnPrimary"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
+        app:pressedTranslationZ="12dp"
+        app:rippleColor="?attr/colorOnPrimary"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

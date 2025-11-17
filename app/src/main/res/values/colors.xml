@@ -107,6 +107,8 @@
     <color name="present_container">#E8F5E9</color>
     <color name="absent">#F44336</color>
     <color name="absent_container">#FFEBEE</color>
+    <color name="leave">#E7B008</color>
+    <color name="leave_container">#FFF3E0</color>
 
     <!-- Grade Colors -->
     <color name="grade_a">#4CAF50</color>

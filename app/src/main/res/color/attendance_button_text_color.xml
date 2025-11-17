@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Jab button select (checked) ho, toh text color white ho -->
+    <item android:color="?attr/colorOnPrimary" android:state_checked="true" />
+    <!-- Default (unchecked) state mein, text color wahi rahega jo style se aa raha hai -->
+    <item android:color="?attr/colorPrimary" />
+</selector>

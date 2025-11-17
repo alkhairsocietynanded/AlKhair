@@ -64,14 +64,23 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddHomework"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
         android:contentDescription="Add new homework"
-        app:srcCompat="@drawable/ic_add" />
+        android:text="Add"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnPrimary"
+        app:backgroundTint="?attr/colorPrimary"
+        app:elevation="6dp"
+        app:icon="@drawable/ic_add"
+        app:iconTint="?attr/colorOnPrimary"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
+        app:pressedTranslationZ="12dp"
+        app:rippleColor="?attr/colorOnPrimary"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

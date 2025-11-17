@@ -14,7 +14,7 @@
         android:fontFamily="@font/roboto_medium"
         android:gravity="center"
         android:text="Al-Khair Education and\n Welfare Society"
-        android:textColor="?attr/colorPrimary"
+        android:textColor="?attr/colorAccent"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -30,6 +30,7 @@
         android:contentDescription="@string/app_name"
         android:scaleType="centerInside"
         android:src="@drawable/logo_blue"
+
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/tvTitle"
         app:layout_constraintTop_toBottomOf="@id/tvTitle"
@@ -43,7 +44,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:indeterminate="true"
-        android:indeterminateTint="?attr/colorPrimary"
+        android:indeterminateTint="?attr/colorSecondary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/ivLogo" />

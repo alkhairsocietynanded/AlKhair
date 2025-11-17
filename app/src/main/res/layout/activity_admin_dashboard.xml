@@ -49,24 +49,24 @@
                 android:id="@+id/summaryCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="16dp"
                 app:cardBackgroundColor="?attr/colorSecondaryContainer"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="4dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="8dp">
 
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
+                        android:layout_margin="8dp"
                         android:text="Quick Overview"
-                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
                         android:textColor="?attr/colorOnPrimaryContainer" />
 
                     <LinearLayout
@@ -82,14 +82,14 @@
                             android:layout_weight="1"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="12dp">
+                            android:padding="8dp">
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tvTotalTeachers"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="89"
-                                android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                                android:text="0"
+                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
                                 android:textColor="?attr/colorOnPrimaryContainer"
                                 android:textStyle="bold" />
 
@@ -99,7 +99,7 @@
                                 android:layout_marginTop="4dp"
                                 android:alpha="0.8"
                                 android:text="Teachers"
-                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
                                 android:textColor="?attr/colorOnPrimaryContainer" />
 
                         </LinearLayout>
@@ -117,14 +117,14 @@
                             android:layout_weight="1"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="12dp">
+                            android:padding="8dp">
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tvTotalStudents"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="1,248"
-                                android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                                android:text="0"
+                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
                                 android:textColor="?attr/colorOnPrimaryContainer"
                                 android:textStyle="bold" />
 
@@ -134,7 +134,7 @@
                                 android:layout_marginTop="4dp"
                                 android:alpha="0.8"
                                 android:text="Students"
-                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
                                 android:textColor="?attr/colorOnPrimaryContainer" />
 
                         </LinearLayout>
@@ -152,14 +152,14 @@
                             android:layout_weight="1"
                             android:gravity="center"
                             android:orientation="vertical"
-                            android:padding="12dp">
+                            android:padding="8dp">
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:id="@+id/tvTotalClasses"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="42"
-                                android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                                android:text="0"
+                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
                                 android:textColor="?attr/colorOnPrimaryContainer"
                                 android:textStyle="bold" />
 
@@ -169,7 +169,7 @@
                                 android:layout_marginTop="4dp"
                                 android:alpha="0.8"
                                 android:text="Classes"
-                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
                                 android:textColor="?attr/colorOnPrimaryContainer" />
 
                         </LinearLayout>
@@ -179,89 +179,35 @@
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
-            <!-- Announcements Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/announcementCard"
+
+            <!-- Announcements ViewPager -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/announcementPager"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="?attr/colorPrimaryContainer"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                android:layout_height="180dp"
+                tools:background="@drawable/gradient_blue"
+                tools:listitem="@layout/item_announcement" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabLayout"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                app:tabBackground="@drawable/tab_pager_selector"
+                app:tabGravity="center"
+                app:tabIndicatorHeight="0dp"
+                app:tabPaddingEnd="10dp"
+                app:tabPaddingStart="10dp" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="Announcement"
-                            android:src="@drawable/ic_announcement"
-                            app:tint="?attr/colorOnSecondaryContainer" />
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:text="Latest Announcement"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"
-                            android:textColor="?attr/colorOnSecondaryContainer" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnViewAllAnnouncements"
-                            style="@style/Widget.Material3.Button.TextButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="View All"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSecondaryContainer"
-                            app:rippleColor="?attr/colorOnSecondaryContainer" />
-
-                    </LinearLayout>
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tvAnnouncementTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:text="Annual Sports Day - November 15th"
-                        android:textAppearance="?attr/textAppearanceBodyLarge"
-                        android:textColor="?attr/colorOnSecondaryContainer"
-                        android:textStyle="bold" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/tvAnnouncementContent"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:alpha="0.8"
-                        android:ellipsize="end"
-                        android:maxLines="3"
-                        android:text="All students and staff are invited to participate in our annual sports day event. Please register by November 10th."
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSecondaryContainer" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
             <!-- Overall Attendance Card with Progress Bar -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/attendanceCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+                style="?attr/materialCardViewElevatedStyle"
+                app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp"
                 app:strokeWidth="0dp">
@@ -291,7 +237,7 @@
                             android:id="@+id/tvAttendancePercentage"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="87%"
+                            android:text="60%"
                             android:textAppearance="?attr/textAppearanceHeadlineSmall"
                             android:textColor="?attr/colorPrimary"
                             android:textStyle="bold" />
@@ -304,7 +250,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
                         android:max="100"
-                        android:progress="87"
+                        android:progress="60"
                         app:indicatorColor="?attr/colorPrimary"
                         app:trackColor="?attr/colorSurfaceContainerHighest"
                         app:trackCornerRadius="6dp"
@@ -321,7 +267,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Present: 1,086"
+                            android:text="Present: 0"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -329,7 +275,7 @@
                             android:id="@+id/tvAbsentCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Absent: 162"
+                            android:text="Absent: 0"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
@@ -599,7 +545,7 @@
 
                 <!-- Attendance (S) Card -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardAttendance"
+                    android:id="@+id/cardStudentAttendance"
                     style="?attr/materialCardViewElevatedStyle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -678,12 +624,46 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Spacer -->
-                <View
+                <!-- Announcement Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAnnouncement"
+                    style="?attr/materialCardViewElevatedStyle"
                     android:layout_width="0dp"
-                    android:layout_height="0dp"
+                    android:layout_height="wrap_content"
                     android:layout_rowWeight="1"
-                    android:layout_columnWeight="1" />
+                    android:layout_columnWeight="1"
+                    android:layout_margin="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:rippleColor="?attr/colorPrimary">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:minHeight="140dp"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <ImageView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:contentDescription="Announcement"
+                            android:src="@drawable/ic_announce"
+                            app:tint="?attr/colorPrimary" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center"
+                            android:text="Announcement"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Logout Card -->
                 <com.google.android.material.card.MaterialCardView

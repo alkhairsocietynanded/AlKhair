@@ -185,10 +185,16 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:text="Save"
-        android:textColor="?attr/colorOnSecondaryContainer"
-        app:backgroundTint="?attr/colorTertiaryContainer"
         app:icon="@drawable/ic_done_24"
-        app:iconTint="?attr/colorOnSecondaryContainer"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior" />
-
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnPrimary"
+        app:backgroundTint="?attr/colorPrimary"
+        android:elevation="12dp"
+        android:translationZ="12dp"
+        app:iconTint="?attr/colorOnPrimary"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
+        app:pressedTranslationZ="12dp"
+        app:rippleColor="?attr/colorOnPrimary"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
+    
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

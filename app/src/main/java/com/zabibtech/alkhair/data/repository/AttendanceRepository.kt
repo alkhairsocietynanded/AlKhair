@@ -54,4 +54,25 @@ class AttendanceRepository @Inject constructor() {
         }
         return result
     }
+
+    suspend fun getAttendanceForDate(date: String): Map<String, Map<String, String>> {
+        val snapshot = attendanceRef.get().await()
+        val result = mutableMapOf<String, MutableMap<String, String>>()
+        if (snapshot.exists()) {
+            snapshot.children.forEach { classSnapshot ->
+                val classId = classSnapshot.key ?: return@forEach
+                val dateSnapshot = classSnapshot.child(date)
+                if (dateSnapshot.exists()) {
+                    val attendanceData = mutableMapOf<String, String>()
+                    dateSnapshot.children.forEach { userSnapshot ->
+                        val uid = userSnapshot.key ?: return@forEach
+                        val status = userSnapshot.getValue(String::class.java) ?: return@forEach
+                        attendanceData[uid] = status
+                    }
+                    result[classId] = attendanceData
+                }
+            }
+        }
+        return result
+    }
 }

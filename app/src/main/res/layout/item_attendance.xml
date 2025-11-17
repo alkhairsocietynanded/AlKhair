@@ -106,8 +106,9 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:backgroundTint="?attr/colorPrimaryContainer"
+                android:backgroundTint="@color/present_button_tint"
                 android:text="Present"
+                android:textColor="@color/attendance_button_text_color"
                 android:textAppearance="?attr/textAppearanceLabelLarge" />
 
             <com.google.android.material.button.MaterialButton
@@ -116,8 +117,9 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:backgroundTint="?attr/colorPrimaryContainer"
+                android:backgroundTint="@color/absent_button_tint"
                 android:text="Absent"
+                android:textColor="@color/attendance_button_text_color"
                 android:textAppearance="?attr/textAppearanceLabelLarge" />
 
             <com.google.android.material.button.MaterialButton
@@ -126,8 +128,9 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:backgroundTint="?attr/colorPrimaryContainer"
+                android:backgroundTint="@color/leave_button_tint"
                 android:text="Leave"
+                android:textColor="@color/attendance_button_text_color"
                 android:textAppearance="?attr/textAppearanceLabelLarge" />
 
         </com.google.android.material.button.MaterialButtonToggleGroup>

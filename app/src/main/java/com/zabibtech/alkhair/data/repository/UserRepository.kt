@@ -32,4 +32,10 @@ class UserRepository @Inject constructor() {
             .sortedBy { it.name.lowercase() }
     }
 
+    suspend fun getAllUsers(): List<User> {
+        val snapshot = usersDb.get().await()
+        return snapshot.children
+            .mapNotNull { it.getValue(User::class.java) }
+            .sortedBy { it.name.lowercase() }
+    }
 }
