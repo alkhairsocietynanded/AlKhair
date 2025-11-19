@@ -1,6 +1,7 @@
 package com.zabibtech.alkhair.ui.user
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import androidx.activity.enableEdgeToEdge
@@ -124,7 +125,7 @@ class UserListActivity : AppCompatActivity() {
                 } else if (role == Roles.TEACHER) {
                     append("Teachers")
                 } else {
-                    append("User List")
+                    append("Students")
                 }
             }
             subtitle = division ?: ""

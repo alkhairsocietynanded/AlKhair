@@ -2,6 +2,7 @@ package com.zabibtech.alkhair.ui.attendance
 
 import android.os.Bundle
 import android.view.View
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -39,6 +40,7 @@ class AttendanceActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityAttendanceBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -64,9 +66,11 @@ class AttendanceActivity : AppCompatActivity() {
         // ✅ Save Attendance Button
         binding.fabSaveAttendance.apply {
             visibility = View.GONE
+            isEnabled = false
 
             adapter.attendanceCompleteListener = { isComplete ->
                 visibility = if (isComplete) View.VISIBLE else View.GONE
+                isEnabled = true
             }
 
             setOnClickListener {

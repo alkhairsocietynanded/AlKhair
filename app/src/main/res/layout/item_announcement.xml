@@ -19,49 +19,13 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="Announcement"
-                    android:src="@drawable/ic_announcement"
-                    app:tint="?attr/colorOnPrimary" />
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:text="Latest Announcement"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorOnPrimary" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnViewAllAnnouncements"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="View All"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?attr/colorOnSecondaryContainer"
-                    android:visibility="gone"
-                    app:rippleColor="?attr/colorOnSecondaryContainer" />
-
-            </LinearLayout>
-
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/tvAnnouncementTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:text="Annual Sports Day - November 15th"
-                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="?attr/colorOnPrimary"
                 android:textStyle="bold" />
 
@@ -69,15 +33,39 @@
                 android:id="@+id/tvAnnouncementContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alpha="0.8"
                 android:ellipsize="end"
                 android:maxLines="3"
-                android:text="All students and staff are invited to participate in our annual sports day event. Please register by November 10th."
+                android:minLines="3"
+                android:text="All students and staff are invited to participate in our annual sports day event. Please register by November 10th. All students and staff are invited to participate in our annual sports day event. Please register by November 10th. "
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnPrimary" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/tvTimeStamp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:alpha="0.8"
+                    android:text="12-Mar-2025"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnPrimary" />
+
+                <ImageView
+                    android:id="@+id/deleteButton"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:alpha="0.8"
+                    android:contentDescription="Delete"
+                    android:src="@drawable/ic_delete"
+                    app:tint="?attr/colorOnPrimary" />
+            </LinearLayout>
         </LinearLayout>
-
     </com.google.android.material.card.MaterialCardView>
-
 </FrameLayout>

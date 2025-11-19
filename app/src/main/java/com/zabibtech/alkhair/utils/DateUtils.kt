@@ -71,4 +71,22 @@ object DateUtils {
         }
         return monthList
     }
+
+    fun getCurrentTimestamp(): Long {
+        return System.currentTimeMillis()
+    }
+
+    fun formatDateTime(timestamp: Long): String {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = timestamp
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        return sdf.format(calendar.time)
+    }
+
+    fun convertTimestampToStringDate(timestamp: Long): String {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = timestamp
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        return sdf.format(calendar.time)
+    }
 }

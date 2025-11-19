@@ -78,6 +78,7 @@ class HomeworkActivity : AppCompatActivity() {
 
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.loadAllHomework()
+            binding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
