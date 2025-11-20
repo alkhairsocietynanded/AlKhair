@@ -34,6 +34,7 @@ import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
@@ -61,6 +62,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
         setupToolbar()
         setupListeners()
+        observeViewModelsLoadingState()
         observeMainViewModel()
         observeAnnouncementViewModel()
         setupAnnouncementViewPager()
@@ -76,7 +78,6 @@ class AdminDashboardActivity : AppCompatActivity() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             announcementViewModel.loadFiveLatestAnnouncements()
             mainViewModel.loadDashboardStats()
-            binding.swipeRefreshLayout.isRefreshing = false
         }
 
     }
@@ -167,13 +168,28 @@ class AdminDashboardActivity : AppCompatActivity() {
         }.attach()
     }
 
+    private fun observeViewModelsLoadingState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    mainViewModel.dashboardState,
+                    announcementViewModel.latestAnnouncementsState,
+                    announcementViewModel.addAnnouncementState
+                ) { dashboardState, latestAnnouncementsState, addAnnouncementState ->
+                    dashboardState is UiState.Loading ||
+                            latestAnnouncementsState is UiState.Loading ||
+                            addAnnouncementState is UiState.Loading
+                }.collectLatest { isLoading ->
+                    binding.swipeRefreshLayout.isRefreshing = isLoading
+                }
+            }
+        }
+    }
+
     private fun observeMainViewModel() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 mainViewModel.dashboardState.collectLatest { state ->
-
-                    binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
-
                     when (state) {
                         is UiState.Success -> {
 //                            DialogUtils.hideLoading(supportFragmentManager)
@@ -201,8 +217,6 @@ class AdminDashboardActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 announcementViewModel.latestAnnouncementsState.collectLatest { state ->
-                    binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
-
                     when (state) {
 
                         is UiState.Success -> {
@@ -235,9 +249,6 @@ class AdminDashboardActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 announcementViewModel.addAnnouncementState.collectLatest { state ->
-
-                    binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
-
                     when (state) {
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)

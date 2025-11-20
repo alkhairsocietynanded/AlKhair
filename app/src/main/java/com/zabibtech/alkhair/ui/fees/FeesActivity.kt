@@ -201,7 +201,7 @@ class FeesActivity : AppCompatActivity() {
 
         barChart.animateY(1000)
 
-        barChart.setExtraBottomOffset(40f) // make sure labels have space below
+        barChart.extraBottomOffset = 40f // make sure labels have space below
         barChart.invalidate()
     }
 }

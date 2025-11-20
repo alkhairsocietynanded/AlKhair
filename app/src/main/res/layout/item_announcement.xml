@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:text="Annual Sports Day - November 15th"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textAppearance="?attr/textAppearanceTitleMediumEmphasized"
                 android:textColor="?attr/colorOnPrimary"
                 android:textStyle="bold" />
 
@@ -49,7 +49,7 @@
 
                 <com.google.android.material.textview.MaterialTextView
                     android:id="@+id/tvTimeStamp"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:alpha="0.8"

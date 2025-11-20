@@ -2,14 +2,12 @@ package com.zabibtech.alkhair.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
-import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityLoginBinding
 import com.zabibtech.alkhair.ui.dashboard.AdminDashboardActivity

@@ -60,7 +60,7 @@ class SalaryRepository @Inject constructor() {
         val newSalary = salary.copy(
             id = key,
             netSalary = salary.calculateNet(),
-            staff_month = "${salary.staffId}_${salary.monthYear}"
+            staffMonth = "${salary.staffId}_${salary.monthYear}"
         )
         salariesRef.child(key).setValue(newSalary).await()
     }

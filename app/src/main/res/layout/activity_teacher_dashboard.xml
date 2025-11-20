@@ -2,7 +2,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white"
+    android:background="?attr/colorSurface"
     android:padding="24dp">
 
     <LinearLayout
@@ -13,52 +13,52 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_marginBottom="24dp"
             android:text="Teacher Dashboard"
-            android:layout_gravity="center"
             android:textSize="22sp"
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAddStudent"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:text="Add Student" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnManageUsers"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="6dp"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:text="Manage Users" />
 
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMarkAttendance"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:text="Mark Attendance" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnViewStudents"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:text="View Students" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLogout"
+            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-            android:backgroundTint="@color/md_theme_light_tertiary"
+            android:backgroundTint="?attr/colorTertiary"
             android:text="Logout"
-            android:textColor="@color/md_theme_light_onPrimary" />
+            android:textColor="?attr/colorOnPrimary" />
     </LinearLayout>
 </ScrollView>

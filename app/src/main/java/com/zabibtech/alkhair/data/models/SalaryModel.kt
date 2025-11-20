@@ -19,7 +19,7 @@ data class SalaryModel(
     val createdAt: Long = System.currentTimeMillis(),
 
     // New field for combined indexing
-    val staff_month: String = "${staffId}_${monthYear}"
+    val staffMonth: String = "${staffId}_${monthYear}"
 ) : Parcelable {
     fun calculateNet(): Double {
         return basicSalary + allowances - deductions

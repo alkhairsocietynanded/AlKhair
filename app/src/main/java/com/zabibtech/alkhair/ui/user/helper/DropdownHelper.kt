@@ -1,6 +1,5 @@
 package com.zabibtech.alkhair.ui.user.helper
 
-import android.R
 import android.content.Context
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -32,7 +31,7 @@ class DropdownHelper(
 
         val divisionNames = allDivisions.map { it.name }
         divisionView.setAdapter(
-            ArrayAdapter(context, R.layout.simple_dropdown_item_1line, divisionNames)
+            ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, divisionNames)
         )
 
         // Prefill division if provided
@@ -60,7 +59,7 @@ class DropdownHelper(
         val classNames = filteredClasses.map { it.className }
 
         classView.setAdapter(
-            ArrayAdapter(context, R.layout.simple_dropdown_item_1line, classNames)
+            ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, classNames)
         )
 
         // Prefill class if provided

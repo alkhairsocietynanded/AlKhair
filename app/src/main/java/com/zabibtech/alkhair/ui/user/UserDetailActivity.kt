@@ -1,6 +1,5 @@
 package com.zabibtech.alkhair.ui.user
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity

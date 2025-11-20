@@ -24,7 +24,9 @@ class FeesAdapter(
     inner class FeeViewHolder(private val binding: ItemFeeBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        private val currencyFormat = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+        private val currencyFormat = NumberFormat.getCurrencyInstance(
+            Locale.Builder().setLanguage("en").setRegion("IN").build()
+        )
 
         fun bind(feesModel: FeesModel) = with(binding) {
             // Basic Fee Info
@@ -69,8 +71,8 @@ class FeesAdapter(
             tvNetFees.setTextColor(netFeesColor)
 
             val statusColor = when (feesModel.paymentStatus) {
-                "Pending" -> R.color.md_theme_light_error // amber
-                "Paid" -> R.color.md_theme_light_primary // green
+                "Pending" -> R.color.md_theme_error // amber
+                "Paid" -> R.color.md_theme_primary // green
                 else -> Color.DKGRAY
             }
             chipStatus.chipBackgroundColor = ColorStateList.valueOf(statusColor)
@@ -90,7 +92,7 @@ class FeesAdapter(
     override fun submitList(list: List<FeesModel>?) {
         val monthFormat = SimpleDateFormat("yyyy-MMMM", Locale.getDefault())
 
-        val sortedList = list?.sortedWith(compareByDescending<FeesModel> { fee ->
+        val sortedList = list?.sortedWith(compareByDescending { fee ->
             try {
                 monthFormat.parse(fee.monthYear)
             } catch (_: Exception) {

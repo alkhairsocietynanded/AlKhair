@@ -28,6 +28,20 @@ class ClassManagerViewModel @Inject constructor(
     private val _classes = MutableStateFlow<UiState<List<ClassModel>>>(UiState.Loading)
     val classes: StateFlow<UiState<List<ClassModel>>> = _classes
 
+    // This is a helper function to ensure a division exists
+    private suspend fun ensureDivisionExists(divisionName: String) {
+        // Get the current list of divisions from the ViewModel's state
+        val currentDivisions = (_divisions.value as? UiState.Success)?.data ?: emptyList()
+
+        // Check if the divisionName already exists (case-insensitive)
+        if (currentDivisions.none { it.name.equals(divisionName, ignoreCase = true) }) {
+            // If it doesn't exist, add it
+            repository.addDivision(DivisionModel(id = "", name = divisionName))
+            // After adding, reload divisions to update the ViewModel's state
+            loadDivisions()
+        }
+    }
+
     // -------------------------------
     // Division Filter + Auto Refresh
     // -------------------------------
@@ -140,9 +154,16 @@ class ClassManagerViewModel @Inject constructor(
     fun addClass(divisionName: String, className: String) {
         viewModelScope.launch {
             try {
+                // First, ensure the division exists in the database
+                ensureDivisionExists(divisionName)
+
+                // Then, add the class
+                // NOTE: repository.addClassWithDivisionCheck might have redundant division checking
+                // if ensureDivisionExists is called prior. Consider simplifying repository.addClass.
                 repository.addClassWithDivisionCheck(
                     ClassModel(id = "", division = divisionName, className = className)
                 )
+                // Reload divisions and refresh classes to reflect changes
                 loadDivisions()
                 refreshClassesBasedOnFilter()
             } catch (e: Exception) {
@@ -154,7 +175,13 @@ class ClassManagerViewModel @Inject constructor(
     fun updateClass(classModel: ClassModel) {
         viewModelScope.launch {
             try {
+                // First, ensure the division for the updated class exists
+                ensureDivisionExists(classModel.division)
+
+                // Then, update the class
                 repository.updateClass(classModel)
+                // Reload divisions (in case a new one was added) and refresh classes
+                loadDivisions() // Important: reload divisions if ensureDivisionExists added a new one
                 refreshClassesBasedOnFilter()
             } catch (e: Exception) {
                 _classes.value = UiState.Error(e.message ?: "Failed to update class")

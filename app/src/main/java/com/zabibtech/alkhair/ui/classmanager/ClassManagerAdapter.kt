@@ -105,7 +105,13 @@ class ClassManagerAdapter(
         }
 
         override fun areContentsTheSame(oldItem: ClassListItem, newItem: ClassListItem): Boolean {
-            return oldItem == newItem
+            return when {
+                oldItem is ClassListItem.Header && newItem is ClassListItem.Header -> oldItem.divisionName == newItem.divisionName
+                oldItem is ClassListItem.ClassItem && newItem is ClassListItem.ClassItem ->
+                    oldItem.classModel.className == newItem.classModel.className &&
+                    oldItem.classModel.division == newItem.classModel.division
+                else -> false
+            }
         }
     }
 }

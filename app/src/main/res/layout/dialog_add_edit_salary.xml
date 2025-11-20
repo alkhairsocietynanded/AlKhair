@@ -6,7 +6,7 @@
     android:layout_margin="12dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="6dp"
-    app:strokeColor="@color/md_theme_light_primary"
+    app:strokeColor="?attr/colorPrimary"
     app:strokeWidth="1dp">
 
     <androidx.core.widget.NestedScrollView
@@ -54,7 +54,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:orientation="horizontal"
-                android:weightSum="2">
+                android:weightSum="2"
+                android:baselineAligned="false">
 
                 <!-- Month -->
                 <com.google.android.material.textfield.TextInputLayout

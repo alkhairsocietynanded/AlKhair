@@ -19,26 +19,18 @@
         android:padding="16dp">
 
         <!-- Class Info -->
-        <LinearLayout
-            android:id="@+id/layoutInfo"
-            android:layout_width="match_parent"
+
+        <TextView
+            android:id="@+id/tvClassName"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAlignment="center"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textStyle="bold"
+            tools:text="Class Name That Is Very Long and Wraps to Multiple Lines" />
 
-            <TextView
-                android:id="@+id/tvClassName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:textAlignment="center"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textStyle="bold"
-                tools:text="Class Name That Is Very Long and Wraps to Multiple Lines" />
-
-        </LinearLayout>
 
     </RelativeLayout>
 </com.google.android.material.card.MaterialCardView>

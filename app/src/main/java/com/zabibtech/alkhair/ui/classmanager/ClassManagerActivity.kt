@@ -22,13 +22,14 @@ import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ClassManagerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityClassManagerBinding
-    private val viewModel: ClassManagerViewModel by viewModels()
+    val viewModel: ClassManagerViewModel by viewModels()
     private lateinit var adapter: ClassManagerAdapter
 
     private var divisions: List<DivisionModel> = emptyList()
@@ -46,9 +47,9 @@ class ClassManagerActivity : AppCompatActivity() {
         }
         setupToolbar()
 
-
         setupRecyclerView()
         setupFab()
+        setupSwipeRefreshLayout() // Add this call
 
         observeViewModel()
 
@@ -67,15 +68,13 @@ class ClassManagerActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = ClassManagerAdapter(
             onEdit = { classModel ->
-                DialogUtils.showAddClassDialog(
-                    this,
+                val addClassSheet = AddClassSheet.newInstance(
                     divisions = divisions.map { it.name },
                     existingDivision = classModel.division,
-                    existingClassName = classModel.className
-                ) { division, className ->
-                    val updated = classModel.copy(division = division, className = className)
-                    viewModel.updateClass(updated)
-                }
+                    existingClassName = classModel.className,
+                    existingClassId = classModel.id
+                )
+                addClassSheet.show(supportFragmentManager, AddClassSheet.TAG)
             },
             onDelete = { classModel ->
                 DialogUtils.showConfirmation(
@@ -88,8 +87,6 @@ class ClassManagerActivity : AppCompatActivity() {
             onClick = { classModel ->
                 val mode = intent.getStringExtra("mode") ?: Modes.CREATE
                 val role = intent.getStringExtra("role") ?: Roles.STUDENT
-//                val classId = intent.getStringExtra("classId")
-//                val division = intent.getStringExtra("division")
                 val targetIntent = if (mode == Modes.ATTENDANCE) {
                     Intent(this@ClassManagerActivity, AttendanceActivity::class.java)
                 } else {
@@ -124,12 +121,15 @@ class ClassManagerActivity : AppCompatActivity() {
 
     private fun setupFab() {
         binding.fabAddClass.setOnClickListener {
-            DialogUtils.showAddClassDialog(
-                context = this,
-                divisions = divisions.map { it.name }
-            ) { division, className ->
-                viewModel.addClass(division, className)
-            }
+            val addClassSheet = AddClassSheet.newInstance(divisions.map { it.name })
+            addClassSheet.show(supportFragmentManager, AddClassSheet.TAG)
+        }
+    }
+
+    private fun setupSwipeRefreshLayout() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadDivisions()
+            viewModel.loadClasses()
         }
     }
 
@@ -138,16 +138,15 @@ class ClassManagerActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.divisions.combine(viewModel.classes) { divisionsState, classesState ->
                     Pair(divisionsState, classesState)
-                }.collect { (divisionsState, classesState) ->
+                }.collectLatest { (divisionsState, classesState) ->
 
                     // Determine the overall state
                     val isError = divisionsState is UiState.Error || classesState is UiState.Error
                     val isSuccess =
                         divisionsState is UiState.Success && classesState is UiState.Success
-                    // Show loading only if not in success or error, and the list is empty
-//                    val isLoading = !isSuccess && !isError && adapter.itemCount == 0
+                    val isLoading = !isSuccess && !isError && adapter.itemCount == 0 || divisionsState is UiState.Loading || classesState is UiState.Loading
 
-//                    binding.progressBar.isVisible = isLoading
+                    binding.swipeRefreshLayout.isRefreshing = isLoading // Use swipeRefreshLayout for loading
 
                     if (isError) {
                         val errorMessage = (divisionsState as? UiState.Error)?.message
@@ -156,8 +155,8 @@ class ClassManagerActivity : AppCompatActivity() {
                         binding.emptyView.isVisible = true
                         adapter.submitList(emptyList()) // Clear previous data
                     } else if (isSuccess) {
-                        val divisionsList = (divisionsState as UiState.Success).data
-                        val classesList = (classesState as UiState.Success).data
+                        val divisionsList = divisionsState.data
+                        val classesList = classesState.data
                         this@ClassManagerActivity.divisions = divisionsList
 
                         val items = mutableListOf<ClassListItem>()

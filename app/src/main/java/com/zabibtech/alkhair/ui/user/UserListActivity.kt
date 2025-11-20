@@ -1,7 +1,6 @@
 package com.zabibtech.alkhair.ui.user
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import androidx.activity.enableEdgeToEdge
@@ -93,10 +92,10 @@ class UserListActivity : AppCompatActivity() {
             uiController.setupListeners(role, classId, division, currentShift)
 
             // Initialize SwipeRefreshLayout
-            binding.swipeRefreshLayout.setColorSchemeResources(
-                R.color.md_theme_light_primary,
-                R.color.md_theme_light_onSurface
-            )
+/*            binding.swipeRefreshLayout.setColorSchemeResources(
+                R.color.md_theme_primary,
+                R.color.md_theme_onSurface
+            )*/
 
             // First-time load
             userViewModel.loadUsers(role)
