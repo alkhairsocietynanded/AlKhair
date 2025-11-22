@@ -1,5 +1,6 @@
 package com.zabibtech.alkhair.ui.salary
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,7 +26,9 @@ class SalaryAdapter(
 
         fun bind(salary: SalaryModel) {
             val context = binding.root.context
-            val formatter = NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("en").setRegion("IN").build())
+            val formatter = NumberFormat.getCurrencyInstance(
+                Locale.Builder().setLanguage("en").setRegion("IN").build()
+            )
 
             binding.apply {
                 tvStaffName.text = salary.staffName
@@ -36,11 +39,9 @@ class SalaryAdapter(
                 // Status color
                 val isPaid = salary.paymentStatus == "Paid"
                 val statusColor = if (isPaid)
-                    ContextCompat.getColor(context, android.R.color.holo_green_dark)
-                else ContextCompat.getColor(context, android.R.color.holo_red_dark)
-                tvPaymentStatus.setBackgroundColor(statusColor)
-                // You may need to define bg_status_chip in drawable
-                // tvPaymentStatus.setBackgroundResource(if (isPaid) R.drawable.bg_status_paid else R.drawable.bg_status_pending)
+                    ContextCompat.getColor(context, R.color.success)
+                else ContextCompat.getColor(context, R.color.failure)
+                tvPaymentStatus.chipBackgroundColor = ColorStateList.valueOf(statusColor)
 
 
                 // Allowances and Deductions
@@ -88,10 +89,12 @@ class SalaryAdapter(
                                 onEdit(salary)
                                 true
                             }
+
                             R.id.action_delete -> {
                                 onDelete(salary)
                                 true
                             }
+
                             else -> false
                         }
                     }

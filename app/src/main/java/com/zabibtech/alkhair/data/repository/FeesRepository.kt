@@ -45,6 +45,14 @@ class FeesRepository @Inject constructor() {
     }
 
     // ================================
+    // Get Fees by Month
+    // ================================
+    suspend fun getFeesByMonthYear(monthYear: String): List<FeesModel> {
+        val snapshot = feesRef.orderByChild("monthYear").equalTo(monthYear).get().await()
+        return snapshot.children.mapNotNull { it.getValue(FeesModel::class.java) }
+    }
+
+    // ================================
     // Get Single FeesModel Record
     // ================================
     suspend fun getFeeById(feeId: String): FeesModel? {

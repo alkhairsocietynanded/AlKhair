@@ -5,6 +5,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -62,6 +66,49 @@ class FeesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 1. Insets Handle karo (FAB ko Navigation Bar ke upar rakhne ke liye)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.fabAddFee) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = 16.dpToPx() + systemBars.bottom
+            }
+            insets
+        }
+
+        // 2. MD3 STYLE: SLIDE RIGHT ON SCROLL (Instant Reaction)
+        binding.nestedScrollView.setOnScrollChangeListener { _: NestedScrollView, _, scrollY, _, oldScrollY ->
+            val dy = scrollY - oldScrollY
+
+            // Threshold: 5 pixels se zyada movement hote hi action lo (Responsive)
+            if (Math.abs(dy) > 5) {
+                if (dy > 0) {
+                    // SCROLL DOWN -> Slide Right (Hide)
+                    // Check karein agar already hidden nahi hai
+                    if (binding.fabAddFee.translationX == 0f) {
+                        // FAB ki width + margin calculate karke usko right bhej do
+                        val slideRightDistance =
+                            binding.fabAddFee.width.toFloat() + binding.fabAddFee.marginEnd.toFloat() + 50f // +50 extra safety
+
+                        binding.fabAddFee.animate()
+                            .translationX(slideRightDistance) // Right side movement
+                            .setDuration(200) // Fast duration (Snappy feel)
+                            .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                            .start()
+                    }
+                } else {
+                    // SCROLL UP -> Slide Left/Back (Show)
+                    // Check karein agar chupa hua hai
+                    if (binding.fabAddFee.translationX > 0f) {
+                        binding.fabAddFee.animate()
+                            .translationX(0f) // Wapas 0 position par
+                            .setDuration(200)
+                            .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
+                            .start()
+                    }
+                }
+            }
+        }
 
         setupRecyclerView()
         setupObservers()
@@ -173,6 +220,19 @@ class FeesFragment : Fragment() {
         val dialog = AddEditFeesDialog.newInstance(user, feesModelToEdit)
         dialog.show(childFragmentManager, "AddEditFeesDialog")
     }
+
+    // Helper function to convert dp to px (agar aapke paas utils mein nahi hai)
+    private fun Int.dpToPx(): Int {
+        val scale = resources.displayMetrics.density
+        return (this * scale + 0.5f).toInt()
+    }
+
+    // Helper Extension for MarginEnd
+    private val View.marginEnd: Int
+        get() {
+            val lp = layoutParams as? ViewGroup.MarginLayoutParams
+            return lp?.marginEnd ?: 0
+        }
 
     override fun onPause() {
         super.onPause()

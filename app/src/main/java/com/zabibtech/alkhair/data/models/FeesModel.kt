@@ -14,7 +14,6 @@ data class FeesModel(
     val dueAmount: Double = 0.0,
     val discounts: Double = 0.0,
     val netFees: Double = 0.0,
-    val status: String = "Unpaid", // Paid | Partial | Unpaid
     val paymentDate: String = "",
     val remarks: String? = null,
     val paymentStatus: String = "Pending", // Pending, Paid

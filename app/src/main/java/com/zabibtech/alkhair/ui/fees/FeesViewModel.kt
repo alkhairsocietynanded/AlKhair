@@ -20,21 +20,15 @@ class FeesViewModel @Inject constructor(
     private val userRepo: UserRepository
 ) : ViewModel() {
 
-    // ✅ FeesModel list load karne ke liye
     private val _feesModelListState = MutableStateFlow<UiState<List<FeesModel>>>(UiState.Idle)
     val feesModelListState: StateFlow<UiState<List<FeesModel>>> = _feesModelListState
 
-    // ✅ FeesModel save / delete ke liye
     private val _feesModelState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val feeState: StateFlow<UiState<Unit>> = _feesModelState
 
     private val _feesOverviewState = MutableStateFlow<UiState<FeesOverviewData>>(UiState.Idle)
     val feesOverviewState: StateFlow<UiState<FeesOverviewData>> = _feesOverviewState
 
-
-    // ================================
-    // Load all fees by studentId
-    // ================================
     fun loadFeesByStudent(studentId: String) {
         _feesModelListState.value = UiState.Loading
         viewModelScope.launch {
@@ -48,9 +42,6 @@ class FeesViewModel @Inject constructor(
         }
     }
 
-    // ================================
-    // Add or update feesModel
-    // ================================
     fun saveFee(feesModel: FeesModel) {
         _feesModelState.value = UiState.Loading
         viewModelScope.launch {
@@ -64,9 +55,6 @@ class FeesViewModel @Inject constructor(
         }
     }
 
-    // ================================
-    // Delete fee record
-    // ================================
     fun deleteFee(feeId: String) {
         _feesModelState.value = UiState.Loading
         viewModelScope.launch {
@@ -79,63 +67,63 @@ class FeesViewModel @Inject constructor(
         }
     }
 
-    // ✅ Reset fee mutation state
     fun resetFeeState() {
         _feesModelState.value = UiState.Idle
     }
 
-    fun loadAllFeesOverview() {
+    fun loadFeesOverviewForMonth(monthYear: String) {
         _feesOverviewState.value = UiState.Loading
         viewModelScope.launch {
             try {
-                // ✅ 1. Get all students
+                // Step 1: Sabhi students aur uss mahine ki fees fetch karein
                 val allStudents = userRepo.getUsers(Roles.STUDENT)
+                val feesForMonth = feeRepo.getFeesByMonthYear(monthYear)
+
                 val totalStudents = allStudents.size
 
-                // ✅ 2. Get all fees records
-                val allFees = feeRepo.getAllFees()
+                // Step 2: Fees ko studentId se group karein taaki har student ki total fees aasani se calculate ho sake
+                val feesByStudentId = feesForMonth.groupBy { it.studentId }
 
-                // ✅ 3. Calculate totals from fee records
-                val totalFees = allFees.sumOf { it.baseAmount }
-                val totalCollected = allFees.sumOf { it.paidAmount }
-                val totalDiscount = allFees.sumOf { it.discounts } // Calculate total discount
-                // BUG FIX: Calculate totalDue with discount
-                val totalDue = totalFees - totalCollected - totalDiscount
-
-                // ✅ 4. Identify unpaid students
-                // For performance, group fees by studentId once
-                val feesByStudentId = allFees.groupBy { it.studentId }
-
-                // BUG FIX: A student is unpaid if they have no fee record OR their total due amount is > 0
+                // Step 3: Unpaid students ko aache se count karein
                 val unpaidStudentsCount = allStudents.count { student ->
                     val studentFees = feesByStudentId[student.uid]
+
                     if (studentFees.isNullOrEmpty()) {
-                        true // Consider students with no fee records as unpaid
+                        // Case 1: Agar student ka koi fee record nahi hai, toh woh unpaid hai.
+                        true
                     } else {
-                        // A student is unpaid if their total due is greater than zero
-                        (studentFees.sumOf { it.baseAmount } - studentFees.sumOf { it.paidAmount } - studentFees.sumOf { it.discounts }) > 0
+                        // Case 2: Agar fee record hai, toh total due amount calculate karein.
+                        val totalDueForStudent = studentFees.sumOf { it.baseAmount } -
+                                studentFees.sumOf { it.paidAmount } -
+                                studentFees.sumOf { it.discounts }
+                        // Agar due amount 0 se zyada hai, toh student unpaid hai.
+                        totalDueForStudent > 0
                     }
                 }
 
-                // ✅ 5. Compute collected fees by class
+                // Baaki ka calculation pehle jaisa hi rahega
+                val totalFees = feesForMonth.sumOf { it.baseAmount }
+                val totalCollected = feesForMonth.sumOf { it.paidAmount }
+                val totalDiscount = feesForMonth.sumOf { it.discounts }
+                val totalDue = totalFees - totalCollected - totalDiscount
+
                 val collectedByClass = allStudents
-                    .filter { it.className.isNotBlank() } // Ensure className is not blank
+                    .filter { it.className.isNotBlank() }
                     .groupBy { it.className }
                     .mapValues { (_, students) ->
                         val studentIds = students.map { it.uid }
-                        allFees
+                        feesForMonth
                             .filter { it.studentId in studentIds }
                             .sumOf { it.paidAmount }
                     }
 
-                // ✅ 6. Create overview data
                 val overview = FeesOverviewData(
                     totalStudents = totalStudents,
                     totalFees = totalFees,
                     totalCollected = totalCollected,
                     totalDiscount = totalDiscount,
                     totalDue = totalDue,
-                    unpaidCount = unpaidStudentsCount,
+                    unpaidCount = unpaidStudentsCount, // Yahan updated count use hoga
                     classWiseCollected = collectedByClass
                 )
 

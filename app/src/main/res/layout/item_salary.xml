@@ -46,11 +46,16 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/tvPaymentStatus"
+                style="@style/Widget.Material3.Chip.Assist"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:minWidth="85dp"
+                android:textAlignment="center"
                 android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="?attr/colorOnPrimaryContainer"
+                android:textColor="?attr/colorOnPrimary"
                 app:chipBackgroundColor="?attr/colorPrimaryContainer"
+                tools:backgroundTint="@color/success"
                 tools:text="Paid" />
 
             <ImageButton

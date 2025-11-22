@@ -6,7 +6,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.zabibtech.alkhair.data.models.Announcement
 import com.zabibtech.alkhair.databinding.ItemAnnouncementBinding
-import com.zabibtech.alkhair.utils.DateUtils
 
 class AnnouncementPagerAdapter(
     private var announcements: MutableList<Announcement>,

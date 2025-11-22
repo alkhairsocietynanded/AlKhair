@@ -1,10 +1,10 @@
-package com.zabibtech.alkhair.utils
 
-import android.app.DatePickerDialog
-import android.content.Context
+import androidx.fragment.app.FragmentManager
+import com.google.android.material.datepicker.MaterialDatePicker
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 
 object DateUtils {
 
@@ -39,21 +39,32 @@ object DateUtils {
         return newCal
     }
 
-    // --- Show DatePickerDialog and update Calendar & TextView ---
-    fun showDatePicker(
-        context: Context,
+    fun showMaterialDatePicker(
+        fragmentManager: FragmentManager,
         calendar: Calendar,
         onDateSelected: (Calendar) -> Unit
     ) {
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText("Select date")
+            .setSelection(calendar.timeInMillis)
+            .build()
 
-        DatePickerDialog(context, { _, y, m, d ->
-            calendar.set(y, m, d)
-            onDateSelected(calendar)
-        }, year, month, day).show()
+        datePicker.addOnPositiveButtonClickListener {
+            // It's crucial to handle the timezone offset.
+            // MaterialDatePicker returns time in UTC. We need to convert it to the default timezone.
+            val selectedUtc = it
+            val timeZone = TimeZone.getDefault()
+            val offset = timeZone.getOffset(selectedUtc)
+            val selectedMillis = selectedUtc + offset
+
+            val newCalendar = Calendar.getInstance()
+            newCalendar.timeInMillis = selectedMillis
+            onDateSelected(newCalendar)
+        }
+
+        datePicker.show(fragmentManager, "MATERIAL_DATE_PICKER")
     }
+
 
     fun generateMonthListForPicker(): List<String> {
         val monthList = mutableListOf("All Months")

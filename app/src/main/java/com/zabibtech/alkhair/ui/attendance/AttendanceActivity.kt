@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.databinding.ActivityAttendanceBinding
 import com.zabibtech.alkhair.ui.user.UserViewModel
-import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
@@ -211,18 +210,6 @@ class AttendanceActivity : AppCompatActivity() {
                 }
             }
         }
-
-        // ✅ Shift filter change
-        /*   binding.radioGroupShift.setOnCheckedChangeListener { _, checkedId ->
-               currentShift = when (checkedId) {
-                   R.id.radioSubah -> "Subah"
-                   R.id.radioDopahar -> "Dopahar"
-                   R.id.radioShaam -> "Shaam"
-                   else -> "All"
-               }
-               // list refresh with filter
-               userViewModel.loadUsers(role)
-           }*/
     }
 
     private fun setupChipFilterListeners() {
@@ -245,22 +232,22 @@ class AttendanceActivity : AppCompatActivity() {
     private fun setupDateNavigation() {
         // Previous Date button
         binding.btnPrevDate.setOnClickListener {
-            selectedDate = DateUtils.addDays(selectedDate, -1)
+            selectedDate.add(Calendar.DAY_OF_YEAR, -1)
             binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
             reloadAttendanceForSelectedDate()
         }
 
         // Next Date button
         binding.btnNextDate.setOnClickListener {
-            selectedDate = DateUtils.addDays(selectedDate, 1)
+            selectedDate.add(Calendar.DAY_OF_YEAR, 1)
             binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
             reloadAttendanceForSelectedDate()
         }
 
         // Click on TextView to pick date
         binding.tvSelectedDate.setOnClickListener {
-            DateUtils.showDatePicker(this, selectedDate) { cal ->
-                selectedDate = cal
+            DateUtils.showMaterialDatePicker(supportFragmentManager, selectedDate) {
+                selectedDate = it
                 binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
                 reloadAttendanceForSelectedDate()
             }

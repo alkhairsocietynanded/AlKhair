@@ -21,7 +21,6 @@ import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivitySalaryBinding
 import com.zabibtech.alkhair.ui.user.UserViewModel
-import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState

@@ -24,11 +24,13 @@ import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 @AndroidEntryPoint
 class FeesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFeeBinding
     val viewModel: FeesViewModel by viewModels()
+    private var currentMonth: Calendar = Calendar.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +38,6 @@ class FeesActivity : AppCompatActivity() {
         binding = ActivityFeeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ✅ Insets handle karo
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -44,10 +45,9 @@ class FeesActivity : AppCompatActivity() {
         }
 
         setupToolbar()
-
+        setupMonthSelector()
         setupListeners()
         observeFeesData()
-        viewModel.loadAllFeesOverview() // custom method for summary
     }
 
     private fun setupToolbar() {
@@ -55,6 +55,39 @@ class FeesActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbar.setNavigationOnClickListener {
             onBackPressedDispatcher.onBackPressed()
+        }
+    }
+
+    private fun setupMonthSelector() {
+        updateMonthView()
+
+        binding.btnPrevMonth.setOnClickListener {
+            currentMonth.add(Calendar.MONTH, -1)
+            updateMonthView()
+        }
+
+        binding.btnNextMonth.setOnClickListener {
+            currentMonth.add(Calendar.MONTH, 1)
+            updateMonthView()
+        }
+
+        binding.tvSelectedMonth.setOnClickListener {
+            showMonthYearPicker()
+        }
+    }
+
+    private fun updateMonthView() {
+        // Use DateUtils for formatting
+        binding.tvSelectedMonth.text = DateUtils.formatDate(currentMonth, "MMMM yyyy")
+        val monthYearForApi = DateUtils.formatDate(currentMonth, "yyyy-MMMM")
+        
+        viewModel.loadFeesOverviewForMonth(monthYearForApi)
+    }
+
+    private fun showMonthYearPicker() {
+        DateUtils.showMaterialDatePicker(supportFragmentManager, currentMonth) { selectedCal ->
+            currentMonth = selectedCal
+            updateMonthView()
         }
     }
 
@@ -71,7 +104,6 @@ class FeesActivity : AppCompatActivity() {
             // TODO: implement download logic
         }
     }
-
     private fun observeFeesData() {
         lifecycleScope.launch {
             viewModel.feesOverviewState.collectLatest { state ->
@@ -83,7 +115,6 @@ class FeesActivity : AppCompatActivity() {
                     is UiState.Success -> {
                         DialogUtils.hideLoading(supportFragmentManager)
                         val data = state.data
-                        // Update all TextViews including the new discount field
                         binding.tvTotalStudents.text = data.totalStudents.toString()
                         binding.tvTotalFees.text = String.format("₹%,.0f", data.totalFees)
                         binding.tvTotalCollected.text = String.format("₹%,.0f", data.totalCollected)
@@ -91,12 +122,11 @@ class FeesActivity : AppCompatActivity() {
                         binding.tvTotalDue.text = String.format("₹%,.0f", data.totalDue)
                         binding.tvUnpaidCount.text = data.unpaidCount.toString()
 
-                        // Pie chart 1: Overall
                         setupPieChart(binding.pieChartFees, data)
-
-                        // Pie chart 2: Class-wise collected
                         setupVerticalBarChart(binding.barChartClassFees, data)
                     }
+
+
 
                     is UiState.Error -> {
                         DialogUtils.hideLoading(supportFragmentManager)
@@ -111,7 +141,6 @@ class FeesActivity : AppCompatActivity() {
     }
 
     private fun setupPieChart(pieChart: PieChart, data: FeesOverviewData) {
-        // Add Discount to the pie chart entries
         val entries = listOf(
             PieEntry(data.totalCollected.toFloat(), "Collected"),
             PieEntry(data.totalDue.toFloat(), "Due"),
@@ -119,7 +148,6 @@ class FeesActivity : AppCompatActivity() {
         )
 
         val dataSet = PieDataSet(entries, "").apply {
-            // BUG FIX: Use ColorTemplate for reliable and modern colors
             colors = ColorTemplate.MATERIAL_COLORS.toList()
             valueTextSize = 12f
             valueTextColor = Color.WHITE
@@ -156,10 +184,7 @@ class FeesActivity : AppCompatActivity() {
 
         val dataSet =
             com.github.mikephil.charting.data.BarDataSet(entries, "Collected Fees by Class").apply {
-                // BUG FIX: Use ColorTemplate for a vibrant and consistent color scheme
                 colors = ColorTemplate.MATERIAL_COLORS.toList()
-
-                // Show amount on top of bars
                 valueTextSize = 14f
                 valueTextColor = Color.BLACK
                 valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
@@ -175,25 +200,21 @@ class FeesActivity : AppCompatActivity() {
         }
         barChart.data = barData
 
-        // X-axis = class names below bars
         barChart.xAxis.apply {
             valueFormatter = com.github.mikephil.charting.formatter.IndexAxisValueFormatter(labels)
             position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
             setDrawGridLines(false)
             granularity = 1f
             textSize = 12f
-            labelRotationAngle = -30f // optional, avoid overlapping
+            labelRotationAngle = -30f
         }
 
-        // Y-axis setup
         barChart.axisRight.isEnabled = false
         barChart.axisLeft.axisMinimum = 0f
 
-        // Legend + description
         barChart.legend.isEnabled = false
         barChart.description.isEnabled = false
 
-        // Enable pinch/zoom
         barChart.setPinchZoom(true)
         barChart.setScaleEnabled(true)
         barChart.setFitBars(true)
@@ -201,7 +222,7 @@ class FeesActivity : AppCompatActivity() {
 
         barChart.animateY(1000)
 
-        barChart.extraBottomOffset = 40f // make sure labels have space below
+        barChart.extraBottomOffset = 40f
         barChart.invalidate()
     }
 }
