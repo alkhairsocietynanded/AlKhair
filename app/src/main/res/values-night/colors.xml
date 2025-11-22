@@ -1,6 +1,6 @@
 <resources>
     <!-- Dark Theme Colors -->
-    <color name="md_theme_primary">#A8C7FA</color>
+    <color name="md_theme_primary">#2E7D32</color>
     <color name="md_theme_onPrimary">#00315B</color>
     <color name="md_theme_primaryContainer">#004881</color>
     <color name="md_theme_onPrimaryContainer">#D3E4FD</color>

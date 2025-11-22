@@ -14,7 +14,7 @@ object FeeUtils {
         val payable = baseAmount - discount
         return when {
             paidAmount <= 0 -> "Unpaid"
-            paidAmount < payable -> "Partial"
+            paidAmount < payable -> "Pending"
             else -> "Paid"
         }
     }

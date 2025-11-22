@@ -4,7 +4,8 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
+    android:clipToPadding="false"
+    android:fillViewport="true"
     tools:context=".ui.user.fragments.FeesFragment">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -20,7 +21,8 @@
             style="@style/Widget.Material3.CardView.Elevated"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginVertical="8dp"
             app:layout_scrollFlags="scroll|enterAlways|snap">
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -189,6 +191,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingHorizontal="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <ProgressBar
@@ -216,22 +219,29 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:padding="8dp"
+            android:paddingBottom="80dp"
             tools:listitem="@layout/item_fee" />
 
     </FrameLayout>
 
     <!-- Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddFee"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:contentDescription="Add Fee"
-        app:backgroundTint="?attr/colorPrimaryContainer"
+        android:text="Add Fees"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnPrimary"
+        app:backgroundTint="?attr/colorPrimary"
+        app:elevation="6dp"
+        app:icon="@drawable/ic_add"
+        app:iconTint="?attr/colorOnPrimary"
         app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:srcCompat="@drawable/ic_add"
-        app:tint="?attr/colorOnPrimaryContainer" />
+        app:pressedTranslationZ="12dp"
+        app:rippleColor="?attr/colorOnPrimary"
+        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

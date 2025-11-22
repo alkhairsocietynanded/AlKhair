@@ -5,7 +5,7 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
-import androidx.core.graphics.toColorInt
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -34,7 +34,7 @@ class FeesAdapter(
             tvBaseAmount.text = currencyFormat.format(feesModel.baseAmount)
             tvPaidAmount.text = currencyFormat.format(feesModel.paidAmount)
             tvDiscounts.text = currencyFormat.format(feesModel.discounts)
-            tvNetFees.text = currencyFormat.format(feesModel.netFees)
+            tvNetDue.text = currencyFormat.format(feesModel.dueAmount)
             tvRemarks.text = feesModel.remarks
 
             // Status Chip
@@ -67,13 +67,16 @@ class FeesAdapter(
         }
 
         private fun applyColors(feesModel: FeesModel) = with(binding) {
-            val netFeesColor = if (feesModel.netFees > 0) Color.RED else "#2E7D32".toColorInt()
-            tvNetFees.setTextColor(netFeesColor)
+            val netDueColor = if (feesModel.dueAmount > 0) ContextCompat.getColor(
+                binding.root.context,
+                R.color.failure
+            ) else ContextCompat.getColor(binding.root.context, R.color.success)
+            tvNetDue.setTextColor(netDueColor)
 
             val statusColor = when (feesModel.paymentStatus) {
-                "Pending" -> R.color.md_theme_error // amber
-                "Paid" -> R.color.md_theme_primary // green
-                else -> Color.DKGRAY
+                "Pending" -> ContextCompat.getColor(binding.root.context, R.color.warning)
+                "Paid" -> ContextCompat.getColor(binding.root.context, R.color.success) // green
+                else -> ContextCompat.getColor(binding.root.context, R.color.failure)
             }
             chipStatus.chipBackgroundColor = ColorStateList.valueOf(statusColor)
         }

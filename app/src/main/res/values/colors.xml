@@ -51,7 +51,6 @@
     <color name="md_theme_inverseOnSurface">#F1F0F4</color>
     <color name="md_theme_inversePrimary">#A8C7FA</color>
 
-   
 
     <!-- Custom App Colors -->
     <color name="success">#4CAF50</color>
@@ -60,6 +59,8 @@
     <color name="warning_light">#FFF3E0</color>
     <color name="info">#2196F3</color>
     <color name="info_light">#E3F2FD</color>
+    <color name="failure">#F44336</color>
+    <color name="failure_light">#FFEBEE</color>
 
     <!-- Attendance Colors -->
     <color name="present">#4CAF50</color>

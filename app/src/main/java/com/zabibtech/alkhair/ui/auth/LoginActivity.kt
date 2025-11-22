@@ -44,14 +44,15 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.tvSignupRedirect.setOnClickListener {
-            startActivity(Intent(this, StudentSignupActivity::class.java))
-            finish()
+            /*startActivity(Intent(this, StudentSignupActivity::class.java))
+            finish()*/
+
+            DialogUtils.showAlert(this, "Admission", "Please contact headmaster for admission")
         }
 
         viewModel.state.observe(this, Observer { state ->
             when (state) {
                 is UiState.Loading -> {
-//                    Toast.makeText(this, "Logging in...", Toast.LENGTH_SHORT).show()
                     DialogUtils.showLoading(supportFragmentManager, "Logging in...")
                 }
 
