@@ -1,11 +1,14 @@
 package com.zabibtech.alkhair.ui.attendance
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ItemAttendanceBinding
 
@@ -25,7 +28,24 @@ class AttendanceAdapter(
             binding.apply {
                 tvName.text = user.name
                 tvEmail.text = user.email
-                chipRole.text = user.role // Updated to use Chip
+                chipShift.text = user.shift
+                val shiftColor = when (user.shift.lowercase()) {
+                    "subah".lowercase() -> ContextCompat.getColor(
+                        binding.root.context,
+                        R.color.subah
+                    )
+
+                    "dopahar".lowercase() -> ContextCompat.getColor(
+                        binding.root.context,
+                        R.color.dopahar
+                    )
+
+                    else -> ContextCompat.getColor(
+                        binding.root.context,
+                        R.color.shaam
+                    )
+                }
+                chipShift.chipBackgroundColor = ColorStateList.valueOf(shiftColor)
 
                 // Clear previous listener to avoid multiple triggers on recycled views
                 toggleButtonGroup.clearOnButtonCheckedListeners()

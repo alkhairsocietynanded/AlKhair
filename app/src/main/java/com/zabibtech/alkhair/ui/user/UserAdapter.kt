@@ -1,10 +1,12 @@
 package com.zabibtech.alkhair.ui.user
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -34,12 +36,30 @@ class UserAdapter(
             tvName.text = user.name
             tvEmail.text = user.email
             tvPhone.text = user.phone
-            tvRole.text = user.role
+//            tvRole.text = user.role
 
-            tvClassName.text = user.className
-            tvDivisionName.text = user.divisionName
-            tvShift.text = user.shift
-            chipStatus.text = if (user.isActive) "Active" else "Inactive"
+            tvClass.text = user.className
+            tvDivision.text = user.divisionName
+//            tvShift.text = user.shift
+            chipShift.text = user.shift
+
+            val shiftColor = when (user.shift.lowercase()) {
+                "subah".lowercase() -> ContextCompat.getColor(
+                    binding.root.context,
+                    R.color.subah
+                )
+
+                "dopahar".lowercase() -> ContextCompat.getColor(
+                    binding.root.context,
+                    R.color.dopahar
+                )
+
+                else -> ContextCompat.getColor(
+                    binding.root.context,
+                    R.color.shaam
+                )
+            }
+            chipShift.chipBackgroundColor = ColorStateList.valueOf(shiftColor)
 
             btnMore.setOnClickListener { view ->
                 val popup = PopupMenu(view.context, view)

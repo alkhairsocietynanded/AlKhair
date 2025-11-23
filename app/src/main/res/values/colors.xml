@@ -90,7 +90,7 @@
     <color name="black">#000000</color>
     <color name="gray">#808080</color>
 
-<!--    progress bar colors-->
+    <!--    progress bar colors-->
     <color name="progress_bar">#DE911D</color>
     <color name="progress_bar_container">#FACB85</color>
     <color name="progress_bar_light">#FFEB3B</color>
@@ -98,5 +98,9 @@
     <color name="progress_bar_dark">#FF5722</color>
     <color name="progress_bar_container_dark">#FFCCBC</color>
 
+    <!-- Shift Colors -->
+    <color name="subah">#4CAF50</color>
+    <color name="dopahar">#D73C31</color>
+    <color name="shaam">#B11C73</color>
 
 </resources>

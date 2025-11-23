@@ -100,8 +100,76 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/shiftSelectionCard"
+                style="@style/Widget.Material3.CardView.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupShift"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:padding="6dp"
+                    app:chipSpacingHorizontal="4dp"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipAll"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:minWidth="83dp"
+                        android:text="All"
+                        android:textAlignment="center"
+                        android:textColor="@color/chip_text_color"
+                        app:checkedIconTint="@color/chip_text_color"
+                        app:chipBackgroundColor="@color/chip_background_tint" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSubah"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="83dp"
+                        android:text="Subah"
+                        android:textAlignment="center"
+                        android:textColor="@color/chip_text_color"
+                        app:checkedIconTint="@color/chip_text_color"
+                        app:chipBackgroundColor="@color/subah_chip_background" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipDopahar"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dopahr"
+                        android:textAlignment="center"
+                        android:textColor="@color/chip_text_color"
+                        app:checkedIconTint="@color/chip_text_color"
+                        app:chipBackgroundColor="@color/dopahar_chip_background" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipShaam"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Shaam"
+                        android:textAlignment="center"
+                        android:textColor="@color/chip_text_color"
+                        app:checkedIconTint="@color/chip_text_color"
+                        app:chipBackgroundColor="@color/shaam_chip_background" />
+
+                </com.google.android.material.chip.ChipGroup>
+            </com.google.android.material.card.MaterialCardView>
             <!-- Shift Filter Chips -->
-            <com.google.android.material.chip.ChipGroup
+            <!--<com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupShift"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -139,7 +207,7 @@
                     android:layout_height="wrap_content"
                     android:text="Shaam" />
 
-            </com.google.android.material.chip.ChipGroup>
+            </com.google.android.material.chip.ChipGroup>-->
 
             <!-- RecyclerView inside SwipeRefreshLayout for pull-to-refresh -->
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

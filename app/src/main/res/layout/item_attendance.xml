@@ -44,15 +44,16 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
+            android:fontFamily="@font/roboto_bold"
             android:layoutDirection="ltr"
             android:textAlignment="viewStart"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="?attr/colorOnSurface"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorPrimary"
             android:textDirection="ltr"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/profile_avatar_card"
             app:layout_constraintTop_toTopOf="@+id/profile_avatar_card"
-            tools:text="Ammar Khan" />
+            tools:text="حمیرہ عافین" />
 
         <TextView
             android:id="@+id/tvEmail"
@@ -68,15 +69,17 @@
 
         <!-- Role Chip -->
         <com.google.android.material.chip.Chip
-            android:id="@+id/chipRole"
+            android:id="@+id/chipShift"
             style="@style/Widget.Material3.Chip.Assist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Student"
+            android:minWidth="85dp"
+            android:text="Subah"
+            android:textAlignment="center"
             android:textAppearance="?attr/textAppearanceLabelMedium"
-            app:chipIcon="@drawable/ic_students"
-            app:chipIconSize="18dp"
+            android:textColor="?attr/colorOnPrimary"
+            app:chipBackgroundColor="@color/subah"
             app:layout_constraintStart_toStartOf="@+id/tvEmail"
             app:layout_constraintTop_toBottomOf="@+id/tvEmail" />
 
@@ -87,7 +90,7 @@
             android:layout_marginTop="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/chipRole" />
+            app:layout_constraintTop_toBottomOf="@+id/chipShift" />
 
         <!-- Modern Segmented Buttons for Attendance -->
         <com.google.android.material.button.MaterialButtonToggleGroup
@@ -108,8 +111,8 @@
                 android:layout_weight="1"
                 android:backgroundTint="@color/present_button_tint"
                 android:text="Present"
-                android:textColor="@color/attendance_button_text_color"
-                android:textAppearance="?attr/textAppearanceLabelLarge" />
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="@color/attendance_button_text_color" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAbsent"
@@ -119,8 +122,8 @@
                 android:layout_weight="1"
                 android:backgroundTint="@color/absent_button_tint"
                 android:text="Absent"
-                android:textColor="@color/attendance_button_text_color"
-                android:textAppearance="?attr/textAppearanceLabelLarge" />
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="@color/attendance_button_text_color" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLeave"
@@ -130,8 +133,8 @@
                 android:layout_weight="1"
                 android:backgroundTint="@color/leave_button_tint"
                 android:text="Leave"
-                android:textColor="@color/attendance_button_text_color"
-                android:textAppearance="?attr/textAppearanceLabelLarge" />
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="@color/attendance_button_text_color" />
 
         </com.google.android.material.button.MaterialButtonToggleGroup>
 

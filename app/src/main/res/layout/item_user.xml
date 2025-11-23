@@ -21,25 +21,56 @@
             android:id="@+id/tvName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
             android:fontFamily="@font/roboto_bold"
             android:layoutDirection="ltr"
             android:textAlignment="viewStart"
-            android:textDirection="ltr"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
             android:textColor="?attr/colorPrimary"
-            app:layout_constraintEnd_toStartOf="@+id/tvDivisionName"
+            android:textDirection="ltr"
+            android:textSize="20dp"
+            app:layout_constraintEnd_toStartOf="@+id/chipShift"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="عبدالاعلیٰ" />
+            tools:text="حمیرہ عافین  اور عمار  اور زید" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipShift"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="85dp"
+            android:textAlignment="center"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnPrimary"
+            app:chipBackgroundColor="@color/subah"
+            app:layout_constraintBottom_toBottomOf="@+id/btnMore"
+            app:layout_constraintEnd_toStartOf="@+id/btnMore"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Subah" />
+
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="More options"
+            android:focusable="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_more_vert_24"
+            app:tint="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:id="@+id/tvEmail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            android:layoutDirection="ltr"
+            android:textAlignment="viewStart"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant"
+            android:textDirection="ltr"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvName"
             tools:text="user.long.email.address@email.com" />
@@ -48,50 +79,37 @@
             android:id="@+id/tvPhone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="4dp"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvEmail"
             tools:text="+91 9876543210" />
 
-        <TextView
-            android:id="@+id/tvRole"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:textColor="?attr/colorPrimary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvPhone"
-            tools:text="Student" />
+        <!-- <TextView
+             android:id="@+id/tvRole"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_marginTop="12dp"
+             android:textAppearance="?attr/textAppearanceLabelLarge"
+             android:textColor="?attr/colorPrimary"
+             app:layout_constraintBottom_toBottomOf="parent"
+             app:layout_constraintStart_toStartOf="parent"
+             app:layout_constraintTop_toBottomOf="@+id/tvPhone"
+             tools:text="Student" />-->
 
         <!-- Status Chip for better visual representation -->
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textAppearance="?attr/textAppearanceLabelSmall"
-            android:textColor="?attr/colorOnSecondaryContainer"
-            app:chipBackgroundColor="?attr/colorPrimaryContainer"
-            app:chipMinHeight="24dp"
-            app:layout_constraintBottom_toBottomOf="@+id/tvRole"
-            app:layout_constraintStart_toEndOf="@+id/tvRole"
-            app:layout_constraintTop_toTopOf="@+id/tvRole"
-            tools:text="Active" />
 
         <!-- Class/Division Info -->
-        <TextView
+        <!--<TextView
             android:id="@+id/tvDivisionName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="end"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             tools:text="Madarsa Mohammadiya" />
 
         <TextView
@@ -115,21 +133,60 @@
             android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvClassName"
-            tools:text="Subah" />
+            tools:text="Subah" />-->
 
         <!-- More Options Menu -->
-        <ImageButton
-            android:id="@+id/btnMore"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:contentDescription="More options"
-            android:focusable="true"
-            app:layout_constraintBottom_toBottomOf="parent"
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginVertical="16dp"
+            android:background="?attr/colorOutline"
             app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/ic_more_vert_24"
-            app:tint="?attr/colorOnSurfaceVariant" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvPhone" />
+
+        <TextView
+            android:id="@+id/tvClass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintEnd_toStartOf="@+id/bullet"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintHorizontal_chainStyle="spread_inside"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/divider"
+            tools:text="Class 10" />
+
+        <TextView
+            android:id="@+id/bullet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:text="•"
+            android:textColor="?attr/colorAccent"
+            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
+            app:layout_constraintEnd_toStartOf="@+id/tvDivision"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/tvClass"
+            app:layout_constraintTop_toTopOf="@+id/tvClass"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/tvDivision"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/bullet"
+            app:layout_constraintTop_toTopOf="@+id/tvClass"
+            tools:text="Division A" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
