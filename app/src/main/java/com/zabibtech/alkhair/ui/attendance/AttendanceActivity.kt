@@ -70,6 +70,7 @@ class AttendanceActivity : AppCompatActivity() {
             adapter.attendanceCompleteListener = { isComplete ->
                 visibility = if (isComplete) View.VISIBLE else View.GONE
                 isEnabled = true
+                updateAttendanceSummary() // ✅ Update summary whenever attendance changes
             }
 
             setOnClickListener {
@@ -168,6 +169,8 @@ class AttendanceActivity : AppCompatActivity() {
 
                         is UiState.Success -> {
                             binding.fabSaveAttendance.isEnabled = true
+                            binding.fabSaveAttendance.visibility = View.GONE // ✅ Hide on success
+                            adapter.resetChangeFlag() // ✅ Reset change flag
                             DialogUtils.hideLoading(supportFragmentManager) // ✅ Hide loading
                             DialogUtils.showAlert(
                                 this@AttendanceActivity,
@@ -270,5 +273,14 @@ class AttendanceActivity : AppCompatActivity() {
             DateUtils.formatDate(selectedDate)
         )
         binding.fabSaveAttendance.visibility = View.GONE
+        updateAttendanceSummary() // Reset summary
+    }
+
+    private fun updateAttendanceSummary() {
+        val (presentCount, absentCount, leaveCount) = adapter.getAttendanceSummary()
+
+        binding.tvSummaryPresent.text = presentCount.toString()
+        binding.tvSummaryAbsent.text = absentCount.toString()
+        binding.tvSummaryOnLeave.text = leaveCount.toString()
     }
 }

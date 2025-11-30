@@ -18,6 +18,7 @@ class AttendanceAdapter(
 
     private val attendanceMap = mutableMapOf<String, String>() // uid -> status
     private var fullList: List<User> = emptyList()
+    private var hasUserMadeChanges = false // Track if user has modified attendance
 
     // Listener to notify when all attendance is marked
     var attendanceCompleteListener: ((Boolean) -> Unit)? = null
@@ -75,8 +76,10 @@ class AttendanceAdapter(
                             attendanceMap.remove(user.uid)
                         }
                     }
+                    // Mark that user has made changes
+                    hasUserMadeChanges = true
                     // Notify the activity/fragment that the attendance state might have changed
-                    attendanceCompleteListener?.invoke(isAttendanceComplete())
+                    attendanceCompleteListener?.invoke(isAttendanceComplete() && hasUserMadeChanges)
                 }
 
                 root.setOnClickListener { onClick(user) }
@@ -88,6 +91,7 @@ class AttendanceAdapter(
 
     fun clearAttendance() {
         attendanceMap.clear()
+        hasUserMadeChanges = false
         notifyDataSetChanged() // To update the UI and clear selections
         attendanceCompleteListener?.invoke(false) // Hide FAB
     }
@@ -95,8 +99,10 @@ class AttendanceAdapter(
     fun setAttendanceMap(prefilled: Map<String, String>) {
         attendanceMap.clear()
         attendanceMap.putAll(prefilled)
+        hasUserMadeChanges = false // Reset flag when loading from DB
         notifyDataSetChanged()
-        attendanceCompleteListener?.invoke(isAttendanceComplete())
+        // Don't show FAB on initial load
+        attendanceCompleteListener?.invoke(false)
     }
 
     fun isAttendanceComplete(): Boolean {
@@ -105,6 +111,17 @@ class AttendanceAdapter(
     }
 
     fun getAttendanceMap(): Map<String, String> = attendanceMap
+
+    fun getAttendanceSummary(): Triple<Int, Int, Int> {
+        val present = fullList.count { attendanceMap[it.uid] == "Present" }
+        val absent = fullList.count { attendanceMap[it.uid] == "Absent" }
+        val leave = fullList.count { attendanceMap[it.uid] == "Leave" }
+        return Triple(present, absent, leave)
+    }
+
+    fun resetChangeFlag() {
+        hasUserMadeChanges = false
+    }
 
     // --- ViewHolder and DiffUtil boilerplate ---
 

@@ -28,10 +28,10 @@ class UserDetailActivity : AppCompatActivity() {
         binding = ActivityUserDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ✅ Insets handle karo
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+        // ✅ Insets handle karo - Apply top padding to AppBarLayout only
+        ViewCompat.setOnApplyWindowInsetsListener(binding.appBarLayout) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(0, systemBars.top, 0, 0)
             insets
         }
         setupToolbar()

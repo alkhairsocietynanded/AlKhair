@@ -41,8 +41,9 @@ import kotlin.math.abs
 
 @AndroidEntryPoint
 class AdminDashboardActivity : AppCompatActivity() {
-    private lateinit var adapter: AnnouncementPagerAdapter
+
     private lateinit var binding: ActivityAdminDashboardBinding
+    private lateinit var adapter: AnnouncementPagerAdapter
     private val mainViewModel: MainViewModel by viewModels()
     val announcementViewModel: AnnouncementViewModel by viewModels()
 
@@ -60,6 +61,7 @@ class AdminDashboardActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
         setupToolbar()
         setupListeners()
         observeViewModelsLoadingState()
