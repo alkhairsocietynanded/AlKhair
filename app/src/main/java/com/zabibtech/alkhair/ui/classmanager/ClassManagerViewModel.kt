@@ -2,201 +2,140 @@ package com.zabibtech.alkhair.ui.classmanager
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.DivisionModel
-import com.zabibtech.alkhair.data.repository.ClassManagerRepository
-import com.zabibtech.alkhair.data.datastore.ClassDivisionStore
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ClassManagerViewModel @Inject constructor(
-    private val repository: ClassManagerRepository,
-    private val classDivisionStore: ClassDivisionStore
+    private val repoManager: ClassDivisionRepoManager
 ) : ViewModel() {
 
-    private var currentDivisionFilterForRefresh: String? = null
-
+    // State for the list of divisions
     private val _divisions = MutableStateFlow<UiState<List<DivisionModel>>>(UiState.Loading)
     val divisions: StateFlow<UiState<List<DivisionModel>>> = _divisions
 
+    // State for the list of classes
     private val _classes = MutableStateFlow<UiState<List<ClassModel>>>(UiState.Loading)
     val classes: StateFlow<UiState<List<ClassModel>>> = _classes
 
-    // This is a helper function to ensure a division exists
-    private suspend fun ensureDivisionExists(divisionName: String) {
-        // Get the current list of divisions from the ViewModel's state
-        val currentDivisions = (_divisions.value as? UiState.Success)?.data ?: emptyList()
+    // State for individual operations like add, update, delete
+    private val _operationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val operationState: StateFlow<UiState<Unit>> = _operationState
 
-        // Check if the divisionName already exists (case-insensitive)
-        if (currentDivisions.none { it.name.equals(divisionName, ignoreCase = true) }) {
-            // If it doesn't exist, add it
-            repository.addDivision(DivisionModel(id = "", name = divisionName))
-            // After adding, reload divisions to update the ViewModel's state
-            loadDivisions()
+    init {
+        // Observe local database for divisions
+        viewModelScope.launch {
+            repoManager.getAllDivisions().catch { e ->
+                _divisions.value = UiState.Error(e.localizedMessage ?: "Error loading divisions")
+            }.collect { divisionList ->
+                _divisions.value = UiState.Success(divisionList)
+            }
         }
-    }
 
-    // -------------------------------
-    // Division Filter + Auto Refresh
-    // -------------------------------
-    fun setCurrentDivisionFilter(divisionName: String?) {
-        currentDivisionFilterForRefresh = divisionName
-        refreshClassesBasedOnFilter()
-    }
-
-    private fun refreshClassesBasedOnFilter() {
-        if (currentDivisionFilterForRefresh == null) {
-            loadClasses()
-        } else {
-            loadClassesByDivision(currentDivisionFilterForRefresh!!)
+        // Observe local database for classes
+        viewModelScope.launch {
+            repoManager.getAllClasses().catch { e ->
+                _classes.value = UiState.Error(e.localizedMessage ?: "Error loading classes")
+            }.collect { classList ->
+                _classes.value = UiState.Success(classList)
+            }
         }
+
+        // Initial data refresh from remote
+        refreshAll()
     }
 
-    // -------------------------------
-    // Division CRUD
-    // -------------------------------
-    fun loadDivisions() {
+    fun refreshAll() {
         viewModelScope.launch {
             _divisions.value = UiState.Loading
-            try {
-                val list = classDivisionStore.getOrFetchDivisionList()
-                _divisions.value = UiState.Success(list)
-            } catch (e: Exception) {
-                _divisions.value = UiState.Error(e.message ?: "Failed to load divisions")
-            }
+            repoManager.refreshDivisions()
+            repoManager.refreshClasses()
         }
     }
 
+    fun resetOperationState() {
+        _operationState.value = UiState.Idle
+    }
+
+    // =============================
+    // Division Operations
+    // =============================
     fun addDivision(name: String) {
+        if (name.isBlank()) {
+            _operationState.value = UiState.Error("Division name cannot be empty.")
+            return
+        }
+        _operationState.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                repository.addDivision(DivisionModel(id = "", name = name))
-                loadDivisions()
-                refreshClassesBasedOnFilter()
-            } catch (e: Exception) {
-                _divisions.value = UiState.Error(e.message ?: "Failed to add division")
-            }
+            val newDivision = DivisionModel(name = name)
+            repoManager.addDivision(newDivision).fold(
+                onSuccess = { _operationState.value = UiState.Success(Unit) },
+                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to add division") }
+            )
         }
     }
 
     fun updateDivision(division: DivisionModel) {
+        _operationState.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                repository.updateDivision(division)
-                loadDivisions()
-                refreshClassesBasedOnFilter()
-            } catch (e: Exception) {
-                _divisions.value = UiState.Error(e.message ?: "Failed to update division")
-            }
+            repoManager.updateDivision(division).fold(
+                onSuccess = { _operationState.value = UiState.Success(Unit) },
+                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to update division") }
+            )
         }
     }
 
     fun deleteDivision(divisionId: String) {
+        _operationState.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                repository.deleteDivision(divisionId)
-                loadDivisions()
-                refreshClassesBasedOnFilter()
-            } catch (e: Exception) {
-                _divisions.value = UiState.Error(e.message ?: "Failed to delete division")
-            }
+            repoManager.deleteDivision(divisionId).fold(
+                onSuccess = { _operationState.value = UiState.Success(Unit) },
+                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to delete division") }
+            )
         }
     }
 
-    // -------------------------------
-    // Class CRUD
-    // -------------------------------
-    fun loadClasses() {
-        viewModelScope.launch {
-            _classes.value = UiState.Loading
-            try {
-                val list = classDivisionStore.getOrFetchClassList()
-                _classes.value = UiState.Success(list)
-            } catch (e: Exception) {
-                _classes.value = UiState.Error(e.message ?: "Failed to load classes")
-            }
+    // =============================
+    // Class Operations
+    // =============================
+    fun addClass(className: String, divisionName: String) {
+        if (className.isBlank() || divisionName.isBlank()) {
+            _operationState.value = UiState.Error("Class and division names cannot be empty.")
+            return
         }
-    }
-
-    fun loadClassesByDivision(divisionName: String) {
+        _operationState.value = UiState.Loading
         viewModelScope.launch {
-            _classes.value = UiState.Loading
-            try {
-                // Step 1: Load all classes from cache
-                val allClasses = classDivisionStore.getOrFetchClassList()
-                val filtered = allClasses.filter { it.division == divisionName }
-                _classes.value = UiState.Success(filtered)
-
-                // Step 2: Background refresh from repository
-                launch(Dispatchers.IO) {
-                    try {
-                        val freshList = repository.getClassesByDivision(divisionName)
-                        // Merge freshList into cache
-                        val updatedCache = allClasses.filter { it.division != divisionName } + freshList
-                        classDivisionStore.saveClassList(updatedCache)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-
-            } catch (e: Exception) {
-                _classes.value = UiState.Error(e.message ?: "Failed to load classes by division")
-            }
-        }
-    }
-
-    fun addClass(divisionName: String, className: String) {
-        viewModelScope.launch {
-            try {
-                // First, ensure the division exists in the database
-                ensureDivisionExists(divisionName)
-
-                // Then, add the class
-                // NOTE: repository.addClassWithDivisionCheck might have redundant division checking
-                // if ensureDivisionExists is called prior. Consider simplifying repository.addClass.
-                repository.addClassWithDivisionCheck(
-                    ClassModel(id = "", division = divisionName, className = className)
-                )
-                // Reload divisions and refresh classes to reflect changes
-                loadDivisions()
-                refreshClassesBasedOnFilter()
-            } catch (e: Exception) {
-                _classes.value = UiState.Error(e.message ?: "Failed to add class")
-            }
+            val newClass = ClassModel(className = className, division = divisionName)
+            repoManager.addClass(newClass).fold(
+                onSuccess = { _operationState.value = UiState.Success(Unit) },
+                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to add class") }
+            )
         }
     }
 
     fun updateClass(classModel: ClassModel) {
+        _operationState.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                // First, ensure the division for the updated class exists
-                ensureDivisionExists(classModel.division)
-
-                // Then, update the class
-                repository.updateClass(classModel)
-                // Reload divisions (in case a new one was added) and refresh classes
-                loadDivisions() // Important: reload divisions if ensureDivisionExists added a new one
-                refreshClassesBasedOnFilter()
-            } catch (e: Exception) {
-                _classes.value = UiState.Error(e.message ?: "Failed to update class")
-            }
+            repoManager.updateClass(classModel).fold(
+                onSuccess = { _operationState.value = UiState.Success(Unit) },
+                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to update class") }
+            )
         }
     }
 
     fun deleteClass(classId: String) {
+        _operationState.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                repository.deleteClass(classId)
-                refreshClassesBasedOnFilter()
-            } catch (e: Exception) {
-                _classes.value = UiState.Error(e.message ?: "Failed to delete class")
-            }
+            repoManager.deleteClass(classId).fold(
+                onSuccess = { _operationState.value = UiState.Success(Unit) },
+                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to delete class") }
+            )
         }
     }
 }

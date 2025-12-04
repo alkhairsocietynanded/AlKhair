@@ -8,11 +8,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.fragment.app.viewModels // Import viewModels (instead of activityViewModels)
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.DialogAddEditFeesBinding
-import com.zabibtech.alkhair.ui.user.fragments.FeesFragment
 import com.zabibtech.alkhair.utils.FeeUtils
 import com.zabibtech.alkhair.utils.getParcelableCompat
 import java.text.NumberFormat
@@ -23,7 +23,7 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
 
     private var _binding: DialogAddEditFeesBinding? = null
     private val binding get() = _binding!!
-//    private val viewModel: FeesViewModel by activityViewModels()
+    private val feesViewModel: FeesViewModel by viewModels(ownerProducer = { requireParentFragment() }) // Use parent fragment's ViewModel
 
     private var existingFees: FeesModel? = null
     private var user: User? = null
@@ -180,7 +180,7 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 remarks = remarks
             )
 
-            (parentFragment as? FeesFragment)?.feesViewModel?.saveFee(fees)
+            feesViewModel.saveFee(fees)
             dismiss()
         }
     }

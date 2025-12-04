@@ -10,6 +10,8 @@ object FirebaseRefs {
 
     val usersDb: DatabaseReference get() = db.reference.child("users")
     val attendanceRef: DatabaseReference get() = db.reference.child("attendance")
+    val userAttendanceRef: DatabaseReference get() = db.reference.child("user_attendance")
+    val dateAttendanceRef: DatabaseReference get() = db.reference.child("date_attendance")
     val feesRef: DatabaseReference get() = db.reference.child("fees")
     val salariesRef: DatabaseReference get() = db.reference.child("salary")
     val classesRef: DatabaseReference get() = db.reference.child("classes")

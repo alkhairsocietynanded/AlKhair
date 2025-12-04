@@ -5,8 +5,10 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Deprecated("Use FirebaseAttendanceRepository instead")
 @Singleton
 class AttendanceRepository @Inject constructor() {
+
     suspend fun saveAttendanceForClass(
         classId: String?,
         date: String,

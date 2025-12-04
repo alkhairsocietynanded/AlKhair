@@ -1,11 +1,16 @@
 package com.zabibtech.alkhair.data.models
 
 import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 
+
 @Parcelize
+@Entity(tableName = "users")
 data class User(
     //personal details
+    @PrimaryKey
     val uid: String = "",
     val name: String = "",
     val parentName: String = "",
@@ -33,5 +38,6 @@ data class User(
     // 🔹 Salary-related (for Teachers)
     val salary: String = "",
     val paidSalary: String = "",
-    val dueSalary: String = ""
+    val dueSalary: String = "",
+    val updatedAt: Long = System.currentTimeMillis()
 ) : Parcelable

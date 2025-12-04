@@ -178,7 +178,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
                 combine(
                     mainViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
-                    announcementViewModel.addAnnouncementState
+                    announcementViewModel.addUpdateAnnouncementState
                 ) { dashboardState, latestAnnouncementsState, addAnnouncementState ->
                     dashboardState is UiState.Loading ||
                             latestAnnouncementsState is UiState.Loading ||
@@ -251,7 +251,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                announcementViewModel.addAnnouncementState.collectLatest { state ->
+                announcementViewModel.addUpdateAnnouncementState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
@@ -260,7 +260,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
                                 "Announcement Saved!",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            announcementViewModel.resetAddAnnouncementState()
+                            announcementViewModel.resetAddUpdateAnnouncementState()
                         }
 
                         is UiState.Error -> {
@@ -269,7 +269,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
                                 "Error",
                                 state.message
                             )
-                            announcementViewModel.resetAddAnnouncementState()
+                            announcementViewModel.resetAddUpdateAnnouncementState()
                         }
 
                         else -> {}

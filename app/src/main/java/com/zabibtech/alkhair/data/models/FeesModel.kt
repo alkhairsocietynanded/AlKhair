@@ -1,10 +1,14 @@
 package com.zabibtech.alkhair.data.models
 
 import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
+@Entity(tableName = "fees")
 data class FeesModel(
+    @PrimaryKey
     val id: String = "",
     val studentId: String = "",
     val studentName: String = "",
@@ -17,5 +21,6 @@ data class FeesModel(
     val paymentDate: String = "",
     val remarks: String? = null,
     val paymentStatus: String = "Pending", // Pending, Paid
+    val updatedAt: Long = System.currentTimeMillis()
 
 ) : Parcelable

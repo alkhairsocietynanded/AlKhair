@@ -26,6 +26,7 @@ import com.zabibtech.alkhair.utils.UiState
 import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -49,9 +50,6 @@ class UserFormActivity : AppCompatActivity() {
     private var allDivisions: List<DivisionModel> = emptyList()
     private var allClasses: List<ClassModel> = emptyList()
 
-    private var dataLoadedCount = 0
-    private val totalDataToLoad = 2 // divisions + classes
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -69,11 +67,6 @@ class UserFormActivity : AppCompatActivity() {
         extractIntentData()
         setupUi()
         observeViewModels()
-
-        // 🔹 Load divisions & classes
-        showLoading("Loading data...")
-        classVm.loadDivisions()
-        classVm.loadClasses()
 
         binding.btnSave.setOnClickListener { handleSave() }
     }
@@ -114,9 +107,9 @@ class UserFormActivity : AppCompatActivity() {
         }
         // Password handling
         layoutPassword.apply {
-            visibility = when {
-                mode == Modes.CREATE -> View.VISIBLE
-                mode == Modes.UPDATE && role == Roles.ADMIN -> View.VISIBLE
+            visibility = when (mode) {
+                Modes.CREATE -> View.VISIBLE
+                Modes.UPDATE if role == Roles.ADMIN -> View.VISIBLE
                 else -> View.GONE
             }
             isEnabled = mode == Modes.CREATE || (mode == Modes.UPDATE && role == Roles.ADMIN)
@@ -135,21 +128,21 @@ class UserFormActivity : AppCompatActivity() {
         }
 
         // Prefill if update
-        userToEdit?.let { user ->
-            etName.setText(user.name)
-            etParentName.setText(user.parentName)
-            etEmail.setText(user.email)
-            etPhone.setText(user.phone)
-            etPassword.setText(user.password)
-            etAddress.setText(user.address)
-            etShift.setText(user.shift, false)
-            etSubject.setText(user.subject)
-            etSalary.setText(user.salary)
-            etDivision.setText(user.divisionName, false)
-            etClass.setText(user.className, false)
-            etDob.setText(user.dateOfBirth)
-            etTotalFees.setText(user.totalFees)
-            selectedClassId = user.classId
+        userToEdit?.let {
+            etName.setText(it.name)
+            etParentName.setText(it.parentName)
+            etEmail.setText(it.email)
+            etPhone.setText(it.phone)
+            etPassword.setText(it.password)
+            etAddress.setText(it.address)
+            etShift.setText(it.shift, false)
+            etSubject.setText(it.subject)
+            etSalary.setText(it.salary)
+            etDivision.setText(it.divisionName, false)
+            etClass.setText(it.className, false)
+            etDob.setText(it.dateOfBirth)
+            etTotalFees.setText(it.totalFees)
+            selectedClassId = it.classId
         }
 
         // Shift dropdown
@@ -213,34 +206,37 @@ class UserFormActivity : AppCompatActivity() {
     private fun observeClassVm() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                classVm.divisions.collectLatest { state ->
-                    if (state is UiState.Success) {
-                        allDivisions = state.data
-                        markDataLoaded()
-                        setupDropdowns()
-                    } else if (state is UiState.Error) {
-                        hideLoading()
-                        DialogUtils.showAlert(this@UserFormActivity, "Error", state.message)
-                    }
-                }
-            }
-        }
+                // Combine the states of divisions and classes for a synchronized UI update
+                classVm.divisions.combine(classVm.classes) { divisionsState, classesState ->
+                    Pair(divisionsState, classesState)
+                }.collectLatest { (divisionsState, classesState) ->
 
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                classVm.classes.collectLatest { state ->
-                    if (state is UiState.Success) {
-                        allClasses = state.data
-                        markDataLoaded()
-                        setupDropdowns()
-                    } else if (state is UiState.Error) {
+                    val isLoading = divisionsState is UiState.Loading || classesState is UiState.Loading
+
+                    if (isLoading) {
+                        showLoading("Loading data...")
+                    } else {
                         hideLoading()
-                        DialogUtils.showAlert(this@UserFormActivity, "Error", state.message)
+                    }
+
+                    // Handle success only when both are successful
+                    if (divisionsState is UiState.Success && classesState is UiState.Success) {
+                        allDivisions = divisionsState.data
+                        allClasses = classesState.data
+                        // Call setupDropdowns only once when both data are available
+                        setupDropdowns()
+                    } else if (divisionsState is UiState.Error) {
+                        // Handle division error state
+                        DialogUtils.showAlert(this@UserFormActivity, "Error", divisionsState.message)
+                    } else if (classesState is UiState.Error) {
+                        // Handle class error state
+                        DialogUtils.showAlert(this@UserFormActivity, "Error", classesState.message)
                     }
                 }
             }
         }
     }
+
 
     private fun setupDropdowns() {
         if (allDivisions.isEmpty() || allClasses.isEmpty()) return
@@ -277,10 +273,6 @@ class UserFormActivity : AppCompatActivity() {
 //                binding.etShift.setText(currentShift, false)
 //            }
         }
-    }
-
-    private fun markDataLoaded() {
-        if (++dataLoadedCount >= totalDataToLoad) hideLoading()
     }
 
     private fun handleSave() {

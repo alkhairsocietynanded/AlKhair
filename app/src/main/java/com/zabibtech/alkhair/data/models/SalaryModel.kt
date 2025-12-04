@@ -1,10 +1,16 @@
 package com.zabibtech.alkhair.data.models
 
 import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.Ignore
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
+@Entity(tableName = "salary")
 data class SalaryModel(
+    @PrimaryKey
     val id: String = "",
     val staffId: String = "",
     val staffName: String = "",
@@ -19,7 +25,8 @@ data class SalaryModel(
     val createdAt: Long = System.currentTimeMillis(),
 
     // New field for combined indexing
-    val staffMonth: String = "${staffId}_${monthYear}"
+    val staffMonth: String = "${staffId}_${monthYear}",
+    val updatedAt: Long = System.currentTimeMillis()
 ) : Parcelable {
     fun calculateNet(): Double {
         return basicSalary + allowances - deductions

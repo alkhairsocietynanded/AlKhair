@@ -176,7 +176,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                 combine(
                     mainViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
-                    announcementViewModel.addAnnouncementState
+                    announcementViewModel.addUpdateAnnouncementState
                 ) { dashboardState, latestAnnouncementsState, addAnnouncementState ->
                     dashboardState is UiState.Loading ||
                             latestAnnouncementsState is UiState.Loading ||
@@ -220,7 +220,6 @@ class AdminDashboardActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 announcementViewModel.latestAnnouncementsState.collectLatest { state ->
                     when (state) {
-
                         is UiState.Success -> {
                             if (state.data.isEmpty()) {
                                 binding.announcementPager.visibility = View.GONE
@@ -250,7 +249,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                announcementViewModel.addAnnouncementState.collectLatest { state ->
+                announcementViewModel.addUpdateAnnouncementState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
@@ -259,7 +258,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                                 "Announcement Saved!",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            announcementViewModel.resetAddAnnouncementState()
+                            announcementViewModel.resetAddUpdateAnnouncementState()
                         }
 
                         is UiState.Error -> {
@@ -268,7 +267,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                                 "Error",
                                 state.message
                             )
-                            announcementViewModel.resetAddAnnouncementState()
+                            announcementViewModel.resetAddUpdateAnnouncementState()
                         }
 
                         else -> {}

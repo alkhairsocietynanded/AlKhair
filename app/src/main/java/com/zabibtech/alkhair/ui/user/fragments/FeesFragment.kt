@@ -10,7 +10,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.viewModels // Import viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -27,6 +27,7 @@ import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class FeesFragment : Fragment() {
@@ -35,7 +36,8 @@ class FeesFragment : Fragment() {
     private var _binding: FragmentFeesBinding? = null
     private val binding get() = _binding!!
 
-    val feesViewModel: FeesViewModel by viewModels()
+    // ViewModel ko fragment scope mein define karein aur private banayein
+    private val feesViewModel: FeesViewModel by viewModels() // activityViewModels se viewModels mein badal diya
     private lateinit var adapter: FeesAdapter
 
     private var studentId: String? = null
@@ -81,12 +83,12 @@ class FeesFragment : Fragment() {
             val dy = scrollY - oldScrollY
 
             // Threshold: 5 pixels se zyada movement hote hi action lo (Responsive)
-            if (Math.abs(dy) > 5) {
+            if (abs(dy) > 5) {
                 if (dy > 0) {
                     // SCROLL DOWN -> Slide Right (Hide)
                     // Check karein agar already hidden nahi hai
                     if (binding.fabAddFee.translationX == 0f) {
-                        // FAB ki width + margin calculate karke usko right bhej do
+                        // FAB ki width + margin calculate k करके usko right bhej do
                         val slideRightDistance =
                             binding.fabAddFee.width.toFloat() + binding.fabAddFee.marginEnd.toFloat() + 50f // +50 extra safety
 
@@ -120,8 +122,8 @@ class FeesFragment : Fragment() {
         studentId = user?.uid
         studentId?.let {
             feesViewModel.loadFeesByStudent(it)
-        } ?: DialogUtils.showAlert(requireContext(), message = "Invalid student ID")
-    }
+        }
+    } // Moved this here to avoid nullability issues due to early return for 'Invalid student ID'
 
     private fun setupRecyclerView() {
         adapter = FeesAdapter(

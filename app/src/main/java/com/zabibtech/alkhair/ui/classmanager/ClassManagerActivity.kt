@@ -12,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.databinding.ActivityClassManagerBinding
 import com.zabibtech.alkhair.ui.attendance.AttendanceActivity
@@ -21,15 +22,15 @@ import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ClassManagerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityClassManagerBinding
-    val viewModel: ClassManagerViewModel by viewModels()
+    private val viewModel: ClassManagerViewModel by viewModels()
     private lateinit var adapter: ClassManagerAdapter
 
     private var divisions: List<DivisionModel> = emptyList()
@@ -45,16 +46,12 @@ class ClassManagerActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        setupToolbar()
 
+        setupToolbar()
         setupRecyclerView()
         setupFab()
-        setupSwipeRefreshLayout() // Add this call
-
+        setupSwipeRefreshLayout()
         observeViewModel()
-
-        viewModel.loadDivisions()
-        viewModel.loadClasses()
     }
 
     private fun setupToolbar() {
@@ -128,52 +125,78 @@ class ClassManagerActivity : AppCompatActivity() {
 
     private fun setupSwipeRefreshLayout() {
         binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.loadDivisions()
-            viewModel.loadClasses()
+            viewModel.refreshAll() // Single call to refresh everything
         }
     }
 
     private fun observeViewModel() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.divisions.combine(viewModel.classes) { divisionsState, classesState ->
-                    Pair(divisionsState, classesState)
-                }.collectLatest { (divisionsState, classesState) ->
 
-                    // Determine the overall state
-                    val isError = divisionsState is UiState.Error || classesState is UiState.Error
-                    val isSuccess =
-                        divisionsState is UiState.Success && classesState is UiState.Success
-                    val isLoading = !isSuccess && !isError && adapter.itemCount == 0 || divisionsState is UiState.Loading || classesState is UiState.Loading
+                // Combined observer for all UI states
+                launch {
+                    combine(
+                        viewModel.divisions,
+                        viewModel.classes,
+                        viewModel.operationState
+                    ) { divisionsState, classesState, operationState ->
+                        Triple(divisionsState, classesState, operationState)
+                    }.collectLatest { (divisionsState, classesState, operationState) ->
 
-                    binding.swipeRefreshLayout.isRefreshing = isLoading // Use swipeRefreshLayout for loading
+                        // --- Handle Loading State ---
+                        val isListLoading = (divisionsState is UiState.Loading || classesState is UiState.Loading) && (operationState !is UiState.Success && operationState !is UiState.Error)
+                        val isOperationRunning = operationState is UiState.Loading
+                        binding.swipeRefreshLayout.isRefreshing = isListLoading || isOperationRunning
 
-                    if (isError) {
-                        val errorMessage = (divisionsState as? UiState.Error)?.message
-                            ?: (classesState as? UiState.Error)?.message
-                        binding.emptyView.text = errorMessage
-                        binding.emptyView.isVisible = true
-                        adapter.submitList(emptyList()) // Clear previous data
-                    } else if (isSuccess) {
-                        val divisionsList = divisionsState.data
-                        val classesList = classesState.data
-                        this@ClassManagerActivity.divisions = divisionsList
+                        // --- Handle List Display ---
+                        if (operationState !is UiState.Loading) { // Only update list when no operation is running
+                            val isSuccess = divisionsState is UiState.Success && classesState is UiState.Success
+                            when {
+                                divisionsState is UiState.Error -> {
+                                    binding.emptyView.text = divisionsState.message
+                                    binding.emptyView.isVisible = true
+                                    adapter.submitList(emptyList())
+                                }
+                                classesState is UiState.Error -> {
+                                    binding.emptyView.text = classesState.message
+                                    binding.emptyView.isVisible = true
+                                    adapter.submitList(emptyList())
+                                }
+                                isSuccess -> {
+                                    val divisionsList = (divisionsState as UiState.Success).data
+                                    val classesList = (classesState as UiState.Success).data
+                                    this@ClassManagerActivity.divisions = divisionsList
 
-                        val items = mutableListOf<ClassListItem>()
-                        if (classesList.isNotEmpty() && divisionsList.isNotEmpty()) {
-                            val groupedByDivision = classesList.groupBy { it.division }
-                            divisionsList.forEach { division ->
-                                val classesInDivision = groupedByDivision[division.name]
-                                if (!classesInDivision.isNullOrEmpty()) {
-                                    items.add(ClassListItem.Header(division.name))
-                                    items.addAll(classesInDivision.map { ClassListItem.ClassItem(it) })
+                                    val items = mutableListOf<ClassListItem>()
+                                    if (classesList.isNotEmpty() && divisionsList.isNotEmpty()) {
+                                        val groupedByDivision = classesList.groupBy { it.division }
+                                        divisionsList.forEach { division ->
+                                            val classesInDivision = groupedByDivision[division.name]
+                                            if (!classesInDivision.isNullOrEmpty()) {
+                                                items.add(ClassListItem.Header(division.name))
+                                                items.addAll(classesInDivision.map { ClassListItem.ClassItem(it) })
+                                            }
+                                        }
+                                    }
+                                    adapter.submitList(items)
+                                    binding.emptyView.isVisible = items.isEmpty()
+                                    binding.emptyView.text = "No classes found"
                                 }
                             }
                         }
 
-                        adapter.submitList(items)
-                        binding.emptyView.isVisible = items.isEmpty()
-                        binding.emptyView.text = "No classes found"
+                        // --- Handle Operation Feedback (Snackbar) ---
+                        when (operationState) {
+                            is UiState.Success -> {
+                                Snackbar.make(binding.root, "Operation successful", Snackbar.LENGTH_SHORT).show()
+                                viewModel.resetOperationState()
+                            }
+                            is UiState.Error -> {
+                                Snackbar.make(binding.root, operationState.message, Snackbar.LENGTH_LONG).show()
+                                viewModel.resetOperationState()
+                            }
+                            else -> Unit // Idle or Loading
+                        }
                     }
                 }
             }

@@ -1,4 +1,3 @@
-
 package com.zabibtech.alkhair.ui.classmanager
 
 import android.os.Bundle
@@ -7,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.fragment.app.activityViewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.databinding.BottomSheetAddClassBinding
@@ -16,10 +16,13 @@ class AddClassSheet : BottomSheetDialogFragment() {
     private var _binding: BottomSheetAddClassBinding? = null
     private val binding get() = _binding!!
 
+    // Use the Activity's ViewModel. This is the modern, recommended way.
+    private val viewModel: ClassManagerViewModel by activityViewModels()
+
     private var divisions: List<String> = emptyList()
     private var existingDivision: String? = null
     private var existingClassName: String? = null
-    private var existingClassId: String? = null // Add this to handle updates
+    private var existingClassId: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,7 +40,7 @@ class AddClassSheet : BottomSheetDialogFragment() {
             divisions = it.getStringArrayList("divisions")?.toList() ?: emptyList()
             existingDivision = it.getString("existingDivision")
             existingClassName = it.getString("existingClassName")
-            existingClassId = it.getString("existingClassId") // Retrieve existing class ID
+            existingClassId = it.getString("existingClassId")
         }
 
         setupViews()
@@ -47,18 +50,17 @@ class AddClassSheet : BottomSheetDialogFragment() {
             val className = binding.etClassName.text.toString().trim()
 
             if (division.isNotEmpty() && className.isNotEmpty()) {
-                val classManagerActivity = activity as? ClassManagerActivity
                 if (existingClassId != null) {
-                    // Update existing class
+                    // Update existing class by calling the ViewModel directly
                     val updatedClass = ClassModel(
                         id = existingClassId!!,
                         division = division,
                         className = className
                     )
-                    classManagerActivity?.viewModel?.updateClass(updatedClass)
+                    viewModel.updateClass(updatedClass)
                 } else {
-                    // Add new class
-                    classManagerActivity?.viewModel?.addClass(division, className)
+                    // Add new class by calling the ViewModel directly
+                    viewModel.addClass(className, division)
                 }
                 dismiss()
             } else {
@@ -102,14 +104,14 @@ class AddClassSheet : BottomSheetDialogFragment() {
             divisions: List<String>,
             existingDivision: String? = null,
             existingClassName: String? = null,
-            existingClassId: String? = null // Add class ID for editing
+            existingClassId: String? = null
         ): AddClassSheet {
             val fragment = AddClassSheet()
             val args = Bundle().apply {
                 putStringArrayList("divisions", ArrayList(divisions))
                 putString("existingDivision", existingDivision)
                 putString("existingClassName", existingClassName)
-                putString("existingClassId", existingClassId) // Put class ID in arguments
+                putString("existingClassId", existingClassId)
             }
             fragment.arguments = args
             return fragment

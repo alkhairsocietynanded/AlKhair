@@ -2,8 +2,8 @@ package com.zabibtech.alkhair.ui.announcement
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zabibtech.alkhair.data.manager.AnnouncementRepoManager
 import com.zabibtech.alkhair.data.models.Announcement
-import com.zabibtech.alkhair.data.repository.AnnouncementRepository
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,96 +13,117 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AnnouncementViewModel @Inject constructor(
-    private val repository: AnnouncementRepository
+    private val announcementRepoManager: AnnouncementRepoManager
 ) : ViewModel() {
 
-    // Dashboard par dikhane ke liye sirf 5 latest announcements
     private val _latestAnnouncementsState = MutableStateFlow<UiState<List<Announcement>>>(UiState.Idle)
     val latestAnnouncementsState: StateFlow<UiState<List<Announcement>>> = _latestAnnouncementsState
 
-    // "View All" screen ke liye saare announcements
     private val _allAnnouncementsState = MutableStateFlow<UiState<List<Announcement>>>(UiState.Idle)
     val allAnnouncementsState: StateFlow<UiState<List<Announcement>>> = _allAnnouncementsState
 
-    // Add/Update/Delete operations ke liye states
-    private val _addAnnouncementState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
-    val addAnnouncementState: StateFlow<UiState<Unit>> = _addAnnouncementState
+    private val _addUpdateAnnouncementState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val addUpdateAnnouncementState: StateFlow<UiState<Unit>> = _addUpdateAnnouncementState
 
     private val _deleteAnnouncementState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val deleteAnnouncementState: StateFlow<UiState<Unit>> = _deleteAnnouncementState
 
     init {
-        // ViewModel shuru hote hi, dashboard ke liye latest announcements load karein
         loadFiveLatestAnnouncements()
+//        loadAllAnnouncements() // Initial load for all announcements
     }
 
-    /**
-     * Sirf 5 sabse naye announcements fetch karta hai.
-     */
-    fun loadFiveLatestAnnouncements() {
-        _latestAnnouncementsState.value = UiState.Loading
-        viewModelScope.launch {
-            val result = repository.getFiveLatestAnnouncements()
-            result.onSuccess { announcements ->
-                _latestAnnouncementsState.value = UiState.Success(announcements)
-            }
-            result.onFailure { error ->
-                _latestAnnouncementsState.value = UiState.Error(error.localizedMessage ?: "Failed to load announcements")
-            }
-        }
-    }
-
-    /**
-     * Saare announcements fetch karta hai (e.g., "All Announcements" screen ke liye).
-     */
-    fun loadAllAnnouncements() {
-        _allAnnouncementsState.value = UiState.Loading
-        viewModelScope.launch {
-            val result = repository.getAllAnnouncements()
-            result.onSuccess { announcements ->
-                _allAnnouncementsState.value = UiState.Success(announcements)
-            }
-            result.onFailure { error ->
-                _allAnnouncementsState.value = UiState.Error(error.localizedMessage ?: "Failed to load all announcements")
-            }
-        }
-    }
-
-    fun addOrUpdateAnnouncement(announcement: Announcement) {
-        _addAnnouncementState.value = UiState.Loading
+    fun createAnnouncement(announcement: Announcement) {
+        _addUpdateAnnouncementState.value = UiState.Loading
         viewModelScope.launch {
             if (announcement.title.isBlank() || announcement.content.isBlank()) {
-                _addAnnouncementState.value = UiState.Error("Title and content cannot be empty.")
+                _addUpdateAnnouncementState.value = UiState.Error("Title and content cannot be empty.")
                 return@launch
             }
 
-            val result = repository.addAnnouncement(announcement)
-            result.onSuccess {
-                _addAnnouncementState.value = UiState.Success(Unit)
-                // Refresh karein taaki dashboard par naya item aa jaye
-                loadFiveLatestAnnouncements()
+            announcementRepoManager.createAnnouncement(announcement).fold(
+                onSuccess = {
+                    _addUpdateAnnouncementState.value = UiState.Success(Unit)
+                    loadFiveLatestAnnouncements() // Refresh latest
+//                    loadAllAnnouncements() // Refresh all
+                },
+                onFailure = { error ->
+                    _addUpdateAnnouncementState.value = UiState.Error(error.localizedMessage ?: "Failed to create announcement")
+                }
+            )
+        }
+    }
+
+    fun loadFiveLatestAnnouncements() {
+        _latestAnnouncementsState.value = UiState.Loading
+        viewModelScope.launch {
+            announcementRepoManager.getFiveLatestAnnouncements().fold(
+                onSuccess = { announcements ->
+                    _latestAnnouncementsState.value = UiState.Success(announcements)
+                },
+                onFailure = { error ->
+                    _latestAnnouncementsState.value = UiState.Error(error.localizedMessage ?: "Failed to load announcements")
+                }
+            )
+        }
+    }
+
+    fun loadAllAnnouncements() {
+        _allAnnouncementsState.value = UiState.Loading
+        viewModelScope.launch {
+            announcementRepoManager.getAllAnnouncements().fold(
+                onSuccess = { announcements ->
+                    _allAnnouncementsState.value = UiState.Success(announcements)
+                },
+                onFailure = { error ->
+                    _allAnnouncementsState.value = UiState.Error(error.localizedMessage ?: "Failed to load all announcements")
+                }
+            )
+        }
+    }
+
+    fun updateAnnouncement(announcement: Announcement) {
+        _addUpdateAnnouncementState.value = UiState.Loading
+        viewModelScope.launch {
+            if (announcement.id.isBlank()) {
+                _addUpdateAnnouncementState.value = UiState.Error("Announcement ID cannot be empty for update operation.")
+                return@launch
             }
-            result.onFailure { error ->
-                _addAnnouncementState.value = UiState.Error(error.localizedMessage ?: "Failed to save announcement")
+            if (announcement.title.isBlank() || announcement.content.isBlank()) {
+                _addUpdateAnnouncementState.value = UiState.Error("Title and content cannot be empty.")
+                return@launch
             }
+
+            announcementRepoManager.updateAnnouncement(announcement).fold(
+                onSuccess = {
+                    _addUpdateAnnouncementState.value = UiState.Success(Unit)
+                    loadFiveLatestAnnouncements() // Refresh latest
+//                    loadAllAnnouncements() // Refresh all
+                },
+                onFailure = { error ->
+                    _addUpdateAnnouncementState.value = UiState.Error(error.localizedMessage ?: "Failed to update announcement")
+                }
+            )
         }
     }
 
     fun deleteAnnouncement(announcementId: String) {
         _deleteAnnouncementState.value = UiState.Loading
         viewModelScope.launch {
-            val result = repository.deleteAnnouncement(announcementId)
-            result.onSuccess {
-                _deleteAnnouncementState.value = UiState.Success(Unit)
-                loadFiveLatestAnnouncements()
-            }
-            result.onFailure { error ->
-                _deleteAnnouncementState.value = UiState.Error(error.localizedMessage ?: "Failed to delete announcement")
-            }
+            announcementRepoManager.deleteAnnouncement(announcementId).fold(
+                onSuccess = {
+                    _deleteAnnouncementState.value = UiState.Success(Unit)
+                    loadFiveLatestAnnouncements() // Refresh latest
+//                    loadAllAnnouncements() // Refresh all
+                },
+                onFailure = { error ->
+                    _deleteAnnouncementState.value = UiState.Error(error.localizedMessage ?: "Failed to delete announcement")
+                }
+            )
         }
     }
 
-    fun resetAddAnnouncementState() {
-        _addAnnouncementState.value = UiState.Idle
+    fun resetAddUpdateAnnouncementState() {
+        _addUpdateAnnouncementState.value = UiState.Idle
     }
 }

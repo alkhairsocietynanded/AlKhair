@@ -2,6 +2,7 @@ package com.zabibtech.alkhair.ui.user.fragments
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,7 +24,6 @@ import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.CalendarDayLayoutBinding
 import com.zabibtech.alkhair.databinding.CalendarMonthHeaderBinding
 import com.zabibtech.alkhair.databinding.FragmentAttendanceBinding
-import com.zabibtech.alkhair.ui.attendance.AttendanceViewModel
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
@@ -43,7 +43,7 @@ class AttendanceFragment : Fragment() {
 
     private var user: User? = null
 
-    private val attendanceViewModel: AttendanceViewModel by viewModels()
+    private val viewModel: UserAttendanceViewModel by viewModels()
 
     companion object {
         private const val ARG_USER = "arg_user"
@@ -69,41 +69,32 @@ class AttendanceFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAttendanceBinding.inflate(inflater, container, false)
-
-        user?.let { attendanceViewModel.loadAttendanceForUser(it.uid) }
-
+        user?.let { viewModel.loadAttendanceForUser(it.uid) }
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Setup calendar range, first day of week etc.
         val currentMonth = YearMonth.now()
         val firstMonth = currentMonth.minusMonths(12)
         val lastMonth = currentMonth.plusMonths(12)
-        val firstDayOfWeek = DayOfWeek.MONDAY  // ya aap locale-based
+        val firstDayOfWeek = DayOfWeek.MONDAY
 
         binding.calendarView.setup(firstMonth, lastMonth, firstDayOfWeek)
-
-        // Scroll to current month
         binding.calendarView.scrollToMonth(currentMonth)
 
-        // 👇 Add this line so the calendar knows which layout to use for headers
         binding.calendarView.monthHeaderResource = R.layout.calendar_month_header
-        // Optional: show month header (e.g. “April 2025”) above each month
         binding.calendarView.monthHeaderBinder =
             object : MonthHeaderFooterBinder<MonthHeaderContainer> {
                 override fun create(view: View) = MonthHeaderContainer(view)
 
                 override fun bind(container: MonthHeaderContainer, data: CalendarMonth) {
-                    // Month title (e.g. "September 2025")
                     val title =
                         data.yearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) +
                                 " " + data.yearMonth.year
                     container.titleText.text = title
 
-                    // Week days row (bind only once per header view)
                     if (container.weekDaysContainer.tag == null) {
                         container.weekDaysContainer.tag = true
                         val daysOfWeek = data.weekDays.first().map { it.date.dayOfWeek }
@@ -119,7 +110,7 @@ class AttendanceFragment : Fragment() {
                 }
             }
 
-// --- Day Binder (default, avoid crash) ---
+        // Initial day binder setup
         binding.calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
             override fun create(view: View) = DayViewContainer(view)
             override fun bind(container: DayViewContainer, data: CalendarDay) {
@@ -129,85 +120,73 @@ class AttendanceFragment : Fragment() {
             }
         }
 
+        // Observe the ViewModel for attendance data
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                attendanceViewModel.userAttendance.collectLatest { state ->
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.userAttendance.collectLatest { state ->
                     when (state) {
-                        UiState.Loading -> {
-                            DialogUtils.showLoading(childFragmentManager)
-                        }
-
+                        is UiState.Loading -> showLoading(true)
                         is UiState.Success -> {
-                            DialogUtils.hideLoading(childFragmentManager)
-                            val attendanceMap = mutableMapOf<LocalDate, String>()
+                            showLoading(false)
 
-                            // Flatten data: merge all classes for this user
-                            state.data.values.forEach { dateMap ->
-                                dateMap.forEach { (dateStr, status) ->
-                                    val date = LocalDate.parse(dateStr) // "yyyy-MM-dd" format
-                                    attendanceMap[date] = status
+                            // Correctly process the List<Attendance>
+                            val attendanceMap = mutableMapOf<LocalDate, String>()
+                            state.data.forEach { attendanceRecord ->
+                                try {
+                                    val date = LocalDate.parse(attendanceRecord.date) // "yyyy-MM-dd" format
+                                    attendanceMap[date] = attendanceRecord.status
+                                } catch (e: Exception) {
+                                    Log.e("AttendanceFragment", "Invalid date format: ${attendanceRecord.date}", e)
                                 }
                             }
 
-                            binding.calendarView.dayBinder =
-                                object : MonthDayBinder<DayViewContainer> {
-                                    override fun create(view: View) = DayViewContainer(view)
+                            // Update the calendar day binder with the new data
+                            binding.calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
+                                override fun create(view: View) = DayViewContainer(view)
+                                override fun bind(container: DayViewContainer, data: CalendarDay) {
+                                    container.textView.text = data.date.dayOfMonth.toString()
+                                    container.textView.background = null
+                                    container.textView.alpha = if (data.position == DayPosition.MonthDate) 1f else 0.3f
 
-                                    override fun bind(
-                                        container: DayViewContainer,
-                                        data: CalendarDay
-                                    ) {
-                                        container.textView.text = data.date.dayOfMonth.toString()
-                                        container.textView.background = null
-                                        container.textView.alpha =
-                                            if (data.position == DayPosition.MonthDate) 1f else 0.3f
-
-                                        when (attendanceMap[data.date]) {
-                                            "Present" -> container.textView.setBackgroundResource(R.drawable.bg_present_day)
-                                            "Absent" -> container.textView.setBackgroundResource(R.drawable.bg_absent_day)
-                                            "Leave" -> container.textView.setBackgroundResource(R.drawable.bg_leave_day)
-
-                                        }
+                                    when (attendanceMap[data.date]) {
+                                        "Present" -> container.textView.setBackgroundResource(R.drawable.bg_present_day)
+                                        "Absent" -> container.textView.setBackgroundResource(R.drawable.bg_absent_day)
+                                        "Leave" -> container.textView.setBackgroundResource(R.drawable.bg_leave_day)
                                     }
                                 }
+                            }
                             binding.calendarView.notifyCalendarChanged()
                         }
-
                         is UiState.Error -> {
-                            DialogUtils.hideLoading(parentFragmentManager)
+                            showLoading(false)
+                            DialogUtils.showAlert(requireContext(), "Error", state.message)
                         }
-
-                        else -> {
-                            DialogUtils.hideLoading(parentFragmentManager)
-                        }
+                        else -> showLoading(false)
                     }
                 }
             }
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        DialogUtils.hideLoading(childFragmentManager)
+    private fun showLoading(isLoading: Boolean) {
+        if (isLoading) {
+            DialogUtils.showLoading(childFragmentManager)
+        } else {
+            DialogUtils.hideLoading(childFragmentManager)
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // Hide any active loading dialog to prevent window leaks when navigating away
-        DialogUtils.hideLoading(parentFragmentManager)
         _binding = null
     }
 
-    // ViewContainer for day cells
     class DayViewContainer(view: View) : ViewContainer(view) {
-        val binding = CalendarDayLayoutBinding.bind(view)
-        val textView = binding.calendarDayText
+        val textView: TextView = CalendarDayLayoutBinding.bind(view).calendarDayText
     }
 
-    // ViewContainer for month header
     class MonthHeaderContainer(view: View) : ViewContainer(view) {
-        val binding = CalendarMonthHeaderBinding.bind(view)
-        val titleText = binding.tvMonthTitle
-        val weekDaysContainer = binding.weekDaysContainer
+        val titleText: TextView = CalendarMonthHeaderBinding.bind(view).tvMonthTitle
+        val weekDaysContainer: ViewGroup = CalendarMonthHeaderBinding.bind(view).weekDaysContainer
     }
 }

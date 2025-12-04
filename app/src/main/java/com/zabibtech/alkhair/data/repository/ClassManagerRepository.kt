@@ -8,6 +8,7 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Deprecated("Use FirebaseClassRepository instead")
 @Singleton
 class ClassManagerRepository @Inject constructor() {
 

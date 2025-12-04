@@ -39,7 +39,7 @@ class AddAnnouncementSheet : BottomSheetDialogFragment() {
                     timeStamp = DateUtils.getCurrentTimestamp()
                 )
                 // ✅ Activity ko cast karein aur uska public function call karein
-                (activity as? AdminDashboardActivity)?.announcementViewModel?.addOrUpdateAnnouncement(
+                (activity as? AdminDashboardActivity)?.announcementViewModel?.createAnnouncement(
                     newAnnouncement
                 )
                 dismiss() // Data bhej kar bottom sheet ko band kar dein

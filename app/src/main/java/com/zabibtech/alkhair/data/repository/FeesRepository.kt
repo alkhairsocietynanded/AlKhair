@@ -6,6 +6,7 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Deprecated("Use FeesRepoManager instead")
 @Singleton
 class FeesRepository @Inject constructor() {
 
@@ -14,7 +15,9 @@ class FeesRepository @Inject constructor() {
     // ================================
     suspend fun addOrUpdateFee(feesModel: FeesModel) {
         val key =
-            feesModel.id.ifEmpty { feesRef.push().key ?: throw Exception("Failed to generate feesModel id") }
+            feesModel.id.ifEmpty {
+                feesRef.push().key ?: throw Exception("Failed to generate feesModel id")
+            }
 
         val newFee = feesModel.copy(id = key)
         feesRef.child(key).setValue(newFee).await()

@@ -6,22 +6,12 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * AnnouncementRepository Firebase Realtime Database mein announcements se mutalliq
- * tamam data operations (CRUD - Create, Read, Update, Delete) ko manage karta hai.
- *
- * @Inject constructor() - Hilt isko dependency ke taur par inject karne ke liye istemal karta hai.
- * @Singleton - Yeh sunishchit karta hai ki poori app mein is repository ka sirf ek hi instance bane.
- */
+
+@Deprecated("Use AnnouncementRepoManager instead")
 @Singleton
 class AnnouncementRepository @Inject constructor() {
 
-    /**
-     * Ek naya announcement database mein add karta hai.
-     *
-     * @param announcement Woh Announcement object jisko save karna hai.
-     * @return Result<Unit> - Success ya failure ko represent karta hai.
-     */
+
     suspend fun addAnnouncement(announcement: Announcement): Result<Unit> {
         return try {
             // Ek naya unique key generate karein aur uss par data set karein.
@@ -35,11 +25,6 @@ class AnnouncementRepository @Inject constructor() {
         }
     }
 
-    /**
-     * Database se saare announcements fetch karta hai.
-     *
-     * @return Result<List<Announcement>> - Announcements ki list ya error.
-     */
     suspend fun getAllAnnouncements(): Result<List<Announcement>> {
         return try {
             val snapshot = announcementsRef.get().await()
@@ -53,11 +38,6 @@ class AnnouncementRepository @Inject constructor() {
         }
     }
 
-    /**
-     * Database se 5 sabse naye (latest) announcements fetch karta hai.
-     *
-     * @return Result<List<Announcement>> - 5 latest announcements ki list ya error.
-     */
     suspend fun getFiveLatestAnnouncements(): Result<List<Announcement>> {
         return try {
             // ✅ Query ko 'timeStamp' ke hisab se order karein aur aakhri 5 results lein.
@@ -73,13 +53,6 @@ class AnnouncementRepository @Inject constructor() {
         }
     }
 
-    /**
-     * Ek maujooda announcement ko update karta hai.
-     *
-     * @param announcementId Uss announcement ki ID jisko update karna hai.
-     * @param updatedData Woh Map jismein updated fields hain.
-     * @return Result<Unit> - Success ya failure.
-     */
     suspend fun updateAnnouncement(
         announcementId: String,
         updatedData: Map<String, Any>
@@ -92,12 +65,6 @@ class AnnouncementRepository @Inject constructor() {
         }
     }
 
-    /**
-     * Ek announcement ko uski ID se delete karta hai.
-     *
-     * @param announcementId Uss announcement ki ID jisko delete karna hai.
-     * @return Result<Unit> - Success ya failure.
-     */
     suspend fun deleteAnnouncement(announcementId: String): Result<Unit> {
         return try {
             announcementsRef.child(announcementId).removeValue().await()

@@ -11,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.databinding.ActivityAttendanceBinding
 import com.zabibtech.alkhair.ui.user.UserViewModel
@@ -43,7 +44,6 @@ class AttendanceActivity : AppCompatActivity() {
         binding = ActivityAttendanceBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ✅ Insets handle karo
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -56,13 +56,12 @@ class AttendanceActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupObservers()
-        setupDateNavigation() // ✅ Add this
-        updateDateText() // Set initial date
+        setupDateNavigation()
+        updateDateText()
         reloadAttendanceForSelectedDate()
 
-        binding.swipeRefresh.setOnRefreshListener { userViewModel.loadUsers(role) }
+        binding.swipeRefresh.setOnRefreshListener { reloadAttendanceForSelectedDate() }
 
-        // ✅ Save Attendance Button
         binding.fabSaveAttendance.apply {
             visibility = View.GONE
             isEnabled = false
@@ -70,17 +69,19 @@ class AttendanceActivity : AppCompatActivity() {
             adapter.attendanceCompleteListener = { isComplete ->
                 visibility = if (isComplete) View.VISIBLE else View.GONE
                 isEnabled = true
-                updateAttendanceSummary() // ✅ Update summary whenever attendance changes
+                updateAttendanceSummary()
             }
 
             setOnClickListener {
                 val attendanceMap = adapter.getAttendanceMap()
                 if (adapter.isAttendanceComplete()) {
-                    attendanceViewModel.saveAttendanceForClass(
-                        classId,
-                        DateUtils.formatDate(selectedDate),
-                        attendanceMap
-                    )
+                    classId?.let {
+                        attendanceViewModel.saveAttendance(
+                            it,
+                            DateUtils.formatDate(selectedDate),
+                            attendanceMap
+                        )
+                    }
                 } else {
                     DialogUtils.showAlert(
                         this@AttendanceActivity,
@@ -90,9 +91,6 @@ class AttendanceActivity : AppCompatActivity() {
                 }
             }
         }
-
-        // ✅ Default shift filter = All
-//        binding.radioGroupShift.check(R.id.radioAll)
 
         setupChipFilterListeners()
         binding.chipGroupShift.check(R.id.chipAll)
@@ -110,28 +108,21 @@ class AttendanceActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = AttendanceAdapter { user ->
-            // Agar kisi student pe click karna ho (optional)
+            // Optional: Handle click on a student item
         }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
     }
 
     private fun setupObservers() {
-        // Students list observe
+        // Observer for student list
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userViewModel.userListState.collectLatest { state ->
-                    // Always stop refreshing first
-//                    binding.swipeRefresh.isRefreshing = false
+                    binding.swipeRefresh.isRefreshing = state is UiState.Loading
 
                     when (state) {
-                        UiState.Loading -> if (!binding.swipeRefresh.isRefreshing)
-                            DialogUtils.showLoading(supportFragmentManager)
-
                         is UiState.Success -> {
-                            DialogUtils.hideLoading(supportFragmentManager)
-                            binding.swipeRefresh.isRefreshing = false
-
                             val filtered = UserFilterHelper.filterUsers(
                                 users = state.data,
                                 role = role,
@@ -140,75 +131,60 @@ class AttendanceActivity : AppCompatActivity() {
                             )
                             adapter.submitList(filtered)
                         }
-
-                        is UiState.Error -> {
-                            DialogUtils.hideLoading(supportFragmentManager)
-                            binding.swipeRefresh.isRefreshing = false
-                            DialogUtils.showAlert(
-                                this@AttendanceActivity,
-                                "Error",
-                                state.message
-                            )
-                        }
-
-                        else -> {}
-                    }
-                }
-            }
-        }
-
-        // Attendance save state observe
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                attendanceViewModel.attendanceState.collectLatest { state ->
-                    when (state) {
-                        is UiState.Loading -> {
-                            binding.fabSaveAttendance.isEnabled = false
-                            DialogUtils.showLoading(supportFragmentManager) // ✅ Show loading dialog
-                        }
-
-                        is UiState.Success -> {
-                            binding.fabSaveAttendance.isEnabled = true
-                            binding.fabSaveAttendance.visibility = View.GONE // ✅ Hide on success
-                            adapter.resetChangeFlag() // ✅ Reset change flag
-                            DialogUtils.hideLoading(supportFragmentManager) // ✅ Hide loading
-                            DialogUtils.showAlert(
-                                this@AttendanceActivity,
-                                "Saved",
-                                "Attendance saved successfully"
-                            )
-                        }
-
-                        is UiState.Error -> {
-                            binding.fabSaveAttendance.isEnabled = true
-                            DialogUtils.hideLoading(supportFragmentManager) // ✅ Hide loading
-                            DialogUtils.showAlert(
-                                this@AttendanceActivity,
-                                "Error",
-                                state.message
-                            )
-                        }
-
-                        else -> binding.fabSaveAttendance.isEnabled = adapter.isAttendanceComplete()
-                    }
-                }
-            }
-        }
-
-        // ✅ Prefill attendance observer
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                attendanceViewModel.attendanceLoadState.collectLatest { state ->
-                    when (state) {
-                        is UiState.Success -> {
-                            adapter.setAttendanceMap(state.data) // ✅ Prefill adapter
-                        }
-
                         is UiState.Error -> {
                             DialogUtils.showAlert(this@AttendanceActivity, "Error", state.message)
                         }
+                        else -> Unit
+                    }
+                }
+            }
+        }
 
-                        else -> {}
+        // Observer for SAVING attendance state
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                attendanceViewModel.saveState.collectLatest { state ->
+                    when (state) {
+                        is UiState.Loading -> {
+                            binding.fabSaveAttendance.isEnabled = false
+                            DialogUtils.showLoading(supportFragmentManager, "Saving...")
+                        }
+                        is UiState.Success -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
+                            binding.fabSaveAttendance.visibility = View.GONE
+                            adapter.resetChangeFlag()
+                            Snackbar.make(binding.root, "Attendance saved successfully", Snackbar.LENGTH_SHORT).show()
+                            attendanceViewModel.resetSaveState()
+                        }
+                        is UiState.Error -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
+                            binding.fabSaveAttendance.isEnabled = true
+                            Snackbar.make(binding.root, state.message, Snackbar.LENGTH_LONG).show()
+                            attendanceViewModel.resetSaveState()
+                        }
+                        is UiState.Idle -> {
+                            binding.fabSaveAttendance.isEnabled = adapter.isAttendanceComplete()
+                        }
+                    }
+                }
+            }
+        }
+
+        // Observer for LOADING attendance to prefill the adapter
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                attendanceViewModel.attendanceState.collectLatest { state ->
+                    // Show swipe-to-refresh animation while loading attendance
+                    binding.swipeRefresh.isRefreshing = state is UiState.Loading
+
+                    when (state) {
+                        is UiState.Success -> {
+                            adapter.setAttendanceMap(state.data)
+                        }
+                        is UiState.Error -> {
+                            Snackbar.make(binding.root, "Could not load previous attendance: ${state.message}", Snackbar.LENGTH_LONG).show()
+                        }
+                        else -> Unit
                     }
                 }
             }
@@ -216,8 +192,7 @@ class AttendanceActivity : AppCompatActivity() {
     }
 
     private fun setupChipFilterListeners() {
-        binding.chipGroupShift.setOnCheckedStateChangeListener { group, checkedIds ->
-            // Since singleSelection is true, we can safely take the first ID.
+        binding.chipGroupShift.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
 
             currentShift = when (checkedIds.first()) {
@@ -226,59 +201,48 @@ class AttendanceActivity : AppCompatActivity() {
                 R.id.chipShaam -> "Shaam"
                 else -> "All"
             }
-            // Trigger a reload of the user list with the new filter
-            userViewModel.loadUsers(role)
+            userViewModel.loadUsers(role) // Reload users with the new shift filter
         }
     }
 
-
     private fun setupDateNavigation() {
-        // Previous Date button
         binding.btnPrevDate.setOnClickListener {
             selectedDate.add(Calendar.DAY_OF_YEAR, -1)
-            binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
+            updateDateText()
             reloadAttendanceForSelectedDate()
         }
 
-        // Next Date button
         binding.btnNextDate.setOnClickListener {
             selectedDate.add(Calendar.DAY_OF_YEAR, 1)
-            binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
+            updateDateText()
             reloadAttendanceForSelectedDate()
         }
 
-        // Click on TextView to pick date
         binding.tvSelectedDate.setOnClickListener {
             DateUtils.showMaterialDatePicker(supportFragmentManager, selectedDate) {
                 selectedDate = it
-                binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
+                updateDateText()
                 reloadAttendanceForSelectedDate()
             }
         }
-
-        // Initial date display
-        binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
     }
 
     private fun updateDateText() {
-        binding.tvSelectedDate.text = DateUtils.today()
+        binding.tvSelectedDate.text = DateUtils.formatDate(selectedDate)
     }
 
-    // Function to reload attendance based on selected date, role, and class
     private fun reloadAttendanceForSelectedDate() {
         adapter.clearAttendance()
         userViewModel.loadUsers(role)
-        attendanceViewModel.loadAttendanceForClass(
-            classId,
-            DateUtils.formatDate(selectedDate)
-        )
+        classId?.let {
+            attendanceViewModel.getAttendance(it, DateUtils.formatDate(selectedDate))
+        }
         binding.fabSaveAttendance.visibility = View.GONE
-        updateAttendanceSummary() // Reset summary
+        updateAttendanceSummary()
     }
 
     private fun updateAttendanceSummary() {
         val (presentCount, absentCount, leaveCount) = adapter.getAttendanceSummary()
-
         binding.tvSummaryPresent.text = presentCount.toString()
         binding.tvSummaryAbsent.text = absentCount.toString()
         binding.tvSummaryOnLeave.text = leaveCount.toString()

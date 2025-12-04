@@ -57,8 +57,8 @@ class MainActivity : AppCompatActivity() {
                             if (user == null) {
                                 goToLogin()
                             } else {
-                                // ✅ Fetch and cache divisions & classes
-                                viewModel.loadDivisionsAndClasses()
+                                // Data is now loaded reactively in the ViewModel's init block.
+                                // No need to call a manual load function here.
 
                                 // ✅ Route user
                                 routeToDashboard(user)
