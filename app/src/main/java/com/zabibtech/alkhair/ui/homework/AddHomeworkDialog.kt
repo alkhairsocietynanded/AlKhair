@@ -10,13 +10,19 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.firebase.storage.FirebaseStorage
 import com.zabibtech.alkhair.data.datastore.ClassDivisionStore
 import com.zabibtech.alkhair.data.datastore.UserStore
+import com.zabibtech.alkhair.data.models.ClassModel
+import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.models.Homework
 import com.zabibtech.alkhair.databinding.DialogAddHomeworkBinding
+import com.zabibtech.alkhair.utils.DialogUtils
+import com.zabibtech.alkhair.utils.UiState
 import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -40,8 +46,9 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     @Inject
     lateinit var userStore: UserStore
 
-    @Inject
-    lateinit var classDivisionStore: ClassDivisionStore
+    // Remove ClassDivisionStore dependency
+    // @Inject
+    // lateinit var classDivisionStore: ClassDivisionStore
 
     // Determine if we are editing an existing homework item
     private var isEditMode = false
@@ -76,7 +83,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupDropdowns()
+        setupDropdowns() // This will now observe ViewModel states
         prefillDataForEdit()
 
         binding.btnUploadAttachment.setOnClickListener {
@@ -120,8 +127,6 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
         val shift = binding.etShift.text.toString().trim()
         val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
-        // You could show a loading indicator here by adding a progress bar to your layout
-
         CoroutineScope(Dispatchers.Main).launch {
             val fileUrl = if (attachmentUri != null) {
                 uploadFile(attachmentUri!!)
@@ -151,42 +156,78 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             } else {
                 viewModel.addHomework(homework)
             }
-            // The activity will observe the mutation state and handle the result
             dismiss()
         }
     }
 
     private fun setupDropdowns() {
-        lifecycleScope.launch {
-            val divisions = classDivisionStore.getOrFetchClassList().map { it.division }.distinct()
-            val classes = classDivisionStore.getOrFetchClassList().map { it.className }.distinct()
-            val shift = listOf("Subah", "Dopahar", "Shaam")
-
-            val divisionAdapter =
-                ArrayAdapter(
-                    requireContext(),
-                    android.R.layout.simple_dropdown_item_1line,
-                    divisions
-                )
-            binding.etDivision.setAdapter(divisionAdapter)
-            val classAdapter =
-                ArrayAdapter(
-                    requireContext(),
-                    android.R.layout.simple_dropdown_item_1line,
-                    classes
-                )
-            binding.etClass.setAdapter(classAdapter)
-
-            val shiftAdapter =
-                ArrayAdapter(
-                    requireContext(),
-                    android.R.layout.simple_dropdown_item_1line,
-                    shift
-                )
-            binding.etShift.setAdapter(shiftAdapter)
-
-
+        // Observe classes and divisions from ViewModel
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Observe Classes
+                viewModel.classesState.collect { state ->
+                    when (state) {
+                        is UiState.Success -> {
+                            val classes = state.data.map { it.className }.distinct()
+                            setupClassAdapter(classes)
+                        }
+                        is UiState.Error -> {
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                        }
+                        else -> Unit // Idle or Loading states
+                    }
+                }
+            }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Observe Divisions
+                viewModel.divisionsState.collect { state ->
+                    when (state) {
+                        is UiState.Success -> {
+                            val divisions = state.data.map { it.name }.distinct()
+                            setupDivisionAdapter(divisions)
+                        }
+                        is UiState.Error -> {
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                        }
+                        else -> Unit // Idle or Loading states
+                    }
+                }
+            }
+        }
+        
+        // Shifts are static, so no need to observe
+        val shift = listOf("Subah", "Dopahar", "Shaam")
+        setupShiftAdapter(shift)
+    }
+
+    private fun setupClassAdapter(classes: List<String>) {
+        val classAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            classes
+        )
+        binding.etClass.setAdapter(classAdapter)
+    }
+
+    private fun setupDivisionAdapter(divisions: List<String>) {
+        val divisionAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            divisions
+        )
+        binding.etDivision.setAdapter(divisionAdapter)
+    }
+
+    private fun setupShiftAdapter(shifts: List<String>) {
+        val shiftAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            shifts
+        )
+        binding.etShift.setAdapter(shiftAdapter)
     }
 
     private fun validateInput(): Boolean {
@@ -238,6 +279,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
         _binding = null
     }
 
+    // Companion object remains the same for creating new instances
     companion object {
         fun newInstance(homework: Homework? = null): AddHomeworkDialog {
             val dialog = AddHomeworkDialog()

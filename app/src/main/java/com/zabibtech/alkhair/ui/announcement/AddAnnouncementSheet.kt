@@ -6,15 +6,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.fragment.app.viewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.Announcement
 import com.zabibtech.alkhair.databinding.BottomSheetAddAnnouncementBinding
 import com.zabibtech.alkhair.ui.dashboard.AdminDashboardActivity
+import com.zabibtech.alkhair.ui.fees.FeesViewModel
+import kotlin.getValue
 
 class AddAnnouncementSheet : BottomSheetDialogFragment() {
 
     private var _binding: BottomSheetAddAnnouncementBinding? = null
     private val binding get() = _binding!!
+    private val announcementViewModel: AnnouncementViewModel by viewModels(ownerProducer = { requireParentFragment() }) // Use parent fragment's ViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,9 +43,8 @@ class AddAnnouncementSheet : BottomSheetDialogFragment() {
                     timeStamp = DateUtils.getCurrentTimestamp()
                 )
                 // ✅ Activity ko cast karein aur uska public function call karein
-                (activity as? AdminDashboardActivity)?.announcementViewModel?.createAnnouncement(
-                    newAnnouncement
-                )
+                announcementViewModel.createAnnouncement(newAnnouncement)
+
                 dismiss() // Data bhej kar bottom sheet ko band kar dein
             } else {
                 Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT)

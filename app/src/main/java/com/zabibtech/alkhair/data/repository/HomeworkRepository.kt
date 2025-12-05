@@ -6,6 +6,7 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Deprecated("Use HomeworkRepoManager instead")
 @Singleton
 class HomeworkRepository @Inject constructor() {
 
@@ -21,7 +22,8 @@ class HomeworkRepository @Inject constructor() {
      */
     suspend fun updateHomework(homework: Homework) {
         if (homework.id.isBlank()) return
-        homeworkRef.child("${homework.className}_${homework.division}").child(homework.id).setValue(homework).await()
+        homeworkRef.child("${homework.className}_${homework.division}").child(homework.id)
+            .setValue(homework).await()
     }
 
     suspend fun getHomeworkListByClass(className: String, division: String): List<Homework> {
@@ -48,6 +50,7 @@ class HomeworkRepository @Inject constructor() {
      */
     suspend fun deleteHomework(homework: Homework) {
         if (homework.id.isBlank()) return
-        homeworkRef.child("${homework.className}_${homework.division}").child(homework.id).removeValue().await()
+        homeworkRef.child("${homework.className}_${homework.division}").child(homework.id)
+            .removeValue().await()
     }
 }

@@ -21,6 +21,9 @@ interface HomeworkDao {
     @Query("SELECT * FROM homework WHERE className = :className AND division = :division")
     fun getHomeworkByClass(className: String, division: String): Flow<List<Homework>>
 
+    @Query("DELETE FROM homework WHERE id = :homeworkId") // New: Delete by ID
+    suspend fun deleteHomeworkById(homeworkId: String)
+
     @Query("DELETE FROM homework")
     suspend fun clearAllHomework()
 }

@@ -2,18 +2,23 @@ package com.zabibtech.alkhair.ui.homework
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager // Import ClassDivisionRepoManager
+import com.zabibtech.alkhair.data.manager.HomeworkRepoManager
+import com.zabibtech.alkhair.data.models.ClassModel
+import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.models.Homework
-import com.zabibtech.alkhair.data.repository.HomeworkRepository
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeworkViewModel @Inject constructor(
-    private val repository: HomeworkRepository
+    private val homeworkRepoManager: HomeworkRepoManager,
+    private val classDivisionRepoManager: ClassDivisionRepoManager // Inject ClassDivisionRepoManager
 ) : ViewModel() {
 
     // State for loading the list of homework
@@ -24,6 +29,41 @@ class HomeworkViewModel @Inject constructor(
     private val _mutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val mutationState: StateFlow<UiState<Unit>> = _mutationState
 
+    // New: State for loading classes and divisions
+    private val _classesState = MutableStateFlow<UiState<List<ClassModel>>>(UiState.Idle)
+    val classesState: StateFlow<UiState<List<ClassModel>>> = _classesState
+
+    private val _divisionsState = MutableStateFlow<UiState<List<DivisionModel>>>(UiState.Idle)
+    val divisionsState: StateFlow<UiState<List<DivisionModel>>> = _divisionsState
+
+    init {
+        loadClassesAndDivisions() // Load classes and divisions on init
+    }
+
+    fun loadClassesAndDivisions() {
+        viewModelScope.launch {
+            // Observe local database for classes
+            classDivisionRepoManager.getAllClasses().catch {
+                _classesState.value = UiState.Error(it.localizedMessage ?: "Error loading classes")
+            }.collect {
+                _classesState.value = UiState.Success(it)
+            }
+        }
+        viewModelScope.launch {
+            // Observe local database for divisions
+            classDivisionRepoManager.getAllDivisions().catch {
+                _divisionsState.value = UiState.Error(it.localizedMessage ?: "Error loading divisions")
+            }.collect {
+                _divisionsState.value = UiState.Success(it)
+            }
+        }
+        // Initial data refresh from remote
+        viewModelScope.launch {
+            classDivisionRepoManager.refreshClasses()
+            classDivisionRepoManager.refreshDivisions()
+        }
+    }
+
     /**
      * Loads homework for a specific class and division.
      * The result is emitted via the [homeworkState].
@@ -31,13 +71,15 @@ class HomeworkViewModel @Inject constructor(
     fun loadHomework(className: String, division: String) {
         viewModelScope.launch {
             _homeworkState.value = UiState.Loading
-            try {
-                val homeworkList = repository.getHomeworkListByClass(className, division)
-                _homeworkState.value = UiState.Success(homeworkList)
-            } catch (e: Exception) {
-                _homeworkState.value =
-                    UiState.Error(e.localizedMessage ?: "Failed to load homework")
-            }
+            homeworkRepoManager.getHomeworkByClass(className, division).fold(
+                onSuccess = { homeworkList ->
+                    _homeworkState.value = UiState.Success(homeworkList)
+                },
+                onFailure = { error ->
+                    _homeworkState.value =
+                        UiState.Error(error.localizedMessage ?: "Failed to load homework")
+                }
+            )
         }
     }
 
@@ -48,13 +90,15 @@ class HomeworkViewModel @Inject constructor(
     fun loadAllHomework() {
         viewModelScope.launch {
             _homeworkState.value = UiState.Loading
-            try {
-                val allHomework = repository.getAllHomeworkList()
-                _homeworkState.value = UiState.Success(allHomework)
-            } catch (e: Exception) {
-                _homeworkState.value =
-                    UiState.Error(e.localizedMessage ?: "Failed to load all homework")
-            }
+            homeworkRepoManager.getAllHomework().fold(
+                onSuccess = { allHomework ->
+                    _homeworkState.value = UiState.Success(allHomework)
+                },
+                onFailure = { error ->
+                    _homeworkState.value =
+                        UiState.Error(error.localizedMessage ?: "Failed to load all homework")
+                }
+            )
         }
     }
 
@@ -65,12 +109,14 @@ class HomeworkViewModel @Inject constructor(
     fun addHomework(homework: Homework) {
         viewModelScope.launch {
             _mutationState.value = UiState.Loading
-            try {
-                repository.addHomework(homework)
-                _mutationState.value = UiState.Success(Unit)
-            } catch (e: Exception) {
-                _mutationState.value = UiState.Error(e.localizedMessage ?: "Failed to add homework")
-            }
+            homeworkRepoManager.createHomework(homework).fold(
+                onSuccess = { _ ->
+                    _mutationState.value = UiState.Success(Unit)
+                },
+                onFailure = { error ->
+                    _mutationState.value = UiState.Error(error.localizedMessage ?: "Failed to add homework")
+                }
+            )
         }
     }
 
@@ -81,13 +127,15 @@ class HomeworkViewModel @Inject constructor(
     fun updateHomework(homework: Homework) {
         viewModelScope.launch {
             _mutationState.value = UiState.Loading
-            try {
-                repository.updateHomework(homework)
-                _mutationState.value = UiState.Success(Unit)
-            } catch (e: Exception) {
-                _mutationState.value =
-                    UiState.Error(e.localizedMessage ?: "Failed to update homework")
-            }
+            homeworkRepoManager.updateHomework(homework).fold(
+                onSuccess = { _ ->
+                    _mutationState.value = UiState.Success(Unit)
+                },
+                onFailure = { error ->
+                    _mutationState.value =
+                        UiState.Error(error.localizedMessage ?: "Failed to update homework")
+                }
+            )
         }
     }
 
@@ -98,13 +146,15 @@ class HomeworkViewModel @Inject constructor(
     fun deleteHomework(homework: Homework) {
         viewModelScope.launch {
             _mutationState.value = UiState.Loading
-            try {
-                repository.deleteHomework(homework)
-                _mutationState.value = UiState.Success(Unit)
-            } catch (e: Exception) {
-                _mutationState.value =
-                    UiState.Error(e.localizedMessage ?: "Failed to delete homework")
-            }
+            homeworkRepoManager.deleteHomework(homework.id).fold(
+                onSuccess = { _ ->
+                    _mutationState.value = UiState.Success(Unit)
+                },
+                onFailure = { error ->
+                    _mutationState.value =
+                        UiState.Error(error.localizedMessage ?: "Failed to delete homework")
+                }
+            )
         }
     }
 

@@ -45,7 +45,7 @@ class AdminDashboardActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAdminDashboardBinding
     private lateinit var adapter: AnnouncementPagerAdapter
     private val mainViewModel: MainViewModel by viewModels()
-    val announcementViewModel: AnnouncementViewModel by viewModels()
+    private val announcementViewModel: AnnouncementViewModel by viewModels()
 
     @Inject
     lateinit var logoutManager: LogoutManager

@@ -18,5 +18,7 @@ class LocalHomeworkRepository @Inject constructor(
     suspend fun insertHomeworkList(homeworkList: List<Homework>) = 
         homeworkDao.insertHomeworkList(homeworkList)
 
+    suspend fun deleteHomeworkById(homeworkId: String) = homeworkDao.deleteHomeworkById(homeworkId) // New function
+
     suspend fun clearAll() = homeworkDao.clearAllHomework()
 }
