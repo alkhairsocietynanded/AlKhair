@@ -2,26 +2,18 @@ package com.zabibtech.alkhair.utils
 
 import android.content.Context
 import android.content.Intent
-import com.zabibtech.alkhair.data.datastore.UserStore
-import com.zabibtech.alkhair.data.repository.AuthRepository
+import com.zabibtech.alkhair.data.manager.AuthRepoManager
 import com.zabibtech.alkhair.ui.auth.LoginActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class LogoutManager @Inject constructor(
-    private val authRepo: AuthRepository,
-    private val sessionManager: UserStore
+    private val authRepoManager: AuthRepoManager
 ) {
     fun logout(context: Context) {
-        // direct coroutine chalao background me
-        CoroutineScope(Dispatchers.IO).launch {
-            authRepo.logout()
-            sessionManager.clearUser()
-        }
+        // Call logout from the single source of truth for authentication
+        authRepoManager.logout()
 
         // UI redirect
         val intent = Intent(context, LoginActivity::class.java)

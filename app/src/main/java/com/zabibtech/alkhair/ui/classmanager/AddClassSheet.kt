@@ -5,11 +5,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.snackbar.Snackbar
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.databinding.BottomSheetAddClassBinding
+import com.zabibtech.alkhair.utils.DialogUtils
 
 class AddClassSheet : BottomSheetDialogFragment() {
 
@@ -46,28 +47,49 @@ class AddClassSheet : BottomSheetDialogFragment() {
         setupViews()
 
         binding.btnSave.setOnClickListener {
-            val division = binding.etDivision.text.toString().trim()
-            val className = binding.etClassName.text.toString().trim()
+            handleSave()
+        }
+    }
 
-            if (division.isNotEmpty() && className.isNotEmpty()) {
-                if (existingClassId != null) {
-                    // Update existing class by calling the ViewModel directly
-                    val updatedClass = ClassModel(
-                        id = existingClassId!!,
-                        division = division,
-                        className = className
-                    )
-                    viewModel.updateClass(updatedClass)
-                } else {
-                    // Add new class by calling the ViewModel directly
-                    viewModel.addClass(className, division)
-                }
-                dismiss()
-            } else {
-                Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT)
-                    .show()
+    private fun handleSave() {
+        val division = binding.etDivision.text.toString().trim()
+        val className = binding.etClassName.text.toString().trim()
+
+        if (division.isEmpty() || className.isEmpty()) {
+            Snackbar.make(binding.root, "Please fill all fields", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        val divisionExists = divisions.any { it.equals(division, ignoreCase = true) }
+
+        if (divisionExists) {
+            saveClass(division, className)
+        } else {
+            DialogUtils.showConfirmation(
+                context = requireContext(),
+                title = "Create New Division",
+                message = "Division '$division' does not exist. Do you want to create it?",
+                positiveText = "Create"
+            ) {
+                viewModel.addDivision(division)
+                saveClass(division, className)
             }
         }
+    }
+    private fun saveClass(division: String, className: String) {
+        if (existingClassId != null) {
+            // Update existing class
+            val updatedClass = ClassModel(
+                id = existingClassId!!,
+                division = division,
+                className = className
+            )
+            viewModel.updateClass(updatedClass)
+        } else {
+            // Add new class
+            viewModel.addClass(className, division)
+        }
+        dismiss()
     }
 
     private fun setupViews() {

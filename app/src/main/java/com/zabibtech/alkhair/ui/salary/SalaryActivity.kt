@@ -28,7 +28,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
-import java.util.Calendar
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -88,7 +87,10 @@ class SalaryActivity : AppCompatActivity() {
                 )
             },
             onMarkPaid = { salary ->
-                val updated = salary.copy(paymentStatus = "Paid", paymentDate = getToday())
+                val updated = salary.copy(
+                    paymentStatus = "Paid",
+                    paymentDate = DateUtils.today()
+                ) // Use DateUtils.today()
                 viewModel.saveSalary(updated)
             }
         )
@@ -101,12 +103,11 @@ class SalaryActivity : AppCompatActivity() {
     private fun setupMonthDropdown() {
         val monthList = DateUtils.generateMonthListForPicker()
 
-        val monthAdapter =
-            ArrayAdapter(
-                this,
-                android.R.layout.simple_dropdown_item_1line,
-                monthList
-            )
+        val monthAdapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            monthList
+        )
         binding.spinnerMonth.setAdapter(monthAdapter)
         binding.spinnerMonth.setOnItemClickListener { _, _, position, _ ->
             selectedMonth = if (position == 0) null else monthList[position]
@@ -147,7 +148,6 @@ class SalaryActivity : AppCompatActivity() {
             }
         }
 
-        // ✅ FIX: Properly handle loading dialog for salary list
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.salaryListState.collectLatest { state ->
@@ -164,10 +164,7 @@ class SalaryActivity : AppCompatActivity() {
 
                         is UiState.Error -> {
                             DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(
-                                this@SalaryActivity,
-                                message = state.message
-                            )
+                            DialogUtils.showAlert(this@SalaryActivity, message = state.message)
                         }
 
                         is UiState.Idle -> {
@@ -178,7 +175,6 @@ class SalaryActivity : AppCompatActivity() {
             }
         }
 
-        // ✅ FIX: Separate loading dialog for mutations
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.salaryMutationState.collectLatest { state ->
@@ -211,17 +207,13 @@ class SalaryActivity : AppCompatActivity() {
             }
         }
 
-        // ✅ FIX: Chart data observer - no loading dialog needed
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.chartDataState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> setupChart(state.data)
                         is UiState.Error -> {
-                            DialogUtils.showAlert(
-                                this@SalaryActivity,
-                                message = state.message
-                            )
+                            DialogUtils.showAlert(this@SalaryActivity, message = state.message)
                         }
 
                         else -> {}
@@ -235,25 +227,20 @@ class SalaryActivity : AppCompatActivity() {
     private fun setupChart(data: Map<String, Double>) {
         val barChart = binding.salaryChart
 
-        // Prepare entries and labels from the data map
         val chartEntries = data.entries.mapIndexed { index, entry ->
             BarEntry(index.toFloat(), entry.value.toFloat())
         }
         val monthLabels = data.keys.toList()
 
-        // Create DataSet
         val dataSet = BarDataSet(chartEntries, "Monthly Salary Summary").apply {
             valueTextSize = 10f
-            // BUG FIX: Use ColorTemplate for reliable and modern colors
             colors = ColorTemplate.MATERIAL_COLORS.toList()
         }
 
-        // Create BarData
         val barData = BarData(dataSet).apply {
             barWidth = 0.4f
         }
 
-        // Configure BarChart
         barChart.apply {
             this.data = barData
             description.isEnabled = false
@@ -261,7 +248,6 @@ class SalaryActivity : AppCompatActivity() {
             axisRight.isEnabled = false
             animateY(1000)
 
-            // Configure X-axis
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 granularity = 1f
@@ -279,7 +265,9 @@ class SalaryActivity : AppCompatActivity() {
         val totalStaff = list.map { it.staffId }.distinct().size
 
         val formatter = NumberFormat.getCurrencyInstance(
-            Locale.Builder().setLanguage("en").setRegion("IN").build()
+            Locale.Builder().setLanguage("en").setRegion(
+                "IN"
+            ).build()
         )
         binding.tvTotalPaid.text = formatter.format(totalPaid)
         binding.tvTotalPending.text = formatter.format(totalPending)
@@ -298,17 +286,9 @@ class SalaryActivity : AppCompatActivity() {
     }
 
     private fun reloadData() {
-        viewModel.loadFilteredSalaries(selectedStaffId, selectedMonth)
+        viewModel.loadSalaries(selectedStaffId, selectedMonth)
         viewModel.loadSalaryChartData(selectedStaffId, selectedMonth)
     }
 
-
-    private fun getToday(): String {
-        val cal = Calendar.getInstance()
-        return "%04d-%02d-%02d".format(
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH) + 1,
-            cal.get(Calendar.DAY_OF_MONTH)
-        )
-    }
+    // getToday() function has been removed
 }

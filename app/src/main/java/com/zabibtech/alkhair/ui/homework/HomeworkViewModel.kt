@@ -1,9 +1,12 @@
 package com.zabibtech.alkhair.ui.homework
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager // Import ClassDivisionRepoManager
+import com.google.firebase.storage.FirebaseStorage
+import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager
 import com.zabibtech.alkhair.data.manager.HomeworkRepoManager
+import com.zabibtech.alkhair.data.manager.UserRepoManager
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.models.Homework
@@ -11,14 +14,19 @@ import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeworkViewModel @Inject constructor(
     private val homeworkRepoManager: HomeworkRepoManager,
-    private val classDivisionRepoManager: ClassDivisionRepoManager // Inject ClassDivisionRepoManager
+    private val classDivisionRepoManager: ClassDivisionRepoManager,
+    private val userRepoManager: UserRepoManager // Inject UserRepoManager
 ) : ViewModel() {
 
     // State for loading the list of homework
@@ -29,7 +37,6 @@ class HomeworkViewModel @Inject constructor(
     private val _mutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val mutationState: StateFlow<UiState<Unit>> = _mutationState
 
-    // New: State for loading classes and divisions
     private val _classesState = MutableStateFlow<UiState<List<ClassModel>>>(UiState.Idle)
     val classesState: StateFlow<UiState<List<ClassModel>>> = _classesState
 
@@ -37,131 +44,118 @@ class HomeworkViewModel @Inject constructor(
     val divisionsState: StateFlow<UiState<List<DivisionModel>>> = _divisionsState
 
     init {
-        loadClassesAndDivisions() // Load classes and divisions on init
+        loadClassesAndDivisions()
     }
 
-    fun loadClassesAndDivisions() {
+    private fun loadClassesAndDivisions() {
+        _classesState.value = UiState.Loading
         viewModelScope.launch {
-            // Observe local database for classes
-            classDivisionRepoManager.getAllClasses().catch {
-                _classesState.value = UiState.Error(it.localizedMessage ?: "Error loading classes")
-            }.collect {
-                _classesState.value = UiState.Success(it)
-            }
+            classDivisionRepoManager.getAllClasses().fold(
+                onSuccess = { classList -> _classesState.value = UiState.Success(classList) },
+                onFailure = { e -> _classesState.value = UiState.Error(e.localizedMessage ?: "Error loading classes") }
+            )
         }
+
+        _divisionsState.value = UiState.Loading
         viewModelScope.launch {
-            // Observe local database for divisions
-            classDivisionRepoManager.getAllDivisions().catch {
-                _divisionsState.value = UiState.Error(it.localizedMessage ?: "Error loading divisions")
-            }.collect {
-                _divisionsState.value = UiState.Success(it)
-            }
-        }
-        // Initial data refresh from remote
-        viewModelScope.launch {
-            classDivisionRepoManager.refreshClasses()
-            classDivisionRepoManager.refreshDivisions()
+            classDivisionRepoManager.getAllDivisions().fold(
+                onSuccess = { divisionList -> _divisionsState.value = UiState.Success(divisionList) },
+                onFailure = { e -> _divisionsState.value = UiState.Error(e.localizedMessage ?: "Error loading divisions") }
+            )
         }
     }
 
-    /**
-     * Loads homework for a specific class and division.
-     * The result is emitted via the [homeworkState].
-     */
+    fun createOrUpdateHomework(
+        isEditMode: Boolean,
+        existingHomework: Homework?,
+        className: String,
+        division: String,
+        shift: String,
+        subject: String,
+        title: String,
+        description: String,
+        newAttachmentUri: Uri?
+    ) {
+        _mutationState.value = UiState.Loading
+        viewModelScope.launch {
+            try {
+                val currentUser = userRepoManager.getCurrentUser().getOrNull()
+                if (currentUser == null) {
+                    _mutationState.value = UiState.Error("User not logged in")
+                    return@launch
+                }
+
+                val attachmentUrl = if (newAttachmentUri != null) {
+                    uploadFile(newAttachmentUri)
+                } else {
+                    existingHomework?.attachmentUrl
+                }
+
+                val homework = Homework(
+                    id = existingHomework?.id ?: UUID.randomUUID().toString(),
+                    className = className,
+                    division = division,
+                    shift = shift,
+                    subject = subject,
+                    title = title,
+                    description = description,
+                    date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()),
+                    teacherId = currentUser.uid,
+                    attachmentUrl = attachmentUrl
+                )
+
+                val result = if (isEditMode) {
+                    homeworkRepoManager.updateHomework(homework)
+                } else {
+                    homeworkRepoManager.createHomework(homework)
+                }
+
+                result.fold(
+                    onSuccess = { _mutationState.value = UiState.Success(Unit) },
+                    onFailure = { e -> _mutationState.value = UiState.Error(e.localizedMessage ?: "Submission failed") }
+                )
+            } catch (e: Exception) {
+                _mutationState.value = UiState.Error(e.localizedMessage ?: "An unexpected error occurred")
+            }
+        }
+    }
+
+    private suspend fun uploadFile(uri: Uri): String {
+        val storageRef = FirebaseStorage.getInstance().getReference("homework_attachments/${UUID.randomUUID()}")
+        val uploadTask = storageRef.putFile(uri).await()
+        return uploadTask.storage.downloadUrl.await().toString()
+    }
+    
     fun loadHomework(className: String, division: String) {
         viewModelScope.launch {
             _homeworkState.value = UiState.Loading
             homeworkRepoManager.getHomeworkByClass(className, division).fold(
-                onSuccess = { homeworkList ->
-                    _homeworkState.value = UiState.Success(homeworkList)
-                },
-                onFailure = { error ->
-                    _homeworkState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to load homework")
-                }
+                onSuccess = { homeworkList -> _homeworkState.value = UiState.Success(homeworkList) },
+                onFailure = { error -> _homeworkState.value = UiState.Error(error.localizedMessage ?: "Failed to load homework") }
             )
         }
     }
 
-    /**
-     * Loads all homework from all classes and divisions.
-     * The result is emitted via the [homeworkState].
-     */
     fun loadAllHomework() {
         viewModelScope.launch {
             _homeworkState.value = UiState.Loading
             homeworkRepoManager.getAllHomework().fold(
-                onSuccess = { allHomework ->
-                    _homeworkState.value = UiState.Success(allHomework)
-                },
-                onFailure = { error ->
-                    _homeworkState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to load all homework")
-                }
+                onSuccess = { allHomework -> _homeworkState.value = UiState.Success(allHomework) },
+                onFailure = { error -> _homeworkState.value = UiState.Error(error.localizedMessage ?: "Failed to load all homework") }
             )
         }
     }
 
-    /**
-     * Adds a new homework item.
-     * The result of the operation is emitted via the [mutationState].
-     */
-    fun addHomework(homework: Homework) {
-        viewModelScope.launch {
-            _mutationState.value = UiState.Loading
-            homeworkRepoManager.createHomework(homework).fold(
-                onSuccess = { _ ->
-                    _mutationState.value = UiState.Success(Unit)
-                },
-                onFailure = { error ->
-                    _mutationState.value = UiState.Error(error.localizedMessage ?: "Failed to add homework")
-                }
-            )
-        }
-    }
-
-    /**
-     * Updates an existing homework item.
-     * The result of the operation is emitted via the [mutationState].
-     */
-    fun updateHomework(homework: Homework) {
-        viewModelScope.launch {
-            _mutationState.value = UiState.Loading
-            homeworkRepoManager.updateHomework(homework).fold(
-                onSuccess = { _ ->
-                    _mutationState.value = UiState.Success(Unit)
-                },
-                onFailure = { error ->
-                    _mutationState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to update homework")
-                }
-            )
-        }
-    }
-
-    /**
-     * Deletes a homework item.
-     * The result of the operation is emitted via the [mutationState].
-     */
     fun deleteHomework(homework: Homework) {
         viewModelScope.launch {
             _mutationState.value = UiState.Loading
             homeworkRepoManager.deleteHomework(homework.id).fold(
-                onSuccess = { _ ->
-                    _mutationState.value = UiState.Success(Unit)
-                },
-                onFailure = { error ->
-                    _mutationState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to delete homework")
-                }
+                onSuccess = { _mutationState.value = UiState.Success(Unit) },
+                onFailure = { error -> _mutationState.value = UiState.Error(error.localizedMessage ?: "Failed to delete homework") }
             )
         }
     }
 
-    /**
-     * Resets the mutation state to Idle. Call this after consuming a
-     * Success or Error event in the UI to prevent it from being re-triggered.
-     */
     fun resetMutationState() {
         _mutationState.value = UiState.Idle
     }

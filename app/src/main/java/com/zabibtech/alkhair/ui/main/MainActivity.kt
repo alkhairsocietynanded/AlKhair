@@ -42,36 +42,29 @@ class MainActivity : AppCompatActivity() {
 
         progressBar = findViewById(R.id.progressBar)
 
-        // StateFlow observe karna
+        // Observe the user session state
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.state.collect { state ->
+                viewModel.userSessionState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
                             progressBar.visibility = View.VISIBLE
                         }
-
                         is UiState.Success -> {
                             progressBar.visibility = View.GONE
                             val user = state.data
                             if (user == null) {
                                 goToLogin()
                             } else {
-                                // Data is now loaded reactively in the ViewModel's init block.
-                                // No need to call a manual load function here.
-
-                                // ✅ Route user
                                 routeToDashboard(user)
                             }
                             finish()
                         }
-
                         is UiState.Error -> {
                             progressBar.visibility = View.GONE
                             goToLogin()
                             finish()
                         }
-
                         else -> {}
                     }
                 }
@@ -91,15 +84,12 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("com.zabibtech.alkhair", "Routing user. Role from ViewModel is: '${user.role}'")
 
-        // 2. Pehle check karein ke role valid hai ya nahi
         if (cleanRole !in listOf("admin", "teacher", "student")) {
-            // Agar role in teeno mein se koi nahi hai, to foran Login par bhejein
             goToLogin()
             finish() // MainActivity ko band karna na bhoolein
             return   // Function se bahar nikal jayein
         }
 
-        // 3. Agar role valid hai, tab hi aage barhein
         val destination = when (cleanRole) {
             "admin" -> AdminDashboardActivity::class.java
             "teacher" -> TeacherDashboardActivity::class.java

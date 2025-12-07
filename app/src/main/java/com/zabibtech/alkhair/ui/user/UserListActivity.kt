@@ -20,6 +20,7 @@ import com.zabibtech.alkhair.databinding.ActivityUserListBinding
 import com.zabibtech.alkhair.ui.user.helper.UserListUiController
 import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
+import com.zabibtech.alkhair.utils.Shift
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -82,9 +83,9 @@ class UserListActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val savedShift = shiftDataStore.getShift()
             val chipId = when (savedShift) {
-                "Subah" -> R.id.chipSubah
-                "Dopahar" -> R.id.chipDopahar
-                "Shaam" -> R.id.chipShaam
+                Shift.SUBAH -> R.id.chipSubah
+                Shift.DOPAHAR -> R.id.chipDopahar
+                Shift.SHAM -> R.id.chipShaam
                 else -> R.id.chipAll
             }
             binding.chipGroupShift.check(chipId)
@@ -92,10 +93,10 @@ class UserListActivity : AppCompatActivity() {
             uiController.setupListeners(role, classId, division, currentShift)
 
             // Initialize SwipeRefreshLayout
-/*            binding.swipeRefreshLayout.setColorSchemeResources(
-                R.color.md_theme_primary,
-                R.color.md_theme_onSurface
-            )*/
+            /*            binding.swipeRefreshLayout.setColorSchemeResources(
+                            R.color.md_theme_primary,
+                            R.color.md_theme_onSurface
+                        )*/
 
             // First-time load
             userViewModel.loadUsers(role)
@@ -185,10 +186,10 @@ class UserListActivity : AppCompatActivity() {
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
 
             currentShift = when (checkedIds.first()) {
-                R.id.chipSubah -> "Subah"
-                R.id.chipDopahar -> "Dopahar"
-                R.id.chipShaam -> "Shaam"
-                else -> "All"
+                R.id.chipSubah -> Shift.SUBAH
+                R.id.chipDopahar -> Shift.DOPAHAR
+                R.id.chipShaam -> Shift.SHAM
+                else -> Shift.ALL
             }
 
             lifecycleScope.launch {

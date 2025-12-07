@@ -3,20 +3,18 @@ package com.zabibtech.alkhair.ui.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zabibtech.alkhair.data.datastore.UserStore
 import com.zabibtech.alkhair.data.manager.AttendanceRepoManager
+import com.zabibtech.alkhair.data.manager.AuthRepoManager
 import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager
+import com.zabibtech.alkhair.data.manager.UserRepoManager
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.models.User
-import com.zabibtech.alkhair.data.repository.AuthRepository
-import com.zabibtech.alkhair.data.repository.UserRepository
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,15 +33,14 @@ data class DashboardStats(
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val authRepo: AuthRepository,
-    private val userRepo: UserRepository, // Note: This is still an old repository
+    private val authRepoManager: AuthRepoManager,
+    private val userRepoManager: UserRepoManager,
     private val attendanceRepoManager: AttendanceRepoManager,
-    private val classDivisionRepoManager: ClassDivisionRepoManager,
-    private val sessionManager: UserStore
+    private val classDivisionRepoManager: ClassDivisionRepoManager
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<UiState<User?>>(UiState.Idle)
-    val state: StateFlow<UiState<User?>> = _state
+    private val _userSessionState = MutableStateFlow<UiState<User?>>(UiState.Idle)
+    val userSessionState: StateFlow<UiState<User?>> = _userSessionState
 
     // Single StateFlow for all dashboard stats
     private val _dashboardState = MutableStateFlow<UiState<DashboardStats>>(UiState.Idle)
@@ -56,88 +53,95 @@ class MainViewModel @Inject constructor(
     val classes: StateFlow<List<ClassModel>> = _classes
 
     init {
-        // Reactively observe classes and divisions from the local database
+        // Fetch initial data for classes and divisions for other potential observers
+        loadClassesAndDivisions()
+    }
+
+    fun loadClassesAndDivisions() {
         viewModelScope.launch {
-            classDivisionRepoManager.getAllClasses().catch { /* Handle error if needed */ }
-                .collect { _classes.value = it }
+            classDivisionRepoManager.getAllClasses().fold(
+                onSuccess = { classList -> _classes.value = classList },
+                onFailure = { e -> Log.e("MainViewModel", "Error loading classes", e) }
+            )
         }
         viewModelScope.launch {
-            classDivisionRepoManager.getAllDivisions().catch { /* Handle error if needed */ }
-                .collect { _divisions.value = it }
+            classDivisionRepoManager.getAllDivisions().fold(
+                onSuccess = { divisionList -> _divisions.value = divisionList },
+                onFailure = { e -> Log.e("MainViewModel", "Error loading divisions", e) }
+            )
         }
     }
 
     // ================================
-    // User session management
+    // User session management - Refactored
     // ================================
     fun checkUser() {
-        _state.value = UiState.Loading
+        _userSessionState.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                val uid = authRepo.currentUserUid()
-                if (uid == null) {
-                    _state.value = UiState.Success(null)
-                } else {
-                    val user = userRepo.getUserById(uid)
-                    if (user != null) {
-                        sessionManager.saveUser(user)
-                    }
-                    _state.value = UiState.Success(user)
+            userRepoManager.getCurrentUser().fold(
+                onSuccess = { user ->
+                    // user will be null if not logged in, which is the desired outcome
+                    _userSessionState.value = UiState.Success(user)
+                },
+                onFailure = { e ->
+                    Log.e("MainViewModel", "Failed to fetch current user", e)
+                    // If fetching fails, we can log the user out as a safety measure
+                    authRepoManager.logout()
+                    _userSessionState.value = UiState.Success(null)
                 }
-            } catch (e: Exception) {
-                Log.d("MainViewModel.checkUser", "checkUser: ${e.message}")
-                val localUser = sessionManager.getUser()
-                _state.value = UiState.Success(localUser) // On error, fallback to local user
-            }
+            )
         }
     }
 
     // ================================
-    // Dashboard Statistics
+    // Dashboard Statistics - Refactored
     // ================================
     fun loadDashboardStats() {
         _dashboardState.value = UiState.Loading
         viewModelScope.launch {
-            try {
-                // Fetch all data required for the dashboard
-                val users = userRepo.getAllUsers() // This still uses the old repository
-                val classList = _classes.value // Use the already observed value
+            // Fetch all required data using the repo managers to avoid race conditions
+            val usersResult = userRepoManager.getAllUsers()
+            val classesResult = classDivisionRepoManager.getAllClasses()
+            val attendanceResult = attendanceRepoManager.getAttendanceForDate(
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            )
 
-                // Fetch attendance data for the current date using the new manager
-                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val currentDate = sdf.format(Date())
+            // Process results using .fold() for clean error handling
+            usersResult.fold(
+                onSuccess = { users ->
+                    classesResult.fold(
+                        onSuccess = { classList ->
+                            attendanceResult.fold(
+                                onSuccess = { attendanceList ->
+                                    val present = attendanceList.count { it.status.equals("Present", ignoreCase = true) }
+                                    val absent = attendanceList.count { !it.status.equals("Present", ignoreCase = true) }
+                                    val totalAttendance = present + absent
+                                    val attendancePercentage = if (totalAttendance > 0) (present * 100) / totalAttendance else 0
 
-                // Use the new "smart get" function which returns a Result
-                val attendanceResult = attendanceRepoManager.getAttendanceForDate(currentDate)
-                val attendanceList = attendanceResult.getOrThrow() // Let the outer try-catch handle failure
-
-                val present =
-                    attendanceList.count { it.status.equals("Present", ignoreCase = true) }
-                val absent =
-                    attendanceList.count { !it.status.equals("Present", ignoreCase = true) }
-
-                val totalAttendance = present + absent
-                val attendancePercentage =
-                    if (totalAttendance > 0) (present * 100) / totalAttendance else 0
-
-                // Create a single stats object
-                val stats = DashboardStats(
-                    studentsCount = users.count { it.role == Roles.STUDENT },
-                    teachersCount = users.count { it.role == Roles.TEACHER },
-                    classesCount = classList.size,
-                    presentCount = present,
-                    absentCount = absent,
-                    attendancePercentage = attendancePercentage
-                )
-
-                // Emit the success state with the combined data
-                _dashboardState.value = UiState.Success(stats)
-
-            } catch (e: Exception) {
-                // Emit the error state
-                _dashboardState.value =
-                    UiState.Error(e.localizedMessage ?: "Failed to load dashboard stats")
-            }
+                                    val stats = DashboardStats(
+                                        studentsCount = users.count { it.role == Roles.STUDENT },
+                                        teachersCount = users.count { it.role == Roles.TEACHER },
+                                        classesCount = classList.size,
+                                        presentCount = present,
+                                        absentCount = absent,
+                                        attendancePercentage = attendancePercentage
+                                    )
+                                    _dashboardState.value = UiState.Success(stats)
+                                },
+                                onFailure = { e ->
+                                    _dashboardState.value = UiState.Error(e.localizedMessage ?: "Failed to load attendance stats")
+                                }
+                            )
+                        },
+                        onFailure = { e ->
+                            _dashboardState.value = UiState.Error(e.localizedMessage ?: "Failed to load class stats")
+                        }
+                    )
+                },
+                onFailure = { e ->
+                    _dashboardState.value = UiState.Error(e.localizedMessage ?: "Failed to load user stats")
+                }
+            )
         }
     }
 }

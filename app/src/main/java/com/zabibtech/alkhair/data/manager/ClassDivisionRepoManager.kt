@@ -7,7 +7,8 @@ import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseClassRepository
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseDivisionRepository
-import kotlinx.coroutines.flow.Flow
+import com.zabibtech.alkhair.utils.StaleDetector
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,7 +24,38 @@ class ClassDivisionRepoManager @Inject constructor(
     // Division Logic
     // =============================
 
-    fun getAllDivisions(): Flow<List<DivisionModel>> = localDivisionRepo.getAllDivisions()
+    suspend fun getAllDivisions(): Result<List<DivisionModel>> {
+        val localData = try {
+            localDivisionRepo.getAllDivisions().first()
+        } catch (e: Exception) {
+            Log.w("ClassDivisionRepoManager", "Could not get all local divisions", e)
+            emptyList()
+        }
+
+        if (localData.isNotEmpty() && localData.all { !StaleDetector.isStale(it.updatedAt) }) {
+            return Result.success(localData)
+        }
+
+        val remoteResult = firebaseDivisionRepo.getAllDivisions()
+        return remoteResult.fold(
+            onSuccess = { remoteList ->
+                try {
+                    val updated = remoteList.map { it.copy(updatedAt = System.currentTimeMillis()) }
+                    localDivisionRepo.insertDivisions(updated)
+                } catch (e: Exception) {
+                    Log.e(
+                        "ClassDivisionRepoManager",
+                        "Failed to refresh divisions cache from remote",
+                        e
+                    )
+                }
+                Result.success(remoteList)
+            },
+            onFailure = { exception ->
+                if (localData.isNotEmpty()) Result.success(localData) else Result.failure(exception)
+            }
+        )
+    }
 
     suspend fun addDivision(division: DivisionModel): Result<DivisionModel> {
         val result = firebaseDivisionRepo.addDivision(division)
@@ -75,8 +107,38 @@ class ClassDivisionRepoManager @Inject constructor(
     // =============================
     // Class Logic
     // =============================
+    suspend fun getAllClasses(): Result<List<ClassModel>> {
+        val localData = try {
+            localClassRepo.getAllClasses().first()
+        } catch (e: Exception) {
+            Log.w("ClassDivisionRepoManager", "Could not get all local classes", e)
+            emptyList()
+        }
 
-    fun getAllClasses(): Flow<List<ClassModel>> = localClassRepo.getAllClasses()
+        if (localData.isNotEmpty() && localData.all { !StaleDetector.isStale(it.updatedAt) }) {
+            return Result.success(localData)
+        }
+
+        val remoteResult = firebaseClassRepo.getAllClasses()
+        return remoteResult.fold(
+            onSuccess = { remoteList ->
+                try {
+                    val updated = remoteList.map { it.copy(updatedAt = System.currentTimeMillis()) }
+                    localClassRepo.insertClasses(updated)
+                } catch (e: Exception) {
+                    Log.e(
+                        "ClassDivisionRepoManager",
+                        "Failed to refresh classes cache from remote",
+                        e
+                    )
+                }
+                Result.success(remoteList)
+            },
+            onFailure = { exception ->
+                if (localData.isNotEmpty()) Result.success(localData) else Result.failure(exception)
+            }
+        )
+    }
 
     suspend fun addClass(classModel: ClassModel): Result<ClassModel> {
         // Step 1: Check if the division exists.
@@ -84,7 +146,10 @@ class ClassDivisionRepoManager @Inject constructor(
 
         // Handle failure in checking
         if (divisionExistsResult.isFailure) {
-            return Result.failure(divisionExistsResult.exceptionOrNull() ?: Exception("Failed to check division existence"))
+            return Result.failure(
+                divisionExistsResult.exceptionOrNull()
+                    ?: Exception("Failed to check division existence")
+            )
         }
 
         // If division does not exist, create it using the manager's own `addDivision` function.
@@ -92,7 +157,10 @@ class ClassDivisionRepoManager @Inject constructor(
             val newDivision = DivisionModel(name = classModel.division)
             val addDivisionResult = addDivision(newDivision) // This handles remote + local caching
             if (addDivisionResult.isFailure) {
-                return Result.failure(addDivisionResult.exceptionOrNull() ?: Exception("Failed to create new division"))
+                return Result.failure(
+                    addDivisionResult.exceptionOrNull()
+                        ?: Exception("Failed to create new division")
+                )
             }
         }
 
@@ -133,6 +201,7 @@ class ClassDivisionRepoManager @Inject constructor(
         }
         return result
     }
+
 
     suspend fun refreshClasses() {
         firebaseClassRepo.getAllClasses().onSuccess { classes ->

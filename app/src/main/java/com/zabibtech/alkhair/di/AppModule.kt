@@ -5,7 +5,6 @@ import androidx.room.Room
 import com.google.gson.Gson
 import com.zabibtech.alkhair.data.datastore.AppDataStore
 import com.zabibtech.alkhair.data.datastore.ShiftDataStore
-import com.zabibtech.alkhair.data.datastore.UserStore
 import com.zabibtech.alkhair.data.local.dao.ClassDao
 import com.zabibtech.alkhair.data.local.dao.DivisionDao
 import com.zabibtech.alkhair.data.local.database.AppDatabase
@@ -33,14 +32,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideGson(): Gson = Gson()
-
-    @Provides
-    @Singleton
-    fun provideUserStore(
-        appDataStore: AppDataStore
-    ): UserStore {
-        return UserStore(appDataStore)
-    }
 
     @Provides
     @Singleton

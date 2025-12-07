@@ -7,7 +7,9 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityLoginBinding
 import com.zabibtech.alkhair.ui.dashboard.AdminDashboardActivity
@@ -16,6 +18,7 @@ import com.zabibtech.alkhair.ui.dashboard.TeacherDashboardActivity
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
@@ -33,6 +36,11 @@ class LoginActivity : AppCompatActivity() {
             insets
         }
 
+        setupListeners()
+        observeLoginState()
+    }
+
+    private fun setupListeners() {
         binding.btnLogin.setOnClickListener {
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString().trim()
@@ -44,43 +52,52 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.tvSignupRedirect.setOnClickListener {
-            /*startActivity(Intent(this, StudentSignupActivity::class.java))
-            finish()*/
-
             DialogUtils.showAlert(this, "Admission", "Please contact headmaster for admission")
         }
+    }
 
-        viewModel.state.observe(this, Observer { state ->
-            when (state) {
-                is UiState.Loading -> {
-                    DialogUtils.showLoading(supportFragmentManager, "Logging in...")
-                }
+    private fun observeLoginState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.loginState.collect { state ->
+                    when (state) {
+                        is UiState.Loading -> {
+                            DialogUtils.showLoading(supportFragmentManager, "Logging in...")
+                        }
 
-                is UiState.Success -> {
-                    DialogUtils.hideLoading(supportFragmentManager)
-                    val user = state.data
-                    routeToDashboard(user)
-                }
+                        is UiState.Success -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
+                            routeToDashboard(state.data)
+                            finish() // Finish LoginActivity after successful login
+                        }
 
-                is UiState.Error -> {
-                    DialogUtils.hideLoading(supportFragmentManager)
-//                    Toast.makeText(this, state.message, Toast.LENGTH_SHORT).show()
-                    DialogUtils.showAlert(this, "Error", state.message)
-                }
+                        is UiState.Error -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
+                            DialogUtils.showAlert(this@LoginActivity, "Error", state.message)
+                        }
 
-                else -> {
-                    DialogUtils.hideLoading(supportFragmentManager)
+                        else -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
+                        }
+                    }
                 }
             }
-        })
+        }
     }
 
     private fun routeToDashboard(user: User) {
-        when (user.role) {
-            "admin" -> startActivity(Intent(this, AdminDashboardActivity::class.java))
-            "teacher" -> startActivity(Intent(this, TeacherDashboardActivity::class.java))
-            "student" -> startActivity(Intent(this, StudentDashboardActivity::class.java))
+        val destination = when (user.role) {
+            "admin" -> AdminDashboardActivity::class.java
+            "teacher" -> TeacherDashboardActivity::class.java
+            "student" -> StudentDashboardActivity::class.java
+            else -> null // Handle unknown roles gracefully
         }
-        finish()
+
+        if (destination != null) {
+            startActivity(Intent(this, destination))
+        } else {
+            // Optional: Show an error or default to a certain screen
+            DialogUtils.showAlert(this, "Error", "Invalid user role. Please contact support.")
+        }
     }
 }

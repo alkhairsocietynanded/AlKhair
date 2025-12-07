@@ -8,7 +8,9 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityStudentSignupBinding
@@ -18,11 +20,12 @@ import com.zabibtech.alkhair.ui.dashboard.TeacherDashboardActivity
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class StudentSignupActivity : AppCompatActivity() {
     private lateinit var binding: ActivityStudentSignupBinding
-    private val vm: LoginViewModel by viewModels()
+    private val viewModel: LoginViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +38,11 @@ class StudentSignupActivity : AppCompatActivity() {
             insets
         }
 
+        setupListeners()
+        observeSignupState()
+    }
+
+    private fun setupListeners() {
         binding.tvLoginRedirect.setOnClickListener {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
@@ -55,42 +63,52 @@ class StudentSignupActivity : AppCompatActivity() {
             val student = User(
                 name = name,
                 email = email,
+                // Password should be handled securely and not stored in the User model
+                password = password, 
                 role = "student",
                 className = className,
                 divisionName = section
             )
 
-            vm.signup(email, password, student)
+            viewModel.signup(email, password, student)
         }
+    }
 
-        vm.state.observe(this, Observer { state ->
-            when (state) {
-                is UiState.Loading -> {
-                    Toast.makeText(this, "Signing up student...", Toast.LENGTH_SHORT).show()
+    private fun observeSignupState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.loginState.collect { state ->
+                    when (state) {
+                        is UiState.Loading -> {
+                            // Consider using DialogUtils.showLoading for consistency
+                            Toast.makeText(this@StudentSignupActivity, "Signing up student...", Toast.LENGTH_SHORT).show()
+                        }
+
+                        is UiState.Success -> {
+                            Toast.makeText(this@StudentSignupActivity, "Student created successfully", Toast.LENGTH_SHORT).show()
+                            routeToDashboard(state.data)
+                            finish()
+                        }
+
+                        is UiState.Error -> {
+                            DialogUtils.showAlert(this@StudentSignupActivity, "Error", state.message)
+                        }
+
+                        else -> {}
+                    }
                 }
-
-                is UiState.Success -> {
-                    Toast.makeText(this, "Student created successfully", Toast.LENGTH_SHORT).show()
-                    val user = state.data
-                    routeToDashboard(user)
-                    finish()
-                }
-
-                is UiState.Error -> {
-                    DialogUtils.showAlert(this, "Error", state.message)
-                }
-
-                else -> {}
             }
-        })
+        }
     }
 
     private fun routeToDashboard(user: User) {
-        when (user.role) {
-            "admin" -> startActivity(Intent(this, AdminDashboardActivity::class.java))
-            "teacher" -> startActivity(Intent(this, TeacherDashboardActivity::class.java))
-            "student" -> startActivity(Intent(this, StudentDashboardActivity::class.java))
+        val destination = when (user.role) {
+            "admin" -> AdminDashboardActivity::class.java
+            "teacher" -> TeacherDashboardActivity::class.java
+            "student" -> StudentDashboardActivity::class.java
+            else -> LoginActivity::class.java // Fallback to login
         }
+        startActivity(Intent(this, destination))
         finish()
     }
 }

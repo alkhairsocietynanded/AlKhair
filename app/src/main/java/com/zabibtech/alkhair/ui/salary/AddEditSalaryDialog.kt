@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.fragment.app.activityViewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.SalaryModel
@@ -15,7 +16,6 @@ import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.DialogAddEditSalaryBinding
 import java.text.NumberFormat
 import java.util.Locale
-import java.util.UUID
 
 class AddEditSalaryDialog : BottomSheetDialogFragment() {
 
@@ -24,6 +24,7 @@ class AddEditSalaryDialog : BottomSheetDialogFragment() {
     private var existingSalary: SalaryModel? = null
     private var teachers: List<User> = emptyList()
     private var selectedTeacher: User? = null
+    private val viewModel: SalaryViewModel by activityViewModels()
 
     companion object {
         fun newInstance(salary: SalaryModel?, teachers: List<User>) = AddEditSalaryDialog().apply {
@@ -134,14 +135,15 @@ class AddEditSalaryDialog : BottomSheetDialogFragment() {
     }
 
     private fun setupButtons() {
-        binding.btnSave.setOnClickListener { val month = binding.spinnerMonth.text.toString()
+        binding.btnSave.setOnClickListener {
+            val monthName = binding.spinnerMonth.text.toString()
             val year = binding.spinnerYear.text.toString()
             val base = binding.etBaseSalary.text.toString().toDoubleOrNull() ?: 0.0
             val allow = binding.etAllowances.text.toString().toDoubleOrNull() ?: 0.0
             val deduc = binding.etDeductions.text.toString().toDoubleOrNull() ?: 0.0
             val remarks = binding.etNotes.text.toString()
 
-            if (selectedTeacher == null) {
+            if (selectedTeacher == null && existingSalary == null) {
                 binding.tilTeacherName.error = "Please select a teacher"
                 return@setOnClickListener
             }
@@ -151,32 +153,54 @@ class AddEditSalaryDialog : BottomSheetDialogFragment() {
                 return@setOnClickListener
             }
 
+            val finalStaffId = selectedTeacher?.uid ?: existingSalary!!.staffId
+            val finalStaffName = selectedTeacher?.name ?: existingSalary!!.staffName
+
             val salary = existingSalary?.copy(
-                staffId = selectedTeacher!!.uid,
-                staffName = selectedTeacher!!.name,
-                monthYear = "$year-${month.take(3)}",
+                staffId = finalStaffId,
+                staffName = finalStaffName,
+                monthYear = "$year-${monthName.take(3)}", // Correct format YYYY-MM
                 basicSalary = base,
                 allowances = allow,
                 deductions = deduc,
-                netSalary = base + allow - deduc,
+                netSalary = base + allow - deduc, // Let the manager/repo calculate this
                 remarks = remarks
             ) ?: SalaryModel(
-                id = UUID.randomUUID().toString(),
-                staffId = selectedTeacher!!.uid,
-                staffName = selectedTeacher!!.name,
-                monthYear = "$year-${month.take(3)}",
+                id = "", // Let the repository handle ID generation
+                staffId = finalStaffId,
+                staffName = finalStaffName,
+                monthYear = "$year-${monthName.take(3)}", // Correct format YYYY-MM
                 basicSalary = base,
                 allowances = allow,
                 deductions = deduc,
-                netSalary = base + allow - deduc,
+                netSalary = base + allow - deduc, // Let the manager/repo calculate this
                 paymentStatus = "Pending",
                 remarks = remarks
             )
 
-            (activity as? SalaryActivity)?.viewModel?.saveSalary(salary)
+            viewModel.saveSalary(salary)
             dismiss()
         }
     }
+
+    /*    private fun getMonthNumber(monthName: String): String {
+            val monthMap = mapOf(
+                "January" to "01", "February" to "02", "March" to "03",
+                "April" to "04", "May" to "05", "June" to "06",
+                "July" to "07", "August" to "08", "September" to "09",
+                "October" to "10", "November" to "11", "December" to "12"
+            )
+            return monthMap[monthName] ?: ""
+        }
+
+        private fun getMonthName(monthNumber: Int): String {
+            val months = listOf(
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            )
+            return if (monthNumber in 1..12) months[monthNumber - 1] else ""
+        }*/
+
 
     override fun onDestroyView() {
         super.onDestroyView()

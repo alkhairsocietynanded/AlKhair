@@ -29,34 +29,30 @@ class ClassManagerViewModel @Inject constructor(
     val operationState: StateFlow<UiState<Unit>> = _operationState
 
     init {
-        // Observe local database for divisions
+        // Initial data load
+        loadClassesAndDivisions()
+    }
+
+    private fun loadClassesAndDivisions() {
+        _divisions.value = UiState.Loading
         viewModelScope.launch {
-            repoManager.getAllDivisions().catch { e ->
-                _divisions.value = UiState.Error(e.localizedMessage ?: "Error loading divisions")
-            }.collect { divisionList ->
-                _divisions.value = UiState.Success(divisionList)
-            }
+            repoManager.getAllDivisions().fold(
+                onSuccess = { divisionList -> _divisions.value = UiState.Success(divisionList) },
+                onFailure = { e -> _divisions.value = UiState.Error(e.localizedMessage ?: "Error loading divisions") }
+            )
         }
 
-        // Observe local database for classes
+        _classes.value = UiState.Loading
         viewModelScope.launch {
-            repoManager.getAllClasses().catch { e ->
-                _classes.value = UiState.Error(e.localizedMessage ?: "Error loading classes")
-            }.collect { classList ->
-                _classes.value = UiState.Success(classList)
-            }
+            repoManager.getAllClasses().fold(
+                onSuccess = { classList -> _classes.value = UiState.Success(classList) },
+                onFailure = { e -> _classes.value = UiState.Error(e.localizedMessage ?: "Error loading classes") }
+            )
         }
-
-        // Initial data refresh from remote
-        refreshAll()
     }
 
     fun refreshAll() {
-        viewModelScope.launch {
-            _divisions.value = UiState.Loading
-            repoManager.refreshDivisions()
-            repoManager.refreshClasses()
-        }
+        loadClassesAndDivisions()
     }
 
     fun resetOperationState() {
