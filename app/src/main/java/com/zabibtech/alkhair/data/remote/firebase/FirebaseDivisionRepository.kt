@@ -68,4 +68,15 @@ class FirebaseDivisionRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun getDivisionsUpdatedAfter(timestamp: Long): Result<List<DivisionModel>> {
+        return try {
+            val snapshot = divisionsRef.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
+            val divisions = snapshot.children.mapNotNull { it.getValue(DivisionModel::class.java) }
+            Result.success(divisions)
+        } catch (e: Exception) {
+            Log.e("FirebaseDivisionRepo", "Error getting updated divisions", e)
+            Result.failure(e)
+        }
+    }
 }

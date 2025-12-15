@@ -109,4 +109,15 @@ class FirebaseSalaryRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun getSalariesUpdatedAfter(timestamp: Long): Result<List<SalaryModel>> {
+        return try {
+            val snapshot = salariesRef.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
+            val salaries = snapshot.children.mapNotNull { it.getValue(SalaryModel::class.java) }
+            Result.success(salaries)
+        } catch (e: Exception) {
+            Log.e("FirebaseSalaryRepo", "Error getting updated salaries", e)
+            Result.failure(e)
+        }
+    }
 }

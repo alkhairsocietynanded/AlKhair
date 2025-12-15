@@ -1,5 +1,6 @@
 package com.zabibtech.alkhair.data.manager
 
+import android.util.Log
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseAuthRepository
 import javax.inject.Inject
@@ -18,6 +19,7 @@ class AuthRepoManager @Inject constructor(
                 // If login is successful, fetch the user details from the database
                 userRepoManager.getUserById(uid).fold(
                     onSuccess = { user ->
+                        Log.d("Auth:Login", "login: $user || uid = $uid")
                         if (user != null) {
                             Result.success(user)
                         } else {
@@ -43,6 +45,7 @@ class AuthRepoManager @Inject constructor(
                 // If signup is successful, save the user details to the database
                 val finalUser = user.copy(uid = uid)
                 userRepoManager.createUser(finalUser)
+                
             },
             onFailure = { e ->
                 // If signup fails, return the failure

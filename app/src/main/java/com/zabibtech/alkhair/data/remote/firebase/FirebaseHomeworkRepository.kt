@@ -99,4 +99,15 @@ class FirebaseHomeworkRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun getHomeworkUpdatedAfter(timestamp: Long): Result<List<Homework>> {
+        return try {
+            val snapshot = homeworkRef.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
+            val homeworkList = snapshot.children.mapNotNull { it.getValue(Homework::class.java) }
+            Result.success(homeworkList)
+        } catch (e: Exception) {
+            Log.e("FirebaseHomeworkRepo", "Error getting updated homework", e)
+            Result.failure(e)
+        }
+    }
 }

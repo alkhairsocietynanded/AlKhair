@@ -66,4 +66,15 @@ class FirebaseClassRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun getClassesUpdatedAfter(timestamp: Long): Result<List<ClassModel>> {
+        return try {
+            val snapshot = classesRef.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
+            val classes = snapshot.children.mapNotNull { it.getValue(ClassModel::class.java) }
+            Result.success(classes)
+        } catch (e: Exception) {
+            Log.e("FirebaseClassRepo", "Error getting updated classes", e)
+            Result.failure(e)
+        }
+    }
 }

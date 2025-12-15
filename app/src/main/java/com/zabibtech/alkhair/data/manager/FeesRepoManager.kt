@@ -2,16 +2,18 @@ package com.zabibtech.alkhair.data.manager
 
 import android.util.Log
 import com.zabibtech.alkhair.data.local.local_repos.LocalFeesRepository
+import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseFeesRepository
-import com.zabibtech.alkhair.utils.StaleDetector
+import com.zabibtech.alkhair.utils.FirebaseRefs
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class FeesRepoManager @Inject constructor(
-    private val localFeesRepo: LocalFeesRepository, // Ab yeh class hai
+    private val localFeesRepo: LocalFeesRepository,
     private val firebaseFeesRepo: FirebaseFeesRepository
 ) {
 
@@ -19,7 +21,7 @@ class FeesRepoManager @Inject constructor(
         val result = firebaseFeesRepo.saveFee(feesModel)
         result.onSuccess { savedFee ->
             try {
-                localFeesRepo.insertFee(savedFee) // Method name updated
+                localFeesRepo.insertFee(savedFee.copy(updatedAt = System.currentTimeMillis()))
             } catch (e: Exception) {
                 Log.e("FeesRepoManager", "Failed to cache fees locally: ${savedFee.id}", e)
             }
@@ -27,43 +29,25 @@ class FeesRepoManager @Inject constructor(
         return result
     }
 
-    suspend fun getFee(feeId: String): Result<FeesModel> {
-        val localData = try {
-            localFeesRepo.getFeeById(feeId).first() // Flow se first() call kiya
+    suspend fun getFee(feeId: String): Result<FeesModel?> {
+        // Simple Getter: Always return local data. Syncing is a separate concern.
+        return try {
+            val localData = localFeesRepo.getFeeById(feeId).first()
+            Result.success(localData)
         } catch (e: Exception) {
-            Log.w("FeesRepoManager", "Could not get local fee data for ID: $feeId", e)
-            null
+            Log.e("FeesRepoManager", "Could not get local fee data for ID: $feeId", e)
+            Result.failure(e)
         }
-
-        if (localData != null && !StaleDetector.isStale(localData.updatedAt)) {
-            return Result.success(localData)
-        }
-
-        val remoteResult = firebaseFeesRepo.getFee(feeId)
-        return remoteResult.fold(
-            onSuccess = { feesModel ->
-                try {
-                    localFeesRepo.insertFee(feesModel) // Method name updated
-                } catch (e: Exception) {
-                    Log.e("FeesRepoManager", "Failed to refresh fees cache from remote for ID: $feeId", e)
-                }
-                Result.success(feesModel)
-            },
-            onFailure = { exception ->
-                if (localData != null) Result.success(localData) else Result.failure(exception)
-            }
-        )
     }
 
     suspend fun getAllFees(): Result<List<FeesModel>> {
         val localData = try {
             localFeesRepo.getAllFees().first()
         } catch (e: Exception) {
-            Log.w("FeesRepoManager", "Could not get all local fees data", e)
             emptyList()
         }
 
-        if (localData.isNotEmpty() && localData.all { !StaleDetector.isStale(it.updatedAt) }) {
+        if (localData.isNotEmpty()) {
             return Result.success(localData)
         }
 
@@ -71,83 +55,63 @@ class FeesRepoManager @Inject constructor(
         return remoteResult.fold(
             onSuccess = { feesList ->
                 try {
-                    localFeesRepo.clearAll() // Method name updated
-                    localFeesRepo.insertFees(feesList)
+                    val updatedList = feesList.map { it.copy(updatedAt = System.currentTimeMillis()) }
+                    localFeesRepo.insertFees(updatedList)
                 } catch (e: Exception) {
-                    Log.e("FeesRepoManager", "Failed to refresh all fees cache from remote", e)
+                    Log.e("FeesRepoManager", "Failed to cache initial fees", e)
                 }
                 Result.success(feesList)
             },
-            onFailure = { exception ->
-                if (localData.isNotEmpty()) Result.success(localData) else Result.failure(exception)
-            }
+            onFailure = { Result.failure(it) }
         )
     }
 
+    suspend fun syncFees(lastSync: Long) {
+        firebaseFeesRepo.getFeesUpdatedAfter(lastSync).onSuccess { fees ->
+            if (fees.isNotEmpty()) {
+                try {
+                    val updatedList = fees.map { it.copy(updatedAt = System.currentTimeMillis()) }
+                    localFeesRepo.insertFees(updatedList)
+                } catch (e: Exception) {
+                    Log.e("FeesRepoManager", "Failed to cache synced fees", e)
+                }
+            }
+        }
+    }
+
+    // CORRECTED: Restored to Simple Getter
     suspend fun getFeesForStudent(studentId: String): Result<List<FeesModel>> {
-        val localData = try {
-            localFeesRepo.getFeesByStudentId(studentId).first() // Method name updated
+        return try {
+            val localData = localFeesRepo.getFeesByStudentId(studentId).first()
+            Result.success(localData)
         } catch (e: Exception) {
-            Log.w("FeesRepoManager", "Could not get local fees for student $studentId", e)
-            emptyList()
+            Log.e("FeesRepoManager", "Error fetching local fees for student $studentId", e)
+            Result.failure(e)
         }
-
-        if (localData.isNotEmpty() && localData.all { !StaleDetector.isStale(it.updatedAt) }) {
-            return Result.success(localData)
-        }
-
-        val remoteResult = firebaseFeesRepo.getFeesForStudent(studentId)
-        return remoteResult.fold(
-            onSuccess = { feesList ->
-                try {
-                    localFeesRepo.insertFees(feesList) // Assuming this will replace existing or handle conflicts
-                } catch (e: Exception) {
-                    Log.e("FeesRepoManager", "Failed to refresh fees for student $studentId cache from remote", e)
-                }
-                Result.success(feesList)
-            },
-            onFailure = { exception ->
-                if (localData.isNotEmpty()) Result.success(localData) else Result.failure(exception)
-            }
-        )
     }
 
+    // CORRECTED: Restored to Simple Getter
     suspend fun getFeesForMonthYear(monthYear: String): Result<List<FeesModel>> {
-        val localData = try {
-            // LocalFeesRepository does not have getFeesForMonthYear directly
-            localFeesRepo.getAllFees().first().filter { it.monthYear == monthYear }
+        return try {
+            val localData = localFeesRepo.getAllFees().first().filter { it.monthYear == monthYear }
+            Result.success(localData)
         } catch (e: Exception) {
-            Log.w("FeesRepoManager", "Could not get local fees for month/year $monthYear", e)
-            emptyList()
+            Log.e("FeesRepoManager", "Error fetching local fees for month $monthYear", e)
+            Result.failure(e)
         }
-
-        if (localData.isNotEmpty() && localData.all { !StaleDetector.isStale(it.updatedAt) }) {
-            return Result.success(localData)
-        }
-
-        val remoteResult = firebaseFeesRepo.getFeesForMonthYear(monthYear)
-        return remoteResult.fold(
-            onSuccess = { feesList ->
-                try {
-                    localFeesRepo.insertFees(feesList) // Assuming this will replace existing or handle conflicts
-                } catch (e: Exception) {
-                    Log.e("FeesRepoManager", "Failed to refresh fees for month/year $monthYear cache from remote", e)
-                }
-                Result.success(feesList)
-            },
-            onFailure = { exception ->
-                if (localData.isNotEmpty()) Result.success(localData) else Result.failure(exception)
-            }
-        )
     }
 
+    // CORRECTED: More efficient update without extra network call
     suspend fun updateFee(feeId: String, updatedData: Map<String, Any>): Result<Unit> {
-        val result = firebaseFeesRepo.updateFee(feeId, updatedData)
+        val finalUpdateData = updatedData.toMutableMap()
+        finalUpdateData["updatedAt"] = System.currentTimeMillis()
+
+        val result = firebaseFeesRepo.updateFee(feeId, finalUpdateData)
         result.onSuccess { _ ->
             try {
-                // Fetch updated fee to save it correctly in local cache
+                // We need to get the full updated model to save in local DB
                 firebaseFeesRepo.getFee(feeId).onSuccess { updatedFee ->
-                    localFeesRepo.insertFee(updatedFee) // Method name updated
+                    localFeesRepo.insertFee(updatedFee) // This already has the latest timestamp from server
                 }
             } catch (e: Exception) {
                 Log.e("FeesRepoManager", "Failed to update local cache for fee ID: $feeId", e)
@@ -161,10 +125,23 @@ class FeesRepoManager @Inject constructor(
         result.onSuccess { _ ->
             try {
                 localFeesRepo.deleteFee(feeId)
+
+                val deletedRecord =
+                    DeletedRecord(id = feeId, type = "fees", timestamp = System.currentTimeMillis())
+                FirebaseRefs.deletedRecordsRef.child(feeId).setValue(deletedRecord).await()
+
             } catch (e: Exception) {
-                Log.e("FeesRepoManager", "Failed to delete local fee: $feeId", e)
+                Log.e("FeesRepoManager", "Failed to process fee deletion for ID: $feeId", e)
             }
         }
         return result
+    }
+
+    suspend fun deleteFeeLocally(id: String) {
+        try {
+            localFeesRepo.deleteFee(id)
+        } catch (e: Exception) {
+            Log.e("FeesRepoManager", "Failed to delete local fee: $id", e)
+        }
     }
 }

@@ -18,4 +18,5 @@ object FirebaseRefs {
     val divisionsRef: DatabaseReference get() = db.reference.child("divisions")
     val homeworkRef: DatabaseReference get() = db.reference.child("homework") // "homeworks" se "homework" kar diya
     val announcementsRef: DatabaseReference get() = db.reference.child("announcement")
+    val deletedRecordsRef: DatabaseReference get() = db.reference.child("deleted_records")
 }

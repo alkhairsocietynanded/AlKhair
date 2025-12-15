@@ -72,4 +72,15 @@ class FirebaseAnnouncementRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+    
+    suspend fun getAnnouncementsUpdatedAfter(timestamp: Long): Result<List<Announcement>> {
+        return try {
+            val snapshot = announcementsRef.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
+            val announcements = snapshot.children.mapNotNull { it.getValue(Announcement::class.java) }
+            Result.success(announcements)
+        } catch (e: Exception) {
+            Log.e("FirebaseAnnouncementRepo", "Error getting updated announcements", e)
+            Result.failure(e)
+        }
+    }
 }

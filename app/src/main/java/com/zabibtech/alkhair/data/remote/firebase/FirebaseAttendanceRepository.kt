@@ -1,13 +1,13 @@
 package com.zabibtech.alkhair.data.remote.firebase
 
 import android.util.Log
+import com.zabibtech.alkhair.data.models.Attendance
 import com.zabibtech.alkhair.utils.FirebaseRefs.attendanceRef
+import com.zabibtech.alkhair.utils.FirebaseRefs.dateAttendanceRef
 import com.zabibtech.alkhair.utils.FirebaseRefs.userAttendanceRef
-import com.zabibtech.alkhair.utils.FirebaseRefs.dateAttendanceRef // Naya import add kiya hai
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.collections.mutableMapOf
 
 @Singleton
 class FirebaseAttendanceRepository @Inject constructor() {
@@ -142,6 +142,41 @@ class FirebaseAttendanceRepository @Inject constructor() {
             Result.success(result)
         } catch (e: Exception) {
             Log.e("FirebaseAttendanceRepo", "Error getting attendance for date $date", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getAttendanceForDateRange(startDate: String, endDate: String): Result<List<Attendance>> {
+        return try {
+            val snapshot = dateAttendanceRef.orderByKey().startAt(startDate).endAt(endDate).get().await()
+            val attendanceList = mutableListOf<Attendance>()
+
+            if (snapshot.exists()) {
+                snapshot.children.forEach { dateSnapshot ->
+                    val date = dateSnapshot.key ?: return@forEach
+                    dateSnapshot.children.forEach { classSnapshot ->
+                        val classId = classSnapshot.key ?: return@forEach
+                        classSnapshot.children.forEach { userEntry ->
+                            // Assuming map is <uid, status>
+                            val uid = userEntry.key ?: return@forEach
+                            val status = userEntry.getValue(String::class.java) ?: return@forEach
+
+                            attendanceList.add(
+                                Attendance(
+                                    studentId = uid,
+                                    classId = classId,
+                                    date = date,
+                                    status = status,
+                                    updatedAt = System.currentTimeMillis()
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+            Result.success(attendanceList)
+        } catch (e: Exception) {
+            Log.e("FirebaseAttendanceRepo", "Error getting attendance range", e)
             Result.failure(e)
         }
     }

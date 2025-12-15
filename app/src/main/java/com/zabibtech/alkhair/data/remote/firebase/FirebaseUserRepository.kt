@@ -75,4 +75,18 @@ class FirebaseUserRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun getUsersUpdatedAfter(timestamp: Long): Result<List<User>> {
+        return try {
+            val snapshot =
+                usersDb.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
+            val users = snapshot.children.mapNotNull { it.getValue(User::class.java) }
+            Log.d("FirebaseUserRepository", "Fetched ${users.size} users updated after $timestamp")
+            Result.success(users)
+
+        } catch (e: Exception) {
+            Log.e("FirebaseUserRepository", "Error getting updated users", e)
+            Result.failure(e)
+        }
+    }
 }

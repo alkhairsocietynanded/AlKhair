@@ -3,6 +3,7 @@ package com.zabibtech.alkhair.ui.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zabibtech.alkhair.data.manager.AppDataSyncManager
 import com.zabibtech.alkhair.data.manager.AttendanceRepoManager
 import com.zabibtech.alkhair.data.manager.AuthRepoManager
 import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager
@@ -33,6 +34,7 @@ data class DashboardStats(
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
+    private val appDataSyncManager: AppDataSyncManager,
     private val authRepoManager: AuthRepoManager,
     private val userRepoManager: UserRepoManager,
     private val attendanceRepoManager: AttendanceRepoManager,
@@ -53,8 +55,12 @@ class MainViewModel @Inject constructor(
     val classes: StateFlow<List<ClassModel>> = _classes
 
     init {
-        // Fetch initial data for classes and divisions for other potential observers
+        // Load initial data
         loadClassesAndDivisions()
+    }
+
+    suspend fun syncData(forceRefresh: Boolean = false) {
+        appDataSyncManager.syncAllData(forceRefresh)
     }
 
     fun loadClassesAndDivisions() {
@@ -113,10 +119,21 @@ class MainViewModel @Inject constructor(
                         onSuccess = { classList ->
                             attendanceResult.fold(
                                 onSuccess = { attendanceList ->
-                                    val present = attendanceList.count { it.status.equals("Present", ignoreCase = true) }
-                                    val absent = attendanceList.count { !it.status.equals("Present", ignoreCase = true) }
+                                    val present = attendanceList.count {
+                                        it.status.equals(
+                                            "Present",
+                                            ignoreCase = true
+                                        )
+                                    }
+                                    val absent = attendanceList.count {
+                                        !it.status.equals(
+                                            "Present",
+                                            ignoreCase = true
+                                        )
+                                    }
                                     val totalAttendance = present + absent
-                                    val attendancePercentage = if (totalAttendance > 0) (present * 100) / totalAttendance else 0
+                                    val attendancePercentage =
+                                        if (totalAttendance > 0) (present * 100) / totalAttendance else 0
 
                                     val stats = DashboardStats(
                                         studentsCount = users.count { it.role == Roles.STUDENT },
@@ -129,17 +146,21 @@ class MainViewModel @Inject constructor(
                                     _dashboardState.value = UiState.Success(stats)
                                 },
                                 onFailure = { e ->
-                                    _dashboardState.value = UiState.Error(e.localizedMessage ?: "Failed to load attendance stats")
+                                    _dashboardState.value = UiState.Error(
+                                        e.localizedMessage ?: "Failed to load attendance stats"
+                                    )
                                 }
                             )
                         },
                         onFailure = { e ->
-                            _dashboardState.value = UiState.Error(e.localizedMessage ?: "Failed to load class stats")
+                            _dashboardState.value =
+                                UiState.Error(e.localizedMessage ?: "Failed to load class stats")
                         }
                     )
                 },
                 onFailure = { e ->
-                    _dashboardState.value = UiState.Error(e.localizedMessage ?: "Failed to load user stats")
+                    _dashboardState.value =
+                        UiState.Error(e.localizedMessage ?: "Failed to load user stats")
                 }
             )
         }
