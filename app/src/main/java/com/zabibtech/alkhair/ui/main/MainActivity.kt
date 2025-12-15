@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
                         is UiState.Loading -> {
                             progressBar.visibility = View.VISIBLE
                         }
+
                         is UiState.Success -> {
                             progressBar.visibility = View.GONE
                             val user = state.data
@@ -60,18 +61,23 @@ class MainActivity : AppCompatActivity() {
                             }
                             finish()
                         }
+
                         is UiState.Error -> {
                             progressBar.visibility = View.GONE
                             goToLogin()
                             finish()
                         }
+
                         else -> {}
                     }
                 }
             }
         }
 
-        viewModel.checkUser()
+        lifecycleScope.launch {
+            viewModel.syncData()
+            viewModel.checkUser()
+        }
     }
 
     private fun goToLogin() {
