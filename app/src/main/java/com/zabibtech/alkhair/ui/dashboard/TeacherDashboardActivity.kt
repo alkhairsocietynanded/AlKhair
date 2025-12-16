@@ -226,11 +226,11 @@ class TeacherDashboardActivity : AppCompatActivity() {
                             if (state.data.isEmpty()) {
                                 binding.announcementPager.visibility = View.GONE
                                 binding.tabLayout.visibility = View.GONE
-                                binding.tvNoAnnouncements.visibility = View.VISIBLE
+                                binding.announcementPlaceholder.visibility = View.VISIBLE
                             } else {
                                 binding.announcementPager.visibility = View.VISIBLE
                                 binding.tabLayout.visibility = View.VISIBLE
-                                binding.tvNoAnnouncements.visibility = View.GONE
+                                binding.announcementPlaceholder.visibility = View.GONE
                                 adapter.updateData(state.data)
                             }
                         }

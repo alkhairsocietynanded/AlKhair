@@ -193,23 +193,42 @@
                     android:textAppearance="?attr/textAppearanceTitleLarge"
                     android:textColor="?attr/colorOnSurface" />
 
-                <!-- Announcements ViewPager -->
-                <androidx.viewpager2.widget.ViewPager2
-                    android:id="@+id/announcementPager"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="180dp"
-                    tools:background="@drawable/gradient_blue"
-                    tools:listitem="@layout/item_announcement" />
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvNoAnnouncements"
-                    android:layout_width="match_parent"
-                    android:layout_height="180dp"
-                    android:gravity="center"
-                    android:text="No announcement found"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="?attr/colorError"
-                    android:visibility="gone" />
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/announcementPlaceholder"
+                        android:layout_width="match_parent"
+                        android:layout_height="180dp"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="6dp"
+                        app:strokeWidth="0dp"
+                        tools:visibility="visible">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/tvNoAnnouncements"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/gradient_blue"
+                            android:gravity="center"
+                            android:text="No announcement found"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnPrimary" />
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Announcements ViewPager -->
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/announcementPager"
+                        android:layout_width="match_parent"
+                        android:layout_height="180dp"
+                        tools:listitem="@layout/item_announcement" />
+
+                </FrameLayout>
 
                 <com.google.android.material.tabs.TabLayout
                     android:id="@+id/tabLayout"
@@ -274,7 +293,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="8dp"
                             android:max="100"
-                            android:progress="60"
+                            android:progress="0"
                             app:indicatorColor="@color/progress_bar"
                             app:trackColor="@color/progress_bar_container"
                             app:trackCornerRadius="6dp"
