@@ -56,7 +56,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupDropdowns()
+        setupClassDivisionDropdowns()
         observeMutationState()
         prefillDataForEdit()
 
@@ -120,36 +120,57 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             }
         }
     }
-    
-    private fun setupDropdowns() {
+
+    private fun setupClassDivisionDropdowns() {
+
+        // 📘 Classes
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.classesState.collect { state ->
                     if (state is UiState.Success) {
-                        val classes = state.data.map { it.className }.distinct()
-                        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, classes)
+                        val classNames =
+                            state.data.map { it.className }.distinct()
+
+                        val adapter = ArrayAdapter(
+                            requireContext(),
+                            android.R.layout.simple_dropdown_item_1line,
+                            classNames
+                        )
                         binding.etClass.setAdapter(adapter)
                     }
                 }
             }
         }
 
+        // 📗 Divisions
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.divisionsState.collect { state ->
                     if (state is UiState.Success) {
-                        val divisions = state.data.map { it.name }.distinct()
-                        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, divisions)
+                        val divisionNames =
+                            state.data.map { it.name }.distinct()
+
+                        val adapter = ArrayAdapter(
+                            requireContext(),
+                            android.R.layout.simple_dropdown_item_1line,
+                            divisionNames
+                        )
                         binding.etDivision.setAdapter(adapter)
                     }
                 }
             }
         }
 
+        // ⏰ Shift (static)
         val shifts = listOf("Subah", "Dopahar", "Shaam")
-        val shiftAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, shifts)
+        val shiftAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            shifts
+        )
         binding.etShift.setAdapter(shiftAdapter)
     }
+
 
     private fun validateInput(): Boolean {
         var isValid = true
@@ -181,7 +202,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
         } else {
             binding.tilDivision.error = null
         }
-        
+
         if (binding.etShift.text.isNullOrBlank()) {
             binding.tilShift.error = "Shift is required"
             isValid = false

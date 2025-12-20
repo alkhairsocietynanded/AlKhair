@@ -6,11 +6,12 @@ import com.zabibtech.alkhair.data.manager.FeesRepoManager
 import com.zabibtech.alkhair.data.manager.UserRepoManager
 import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.FeesOverviewData
+import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,123 +21,173 @@ class FeesViewModel @Inject constructor(
     private val userRepoManager: UserRepoManager
 ) : ViewModel() {
 
-    private val _feesModelListState = MutableStateFlow<UiState<List<FeesModel>>>(UiState.Idle)
-    val feesModelListState: StateFlow<UiState<List<FeesModel>>> = _feesModelListState
+    /* ============================================================
+       🔹 FILTER STATE
+       ============================================================ */
 
-    private val _feesModelState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
-    val feeState: StateFlow<UiState<Unit>> = _feesModelState
+    private val _monthFilter = MutableStateFlow<String?>(null)
 
-    private val _feesOverviewState = MutableStateFlow<UiState<FeesOverviewData>>(UiState.Idle)
-    val feesOverviewState: StateFlow<UiState<FeesOverviewData>> = _feesOverviewState
+    fun setMonthFilter(monthYear: String) {
+        _monthFilter.value = monthYear
+    }
 
-    fun loadFeesByStudent(studentId: String) {
-        _feesModelListState.value = UiState.Loading
+    /* ============================================================
+       📦 STUDENTS DATA
+       ============================================================ */
+
+    private val _studentsFlow = MutableStateFlow<List<User>>(emptyList())
+
+    init {
+        loadStudents()
+    }
+
+    private fun loadStudents() {
         viewModelScope.launch {
-            feesRepoManager.getFeesForStudent(studentId).fold(
-                onSuccess = { feesList ->
-                    _feesModelListState.value = UiState.Success(feesList)
-                },
-                onFailure = { error ->
-                    _feesModelListState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to load fees")
-                }
-            )
+            userRepoManager.getUsersByRole(Roles.STUDENT).onSuccess {
+                _studentsFlow.value = it
+            }
         }
     }
 
+    /* ============================================================
+       📦 FEES OVERVIEW — REACTIVE PIPELINE
+       ============================================================ */
+
+    val feesOverviewState: StateFlow<UiState<FeesOverviewData>> =
+        combine(
+            _monthFilter,
+            feesRepoManager.observeLocal(),
+            _studentsFlow
+        ) { month, allFees, students ->
+            Triple(month, allFees, students)
+        }
+            // यहाँ भी Type Inference को मदद करने के लिए explicit type दिया जा सकता है,
+            // लेकिन calculateOverview का return type already UiState है, तो यह usually चल जाता है।
+            .map { (month, allFees, students) ->
+                if (month == null) return@map UiState.Idle
+
+                val feesForMonth = allFees.filter { it.monthYear == month }
+                calculateOverview(feesForMonth, students)
+            }
+            .onStart { emit(UiState.Loading) }
+            .catch { emit(UiState.Error(it.message ?: "Failed to compute fees")) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                UiState.Idle
+            )
+
+    private fun calculateOverview(
+        feesForMonth: List<FeesModel>,
+        students: List<User>
+    ): UiState<FeesOverviewData> {
+        if (students.isEmpty()) return UiState.Loading
+
+        val totalStudents = students.size
+        val feesByStudentId = feesForMonth.groupBy { it.studentId }
+
+        val unpaidStudentsCount = students.count { student ->
+            val studentFees = feesByStudentId[student.uid]
+            if (studentFees.isNullOrEmpty()) {
+                true
+            } else {
+                val due = studentFees.sumOf { it.baseAmount } -
+                        studentFees.sumOf { it.paidAmount } -
+                        studentFees.sumOf { it.discounts }
+                due > 0
+            }
+        }
+
+        val totalFees = feesForMonth.sumOf { it.baseAmount }
+        val totalCollected = feesForMonth.sumOf { it.paidAmount }
+        val totalDiscount = feesForMonth.sumOf { it.discounts }
+        val totalDue = totalFees - totalCollected - totalDiscount
+
+        val collectedByClass = students
+            .filter { it.className.isNotBlank() }
+            .groupBy { it.className }
+            .mapValues { (_, classStudents) ->
+                val ids = classStudents.map { it.uid }.toSet()
+                feesForMonth
+                    .filter { it.studentId in ids }
+                    .sumOf { it.paidAmount }
+            }
+
+        return UiState.Success(
+            FeesOverviewData(
+                totalStudents = totalStudents,
+                totalFees = totalFees,
+                totalCollected = totalCollected,
+                totalDiscount = totalDiscount,
+                totalDue = totalDue,
+                unpaidCount = unpaidStudentsCount,
+                classWiseCollected = collectedByClass
+            )
+        )
+    }
+
+    /* ============================================================
+       🎓 STUDENT SPECIFIC FEES LIST (Reactive) - FIXED HERE 🔧
+       ============================================================ */
+
+    private val _studentIdFilter = MutableStateFlow<String?>(null)
+
+    fun setStudentId(studentId: String) {
+        _studentIdFilter.value = studentId
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val studentFeesListState: StateFlow<UiState<List<FeesModel>>> = _studentIdFilter
+        .flatMapLatest { id ->
+            if (id == null) flowOf(emptyList())
+            else feesRepoManager.observeFeesForStudent(id)
+        }
+        // 👇 FIX: Added <List<FeesModel>, UiState<List<FeesModel>>> explicit typing
+        .map<List<FeesModel>, UiState<List<FeesModel>>> { fees ->
+            UiState.Success(fees)
+        }
+        .onStart { emit(UiState.Loading) }
+        .catch { emit(UiState.Error(it.message ?: "Failed to load fees")) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            UiState.Idle
+        )
+
+    /* ============================================================
+       ✍️ MUTATIONS (Save / Delete)
+       ============================================================ */
+
+    private val _mutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val mutationState: StateFlow<UiState<Unit>> = _mutationState
+
     fun saveFee(feesModel: FeesModel) {
-        _feesModelState.value = UiState.Loading
+        _mutationState.value = UiState.Loading
         viewModelScope.launch {
-            feesRepoManager.saveFee(feesModel).fold( // feeRepo.addOrUpdateFee se change kiya
-                onSuccess = { newFeesModel -> // New: feesRepoManager.saveFee now returns FeesModel on success
-                    _feesModelState.value = UiState.Success(Unit)
-                    // Optionally, you might want to reload fees if this impacts displayed data
-                },
-                onFailure = { error ->
-                    _feesModelState.value = UiState.Error(error.localizedMessage ?: "Failed to save feesModel")
-                }
+            val result = if (feesModel.id.isEmpty()) {
+                feesRepoManager.createFee(feesModel)
+            } else {
+                feesRepoManager.updateFee(feesModel)
+            }
+
+            _mutationState.value = result.fold(
+                onSuccess = { UiState.Success(Unit) },
+                onFailure = { UiState.Error(it.message ?: "Save failed") }
             )
         }
     }
 
     fun deleteFee(feeId: String) {
-        _feesModelState.value = UiState.Loading
+        _mutationState.value = UiState.Loading
         viewModelScope.launch {
-            feesRepoManager.deleteFee(feeId).fold(
-                onSuccess = {
-                    _feesModelState.value = UiState.Success(Unit)
-                },
-                onFailure = { error ->
-                    _feesModelState.value = UiState.Error(error.localizedMessage ?: "Failed to delete fee")
-                }
+            _mutationState.value = feesRepoManager.deleteFee(feeId).fold(
+                onSuccess = { UiState.Success(Unit) },
+                onFailure = { UiState.Error(it.message ?: "Delete failed") }
             )
         }
     }
 
-    fun resetFeeState() {
-        _feesModelState.value = UiState.Idle
-    }
-
-    fun loadFeesOverviewForMonth(monthYear: String) {
-        _feesOverviewState.value = UiState.Loading
-        viewModelScope.launch {
-            userRepoManager.getUsersByRole(Roles.STUDENT).fold(
-                onSuccess = { allStudents ->
-                    feesRepoManager.getFeesForMonthYear(monthYear).fold(
-                        onSuccess = { feesForMonth ->
-                            val totalStudents = allStudents.size
-
-                            val feesByStudentId = feesForMonth.groupBy { it.studentId }
-
-                            val unpaidStudentsCount = allStudents.count { student ->
-                                val studentFees = feesByStudentId[student.uid]
-
-                                if (studentFees.isNullOrEmpty()) {
-                                    true
-                                } else {
-                                    val totalDueForStudent = studentFees.sumOf { it.baseAmount } -
-                                            studentFees.sumOf { it.paidAmount } -
-                                            studentFees.sumOf { it.discounts }
-                                    totalDueForStudent > 0
-                                }
-                            }
-
-                            val totalFees = feesForMonth.sumOf { it.baseAmount }
-                            val totalCollected = feesForMonth.sumOf { it.paidAmount }
-                            val totalDiscount = feesForMonth.sumOf { it.discounts }
-                            val totalDue = totalFees - totalCollected - totalDiscount
-
-                            val collectedByClass = allStudents
-                                .filter { it.className.isNotBlank() }
-                                .groupBy { it.className }
-                                .mapValues { (_, students) ->
-                                    val studentIds = students.map { it.uid }
-                                    feesForMonth
-                                        .filter { it.studentId in studentIds }
-                                        .sumOf { it.paidAmount }
-                                }
-
-                            val overview = FeesOverviewData(
-                                totalStudents = totalStudents,
-                                totalFees = totalFees,
-                                totalCollected = totalCollected,
-                                totalDiscount = totalDiscount,
-                                totalDue = totalDue,
-                                unpaidCount = unpaidStudentsCount,
-                                classWiseCollected = collectedByClass
-                            )
-
-                            _feesOverviewState.value = UiState.Success(overview)
-                        },
-                        onFailure = { error ->
-                            _feesOverviewState.value = UiState.Error(error.localizedMessage ?: "Failed to load fees overview")
-                        }
-                    )
-                },
-                onFailure = { error ->
-                    _feesOverviewState.value = UiState.Error(error.localizedMessage ?: "Failed to load students")
-                }
-            )
-        }
+    fun resetMutationState() {
+        _mutationState.value = UiState.Idle
     }
 }

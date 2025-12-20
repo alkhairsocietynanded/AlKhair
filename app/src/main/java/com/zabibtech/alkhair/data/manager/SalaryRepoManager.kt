@@ -2,160 +2,130 @@ package com.zabibtech.alkhair.data.manager
 
 import android.util.Log
 import com.zabibtech.alkhair.data.local.local_repos.LocalSalaryRepository
+import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
 import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseSalaryRepository
 import com.zabibtech.alkhair.utils.FirebaseRefs
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SalaryRepoManager @Inject constructor(
-    private val localSalaryRepo: LocalSalaryRepository,
-    private val firebaseSalaryRepo: FirebaseSalaryRepository
-) {
+    private val localRepo: LocalSalaryRepository,
+    private val remoteRepo: FirebaseSalaryRepository
+) : BaseRepoManager<SalaryModel>() {
 
-    data class MonthlySummary(
-        val totalPaid: Double,
-        val totalPending: Double,
-        val totalNet: Double
-    )
+    /* ============================================================
+       📦 SSOT — LOCAL OBSERVATION (UI / ViewModel)
+       ============================================================ */
 
-    suspend fun createSalary(salary: SalaryModel): Result<SalaryModel> {
-        val result = firebaseSalaryRepo.createSalary(salary)
-        result.onSuccess { newSalary ->
-            try {
-                // newSalary from Firebase already has the latest timestamps
-                localSalaryRepo.insertSalary(newSalary)
-            } catch (e: Exception) {
-                Log.e("SalaryRepoManager", "Failed to cache new salary locally", e)
+    override fun observeLocal(): Flow<List<SalaryModel>> {
+        return localRepo.getAllSalaries()
+    }
+
+    fun observeFiltered(
+        staffId: String?,
+        monthYear: String?
+    ): Flow<List<SalaryModel>> {
+        return localRepo.getFilteredSalaries(staffId, monthYear)
+    }
+
+    /* ============================================================
+       🔁 SYNC — USED ONLY BY AppDataSyncManager
+       ============================================================ */
+
+    override suspend fun fetchRemoteUpdated(after: Long): List<SalaryModel> {
+        return remoteRepo.getSalariesUpdatedAfter(after)
+            .getOrElse {
+                Log.e("SalaryRepoManager", "Remote sync failed", it)
+                emptyList()
             }
+    }
+
+    override suspend fun insertLocal(items: List<SalaryModel>) {
+        try {
+            localRepo.insertSalaries(items)
+        } catch (e: Exception) {
+            Log.e("SalaryRepoManager", "Local bulk insert failed", e)
         }
-        return result
+    }
+
+    override suspend fun insertLocal(item: SalaryModel) {
+        try {
+            localRepo.insertSalary(item)
+        } catch (e: Exception) {
+            Log.e("SalaryRepoManager", "Local insert failed", e)
+        }
+    }
+
+    override suspend fun deleteLocally(id: String) {
+        try {
+            localRepo.deleteSalary(id)
+        } catch (e: Exception) {
+            Log.e("SalaryRepoManager", "Local delete failed for $id", e)
+        }
+    }
+
+    /* ============================================================
+       ✍️ WRITE — FIREBASE → ROOM (UI ACTIONS)
+       ============================================================ */
+
+    suspend fun createSalary(salary: SalaryModel): Result<Unit> {
+        return try {
+            remoteRepo.createSalary(salary).onSuccess { created ->
+                insertLocal(created)
+            }.map { }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun updateSalary(salary: SalaryModel): Result<Unit> {
-        // CORRECTED: Add the new timestamp to the update map
-        val updateMap: MutableMap<String, Any?> = mutableMapOf(
+        val updateMap = mapOf<String, Any>(
             "basicSalary" to salary.basicSalary,
             "allowances" to salary.allowances,
             "deductions" to salary.deductions,
             "netSalary" to salary.calculateNet(),
             "paymentStatus" to salary.paymentStatus,
-            "paymentDate" to salary.paymentDate,
-            "remarks" to salary.remarks,
+            "paymentDate" to (salary.paymentDate ?: ""),
+            "remarks" to (salary.remarks ?: ""),
             "updatedAt" to System.currentTimeMillis()
         )
 
-        val result = firebaseSalaryRepo.updateSalary(
-            salary.id,
-            updateMap.filterValues { it != null } as Map<String, Any>)
-
-        result.onSuccess {
-            try {
-                // Fetch the updated model from server to get the definitive state
-                firebaseSalaryRepo.getSalaryById(salary.id).onSuccess { updatedSalaryFromServer ->
-                    localSalaryRepo.insertSalary(updatedSalaryFromServer)
-                }
-            } catch (e: Exception) {
-                Log.e("SalaryRepoManager", "Failed to update local salary cache", e)
-            }
-        }
-        return result
-    }
-
-    suspend fun deleteSalary(salaryId: String): Result<Unit> {
-        val result = firebaseSalaryRepo.deleteSalary(salaryId)
-        result.onSuccess {
-            try {
-                localSalaryRepo.deleteSalary(salaryId)
-
-                val deletedRecord = DeletedRecord(
-                    id = salaryId,
-                    type = "salary",
-                    timestamp = System.currentTimeMillis()
-                )
-                FirebaseRefs.deletedRecordsRef.child(salaryId).setValue(deletedRecord).await()
-
-            } catch (e: Exception) {
-                Log.e("SalaryRepoManager", "Failed to process salary deletion for ID: $salaryId", e)
-            }
-        }
-        return result
-    }
-
-    suspend fun deleteSalaryLocally(id: String) {
-        try {
-            localSalaryRepo.deleteSalary(id)
-        } catch (e: Exception) {
-            Log.e("SalaryRepoManager", "Failed to delete local salary: $id", e)
-        }
-    }
-
-    suspend fun syncSalaries(lastSync: Long) {
-        firebaseSalaryRepo.getSalariesUpdatedAfter(lastSync).onSuccess { salaries ->
-            if (salaries.isNotEmpty()) {
-                try {
-                    val updatedList =
-                        salaries.map { it.copy(updatedAt = System.currentTimeMillis()) }
-                    localSalaryRepo.insertSalaries(updatedList)
-                } catch (e: Exception) {
-                    Log.e("SalaryRepoManager", "Failed to cache synced salaries", e)
-                }
-            }
-        }
-    }
-
-    // SIMPLE GETTER: Relies on local data, which is kept fresh by syncSalaries
-    suspend fun getSalaries(staffId: String?, monthYear: String?): Result<List<SalaryModel>> {
         return try {
-            val allLocalSalaries = localSalaryRepo.getAllSalaries().first()
-            val filteredSalaries = allLocalSalaries.filter { salary ->
-                val staffMatch = staffId.isNullOrBlank() || salary.staffId == staffId
-                val monthMatch = monthYear.isNullOrBlank() || salary.monthYear == monthYear
-                staffMatch && monthMatch
-            }
-            Result.success(filteredSalaries)
+            remoteRepo.updateSalary(salary.id, updateMap)
+                .onSuccess {
+                    remoteRepo.getSalaryById(salary.id)
+                        .onSuccess { insertLocal(it) }
+                }
         } catch (e: Exception) {
-            Log.e("SalaryRepoManager", "Could not get local salary data", e)
             Result.failure(e)
         }
     }
 
-    private fun calculateSummary(salaries: List<SalaryModel>): MonthlySummary {
-        var totalPaid = 0.0
-        var totalPending = 0.0
-        var totalNet = 0.0
+    suspend fun deleteSalary(id: String): Result<Unit> {
+        return try {
+            remoteRepo.deleteSalary(id).onSuccess {
 
-        salaries.forEach { s ->
-            totalNet += s.netSalary
-            if (s.paymentStatus.equals("Paid", ignoreCase = true)) {
-                totalPaid += s.netSalary
-            } else {
-                totalPending += s.netSalary
+                // 1️⃣ Local delete
+                deleteLocally(id)
+
+                // 2️⃣ Global deletion log for sync
+                FirebaseRefs.deletedRecordsRef
+                    .child(id)
+                    .setValue(
+                        DeletedRecord(
+                            id = id,
+                            type = "salary",
+                            timestamp = System.currentTimeMillis()
+                        )
+                    ).await()
             }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return MonthlySummary(totalPaid, totalPending, totalNet)
-    }
-
-    suspend fun getMonthlySummary(monthYear: String? = null): Result<MonthlySummary> {
-        val salariesResult = getSalaries(null, monthYear)
-        return salariesResult.fold(
-            onSuccess = { salaries -> Result.success(calculateSummary(salaries)) },
-            onFailure = { exception -> Result.failure(exception) }
-        )
-    }
-
-    suspend fun getStaffSummary(
-        staffId: String,
-        monthYear: String? = null
-    ): Result<MonthlySummary> {
-        val salariesResult = getSalaries(staffId, monthYear)
-        return salariesResult.fold(
-            onSuccess = { salaries -> Result.success(calculateSummary(salaries)) },
-            onFailure = { exception -> Result.failure(exception) }
-        )
     }
 }

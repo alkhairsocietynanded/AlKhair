@@ -22,7 +22,7 @@ class FirebaseHomeworkRepository @Inject constructor() {
         }
     }
 
-    suspend fun getHomework(homeworkId: String): Result<Homework> {
+    suspend fun getHomeworkById(homeworkId: String): Result<Homework> {
         return try {
             val snapshot = homeworkRef.child(homeworkId).get().await()
             val homework = snapshot.getValue(Homework::class.java)

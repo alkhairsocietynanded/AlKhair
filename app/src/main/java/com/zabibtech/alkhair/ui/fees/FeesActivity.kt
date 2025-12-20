@@ -3,33 +3,44 @@ package com.zabibtech.alkhair.ui.fees
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.utils.ColorTemplate
 import com.zabibtech.alkhair.data.models.FeesOverviewData
 import com.zabibtech.alkhair.databinding.ActivityFeeBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
+import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
 @AndroidEntryPoint
 class FeesActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityFeeBinding
-    val viewModel: FeesViewModel by viewModels()
+    private val viewModel: FeesViewModel by viewModels()
     private var currentMonth: Calendar = Calendar.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,16 +49,23 @@ class FeesActivity : AppCompatActivity() {
         binding = ActivityFeeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-
+        setupWindowInsets()
         setupToolbar()
         setupMonthSelector()
         setupListeners()
-        observeFeesData()
+        observeViewModel()
+    }
+
+    /* ============================================================
+       🔧 UI SETUP
+       ============================================================ */
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
     }
 
     private fun setupToolbar() {
@@ -72,23 +90,18 @@ class FeesActivity : AppCompatActivity() {
         }
 
         binding.tvSelectedMonth.setOnClickListener {
-            showMonthYearPicker()
+            DateUtils.showMaterialDatePicker(supportFragmentManager, currentMonth) { selectedCal ->
+                currentMonth = selectedCal
+                updateMonthView()
+            }
         }
     }
 
     private fun updateMonthView() {
-        // Use DateUtils for formatting
         binding.tvSelectedMonth.text = DateUtils.formatDate(currentMonth, "MMMM yyyy")
         val monthYearForApi = DateUtils.formatDate(currentMonth, "yyyy-MMMM")
-        
-        viewModel.loadFeesOverviewForMonth(monthYearForApi)
-    }
-
-    private fun showMonthYearPicker() {
-        DateUtils.showMaterialDatePicker(supportFragmentManager, currentMonth) { selectedCal ->
-            currentMonth = selectedCal
-            updateMonthView()
-        }
+        // Just update the filter in ViewModel, don't trigger a load manually
+        viewModel.setMonthFilter(monthYearForApi)
     }
 
     private fun setupListeners() {
@@ -100,45 +113,76 @@ class FeesActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        binding.btnDownloadReport.setOnClickListener {
-            // TODO: implement download logic
-        }
+       /* binding.fabAddFee.setOnClickListener {
+            AddEditFeesDialog.newInstance(null).show(supportFragmentManager, "AddFee")
+        }*/
     }
-    private fun observeFeesData() {
+
+    /* ============================================================
+       👀 STATE OBSERVERS
+       ============================================================ */
+
+    private fun observeViewModel() {
+
+        // 📦 Fees Overview Data (Charts & Stats)
         lifecycleScope.launch {
-            viewModel.feesOverviewState.collectLatest { state ->
-                when (state) {
-                    is UiState.Loading -> {
-                        DialogUtils.showLoading(supportFragmentManager)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.feesOverviewState.collect { state ->
+
+                    if (state is UiState.Loading) DialogUtils.showLoading(supportFragmentManager)
+                    else DialogUtils.hideLoading(supportFragmentManager)
+
+                    when (state) {
+                        is UiState.Success -> {
+                            val data = state.data
+                            updateStatsUI(data)
+                            setupPieChart(binding.pieChartFees, data)
+                            setupVerticalBarChart(binding.barChartClassFees, data)
+                        }
+                        is UiState.Error -> {
+                            Toast.makeText(this@FeesActivity, state.message, Toast.LENGTH_LONG).show()
+                        }
+                        else -> Unit
                     }
+                }
+            }
+        }
 
-                    is UiState.Success -> {
-                        DialogUtils.hideLoading(supportFragmentManager)
-                        val data = state.data
-                        binding.tvTotalStudents.text = data.totalStudents.toString()
-                        binding.tvTotalFees.text = String.format("₹%,.0f", data.totalFees)
-                        binding.tvTotalCollected.text = String.format("₹%,.0f", data.totalCollected)
-                        binding.tvTotalDiscount.text = String.format("₹%,.0f", data.totalDiscount)
-                        binding.tvTotalDue.text = String.format("₹%,.0f", data.totalDue)
-                        binding.tvUnpaidCount.text = data.unpaidCount.toString()
-
-                        setupPieChart(binding.pieChartFees, data)
-                        setupVerticalBarChart(binding.barChartClassFees, data)
-                    }
-
-
-
-                    is UiState.Error -> {
-                        DialogUtils.hideLoading(supportFragmentManager)
-                    }
-
-                    else -> {
-                        DialogUtils.hideLoading(supportFragmentManager)
+        // ✍️ Mutation Results (Save/Delete)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.mutationState.collect { state ->
+                    when (state) {
+                        is UiState.Success -> {
+                            Toast.makeText(this@FeesActivity, "Operation successful", Toast.LENGTH_SHORT).show()
+                            viewModel.resetMutationState()
+                        }
+                        is UiState.Error -> {
+                            Toast.makeText(this@FeesActivity, state.message, Toast.LENGTH_LONG).show()
+                            viewModel.resetMutationState()
+                        }
+                        is UiState.Loading -> {
+                            // Optional: Show specific mutation loader if needed
+                        }
+                        UiState.Idle -> Unit
                     }
                 }
             }
         }
     }
+
+    private fun updateStatsUI(data: FeesOverviewData) {
+        binding.tvTotalStudents.text = data.totalStudents.toString()
+        binding.tvTotalFees.text = String.format("₹%,.0f", data.totalFees)
+        binding.tvTotalCollected.text = String.format("₹%,.0f", data.totalCollected)
+        binding.tvTotalDiscount.text = String.format("₹%,.0f", data.totalDiscount)
+        binding.tvTotalDue.text = String.format("₹%,.0f", data.totalDue)
+        binding.tvUnpaidCount.text = data.unpaidCount.toString()
+    }
+
+    /* ============================================================
+       📊 CHARTS
+       ============================================================ */
 
     private fun setupPieChart(pieChart: PieChart, data: FeesOverviewData) {
         val entries = listOf(
@@ -153,17 +197,16 @@ class FeesActivity : AppCompatActivity() {
             valueTextColor = Color.WHITE
         }
 
-        val pieData = PieData(dataSet)
-        pieChart.data = pieData
-        pieChart.centerText = "Fees"
-        pieChart.animateY(800)
-        pieChart.invalidate()
+        pieChart.apply {
+            this.data = PieData(dataSet)
+            centerText = "Fees"
+            animateY(800)
+            description.isEnabled = false
+            invalidate()
+        }
     }
 
-    private fun setupVerticalBarChart(
-        barChart: com.github.mikephil.charting.charts.BarChart,
-        data: FeesOverviewData
-    ) {
+    private fun setupVerticalBarChart(barChart: BarChart, data: FeesOverviewData) {
         val classCollections = data.classWiseCollected.filterValues { it > 0.0 }
 
         if (classCollections.isEmpty()) {
@@ -172,57 +215,41 @@ class FeesActivity : AppCompatActivity() {
             return
         }
 
-        val entries = mutableListOf<com.github.mikephil.charting.data.BarEntry>()
+        val entries = mutableListOf<BarEntry>()
         val labels = mutableListOf<String>()
         var index = 0f
 
         classCollections.forEach { (className, collected) ->
-            entries.add(com.github.mikephil.charting.data.BarEntry(index, collected.toFloat()))
+            entries.add(BarEntry(index, collected.toFloat()))
             labels.add(className)
             index++
         }
 
-        val dataSet =
-            com.github.mikephil.charting.data.BarDataSet(entries, "Collected Fees by Class").apply {
-                colors = ColorTemplate.MATERIAL_COLORS.toList()
-                valueTextSize = 14f
-                valueTextColor = Color.BLACK
-                valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
-                    override fun getBarLabel(barEntry: com.github.mikephil.charting.data.BarEntry?): String {
-                        val amount = barEntry?.y?.toInt() ?: 0
-                        return "₹$amount"
-                    }
-                }
+        val dataSet = BarDataSet(entries, "Collected Fees by Class").apply {
+            colors = ColorTemplate.MATERIAL_COLORS.toList()
+            valueTextSize = 12f
+            valueFormatter = object : ValueFormatter() {
+                override fun getBarLabel(barEntry: BarEntry?): String =
+                    "₹${barEntry?.y?.toInt() ?: 0}"
             }
-
-        val barData = com.github.mikephil.charting.data.BarData(dataSet).apply {
-            barWidth = 0.6f
-        }
-        barChart.data = barData
-
-        barChart.xAxis.apply {
-            valueFormatter = com.github.mikephil.charting.formatter.IndexAxisValueFormatter(labels)
-            position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
-            setDrawGridLines(false)
-            granularity = 1f
-            textSize = 12f
-            labelRotationAngle = -30f
         }
 
-        barChart.axisRight.isEnabled = false
-        barChart.axisLeft.axisMinimum = 0f
-
-        barChart.legend.isEnabled = false
-        barChart.description.isEnabled = false
-
-        barChart.setPinchZoom(true)
-        barChart.setScaleEnabled(true)
-        barChart.setFitBars(true)
-        barChart.setDrawValueAboveBar(true)
-
-        barChart.animateY(1000)
-
-        barChart.extraBottomOffset = 40f
-        barChart.invalidate()
+        barChart.apply {
+            this.data = BarData(dataSet).apply { barWidth = 0.6f }
+            xAxis.apply {
+                valueFormatter = IndexAxisValueFormatter(labels)
+                position = XAxis.XAxisPosition.BOTTOM
+                setDrawGridLines(false)
+                granularity = 1f
+                labelRotationAngle = -30f
+            }
+            axisRight.isEnabled = false
+            axisLeft.axisMinimum = 0f
+            description.isEnabled = false
+            legend.isEnabled = false
+            animateY(1000)
+            extraBottomOffset = 20f
+            invalidate()
+        }
     }
 }

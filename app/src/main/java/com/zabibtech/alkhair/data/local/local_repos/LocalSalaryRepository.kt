@@ -13,6 +13,9 @@ class LocalSalaryRepository @Inject constructor(
     fun getSalariesByStaffId(staffId: String): Flow<List<SalaryModel>> = 
         salaryDao.getSalariesByStaffId(staffId)
 
+    fun getFilteredSalaries(staffId: String?, monthYear: String?): Flow<List<SalaryModel>> =
+        salaryDao.getFilteredSalaries(staffId, monthYear)
+
     fun getAllSalaries(): Flow<List<SalaryModel>> = salaryDao.getAllSalaries()
 
     suspend fun insertSalary(salary: SalaryModel) = salaryDao.insertSalary(salary)

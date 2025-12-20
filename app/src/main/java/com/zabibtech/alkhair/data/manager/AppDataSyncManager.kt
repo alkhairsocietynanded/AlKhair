@@ -48,24 +48,34 @@ class AppDataSyncManager @Inject constructor(
                     val isFirstSync = lastSync == 0L
                     val syncTime = if (isFirstSync) 0L else lastSync
 
-                    Log.d("AppDataSyncManager", "Performing ${if (isFirstSync) "FULL" else "INCREMENTAL"} SYNC from $syncTime")
+                    Log.d(
+                        "AppDataSyncManager",
+                        "Performing ${if (isFirstSync) "FULL" else "INCREMENTAL"} SYNC from $syncTime"
+                    )
 
                     // Launch all sync operations in parallel
                     val userSync = async { userRepoManager.syncUsers(syncTime) }
                     val classSync = async { classDivisionRepoManager.syncClasses(syncTime) }
                     val divisionSync = async { classDivisionRepoManager.syncDivisions(syncTime) }
-                    val feesSync = async { feesRepoManager.syncFees(syncTime) }
-                    val salarySync = async { salaryRepoManager.syncSalaries(syncTime) }
-                    val homeworkSync = async { homeworkRepoManager.syncHomework(syncTime) }
-                    val announcementSync = async { announcementRepoManager.syncAnnouncements(syncTime) }
+                    val feesSync = async { feesRepoManager.sync(syncTime) }
+                    val salarySync = async { salaryRepoManager.sync(syncTime) }
+                    val homeworkSync = async { homeworkRepoManager.sync(syncTime) }
+                    val announcementSync =
+                        async { announcementRepoManager.syncAnnouncements(syncTime) }
                     val deletionSync = async { if (!isFirstSync) syncDeletions(syncTime) }
 
                     // Sync Attendance for Current Month (Range Sync) - This can also run in parallel
                     val attendanceSync = async {
                         val calendar = java.util.Calendar.getInstance()
-                        val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+                        val todayDate = SimpleDateFormat(
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).format(calendar.time)
                         calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
-                        val startOfMonth = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+                        val startOfMonth = SimpleDateFormat(
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).format(calendar.time)
                         attendanceRepoManager.syncAttendanceRange(startOfMonth, todayDate)
                     }
 
@@ -106,13 +116,19 @@ class AppDataSyncManager @Inject constructor(
                             "user" -> userRepoManager.deleteUserLocally(record.id)
                             "class" -> classDivisionRepoManager.deleteClassLocally(record.id)
                             "division" -> classDivisionRepoManager.deleteDivisionLocally(record.id)
-                            "fees" -> feesRepoManager.deleteFeeLocally(record.id)
-                            "salary" -> salaryRepoManager.deleteSalaryLocally(record.id)
-                            "homework" -> homeworkRepoManager.deleteHomeworkLocally(record.id)
-                            "announcement" -> announcementRepoManager.deleteAnnouncementLocally(record.id)
+                            "fees" -> feesRepoManager.deleteLocally(record.id)
+                            "salary" -> salaryRepoManager.deleteLocally(record.id)
+                            "homework" -> homeworkRepoManager.deleteLocally(record.id)
+                            "announcement" -> announcementRepoManager.deleteAnnouncementLocally(
+                                record.id
+                            )
                         }
                     } catch (e: Exception) {
-                        Log.e("AppDataSyncManager", "Failed to process deletion for ${record.id}", e)
+                        Log.e(
+                            "AppDataSyncManager",
+                            "Failed to process deletion for ${record.id}",
+                            e
+                        )
                     }
                 }
             }

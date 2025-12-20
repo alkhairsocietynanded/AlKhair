@@ -6,125 +6,157 @@ import com.zabibtech.alkhair.data.manager.SalaryRepoManager
 import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SalaryViewModel @Inject constructor(
-    private val salaryRepoManager: SalaryRepoManager // Injected SalaryRepoManager
+    private val salaryRepoManager: SalaryRepoManager
 ) : ViewModel() {
 
-    private val _salaryListState = MutableStateFlow<UiState<List<SalaryModel>>>(UiState.Idle)
-    val salaryListState: StateFlow<UiState<List<SalaryModel>>> = _salaryListState
+    /* ============================================================
+       🔹 FILTER STATE (UI driven)
+       ============================================================ */
 
-    private val _salaryMutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
-    val salaryMutationState: StateFlow<UiState<Unit>> = _salaryMutationState
+    private val staffIdFilter = MutableStateFlow<String?>(null)
+    private val monthYearFilter = MutableStateFlow<String?>(null)
 
-    private val _summaryState =
-        MutableStateFlow<UiState<SalaryRepoManager.MonthlySummary>>(UiState.Idle) // Updated type
-    val summaryState: StateFlow<UiState<SalaryRepoManager.MonthlySummary>> = _summaryState
-
-    private val _chartDataState =
-        MutableStateFlow<UiState<Map<String, Double>>>(UiState.Idle)
-    val chartDataState: StateFlow<UiState<Map<String, Double>>> = _chartDataState
-
-    fun loadSalaries(staffId: String? = null, monthYear: String? = null) {
-        _salaryListState.value = UiState.Loading
-        viewModelScope.launch {
-            salaryRepoManager.getSalaries(staffId, monthYear).fold(
-                onSuccess = { salaries ->
-                    _salaryListState.value = UiState.Success(salaries)
-                },
-                onFailure = { error ->
-                    _salaryListState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to load salary list")
-                }
-            )
-        }
+    fun setFilters(staffId: String?, monthYear: String?) {
+        staffIdFilter.value = staffId
+        monthYearFilter.value = monthYear
     }
 
+    /* ============================================================
+       📦 SALARY LIST — SSOT (ROOM → UI)
+       ============================================================ */
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val salaryListState: StateFlow<UiState<List<SalaryModel>>> =
+        combine(staffIdFilter, monthYearFilter) { staffId, monthYear ->
+            staffId to monthYear
+        }.flatMapLatest { (staffId, monthYear) ->
+            salaryRepoManager.observeFiltered(staffId, monthYear)
+        }.map<List<SalaryModel>, UiState<List<SalaryModel>>> {
+            UiState.Success(it)
+        }.onStart {
+            emit(UiState.Loading)
+        }.catch { e ->
+            emit(UiState.Error(e.message ?: "Failed to load salaries"))
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = UiState.Idle
+        )
+
+    /* ============================================================
+       📊 CHART DATA — DERIVED FROM SSOT
+       ============================================================ */
+
+    val salaryChartState: StateFlow<UiState<Map<String, Double>>> =
+        salaryListState.map { state ->
+            when (state) {
+                is UiState.Success -> {
+                    val grouped = state.data
+                        .groupBy { it.monthYear }
+                        .mapValues { entry ->
+                            entry.value.sumOf { it.netSalary }
+                        }
+                    UiState.Success(grouped)
+                }
+                is UiState.Error -> UiState.Error(state.message)
+                is UiState.Loading -> UiState.Loading
+                UiState.Idle -> UiState.Idle
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = UiState.Idle
+        )
+
+    /* ============================================================
+       📈 MONTHLY SUMMARY — DERIVED (NO REPO CALL)
+       ============================================================ */
+
+    val monthlySummaryState: StateFlow<UiState<MonthlySummary>> =
+        salaryListState.map { state ->
+            when (state) {
+                is UiState.Success -> {
+                    val totalPaid = state.data
+                        .filter { it.paymentStatus == "PAID" }
+                        .sumOf { it.netSalary }
+
+                    val totalUnpaid = state.data
+                        .filter { it.paymentStatus != "PAID" }
+                        .sumOf { it.netSalary }
+
+                    UiState.Success(
+                        MonthlySummary(
+                            totalPaid = totalPaid,
+                            totalUnpaid = totalUnpaid,
+                            count = state.data.size
+                        )
+                    )
+                }
+                is UiState.Error -> UiState.Error(state.message)
+                is UiState.Loading -> UiState.Loading
+                UiState.Idle -> UiState.Idle
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = UiState.Idle
+        )
+
+    /* ============================================================
+       ✍️ MUTATIONS — FIREBASE WRITE ONLY
+       ============================================================ */
+
+    private val _mutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val mutationState: StateFlow<UiState<Unit>> = _mutationState
+
     fun saveSalary(salary: SalaryModel) {
-        _salaryMutationState.value = UiState.Loading
+        _mutationState.value = UiState.Loading
         viewModelScope.launch {
             val result = if (salary.id.isBlank()) {
                 salaryRepoManager.createSalary(salary)
             } else {
-                // For update, we pass the whole object for simplicity as per manager's new logic
                 salaryRepoManager.updateSalary(salary)
             }
 
-            result.fold(
-                onSuccess = { _ -> _salaryMutationState.value = UiState.Success(Unit) },
-                onFailure = { error ->
-                    _salaryMutationState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to save salary")
+            _mutationState.value = result.fold(
+                onSuccess = { UiState.Success(Unit) },
+                onFailure = {
+                    UiState.Error(it.message ?: "Failed to save salary")
                 }
             )
         }
     }
 
-    fun deleteSalary(salaryId: String) {
-        _salaryMutationState.value = UiState.Loading
+    fun deleteSalary(id: String) {
+        _mutationState.value = UiState.Loading
         viewModelScope.launch {
-            salaryRepoManager.deleteSalary(salaryId).fold(
-                onSuccess = { _ -> _salaryMutationState.value = UiState.Success(Unit) },
-                onFailure = { error ->
-                    _salaryMutationState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to delete salary")
-                }
-            )
-        }
-    }
-
-    fun loadMonthlySummary(monthYear: String? = null) {
-        _summaryState.value = UiState.Loading
-        viewModelScope.launch {
-            salaryRepoManager.getMonthlySummary(monthYear).fold(
-                onSuccess = { summary -> _summaryState.value = UiState.Success(summary) },
-                onFailure = { error ->
-                    _summaryState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to load monthly summary")
-                }
-            )
-        }
-    }
-
-    fun loadStaffSummary(staffId: String, monthYear: String? = null) {
-        _summaryState.value = UiState.Loading
-        viewModelScope.launch {
-            salaryRepoManager.getStaffSummary(staffId, monthYear).fold(
-                onSuccess = { summary -> _summaryState.value = UiState.Success(summary) },
-                onFailure = { error ->
-                    _summaryState.value =
-                        UiState.Error(error.localizedMessage ?: "Failed to load staff summary")
-                }
-            )
-        }
-    }
-
-    fun loadSalaryChartData(staffId: String? = null, monthYear: String? = null) {
-        viewModelScope.launch {
-            salaryRepoManager.getSalaries(staffId, monthYear).fold(
-                onSuccess = { salaries ->
-                    val grouped = salaries.groupBy { it.monthYear }.mapValues { entry ->
-                        entry.value.sumOf { it.netSalary }
-                    }
-                    _chartDataState.value = UiState.Success(grouped)
-                },
-                onFailure = { error ->
-                    _chartDataState.value = UiState.Error(error.localizedMessage ?: "Error loading chart")
+            _mutationState.value = salaryRepoManager.deleteSalary(id).fold(
+                onSuccess = { UiState.Success(Unit) },
+                onFailure = {
+                    UiState.Error(it.message ?: "Failed to delete salary")
                 }
             )
         }
     }
 
     fun resetMutationState() {
-        _salaryMutationState.value = UiState.Idle
-    }
-
-    fun resetSummaryState() {
-        _summaryState.value = UiState.Idle
+        _mutationState.value = UiState.Idle
     }
 }
+
+/* ============================================================
+   📦 UI MODEL — SAFE & SIMPLE
+   ============================================================ */
+
+data class MonthlySummary(
+    val totalPaid: Double,
+    val totalUnpaid: Double,
+    val count: Int
+)

@@ -8,6 +8,19 @@ import javax.inject.Inject
 class LocalHomeworkRepository @Inject constructor(
     private val homeworkDao: HomeworkDao
 ) {
+
+    fun observeHomeworkFiltered(
+        className: String?,
+        division: String?
+    ): Flow<List<Homework>> =
+        when {
+            className != null && division != null ->
+                homeworkDao.getHomeworkByClass(className, division)
+
+            else ->
+                homeworkDao.getAllHomework()
+        }
+
     fun getAllHomework(): Flow<List<Homework>> = homeworkDao.getAllHomework()
 
     fun getHomeworkByClass(className: String, division: String): Flow<List<Homework>> = 

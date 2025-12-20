@@ -21,9 +21,7 @@ import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivitySalaryBinding
 import com.zabibtech.alkhair.ui.user.UserViewModel
-import com.zabibtech.alkhair.utils.DialogUtils
-import com.zabibtech.alkhair.utils.Roles
-import com.zabibtech.alkhair.utils.UiState
+import com.zabibtech.alkhair.utils.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -34,8 +32,10 @@ import java.util.Locale
 class SalaryActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySalaryBinding
-    val viewModel: SalaryViewModel by viewModels()
+
+    private val viewModel: SalaryViewModel by viewModels()
     private val userViewModel: UserViewModel by viewModels()
+
     private lateinit var salaryAdapter: SalaryAdapter
 
     private var selectedStaffId: String? = null
@@ -45,10 +45,10 @@ class SalaryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         binding = ActivitySalaryBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Apply window insets to handle system bars
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -56,16 +56,21 @@ class SalaryActivity : AppCompatActivity() {
         }
 
         setupToolbar()
-
         setupRecyclerView()
         setupMonthDropdown()
-        setupObservers()
         setupFab()
+        setupObservers()
 
-        // Initial Load with no filters
-        reloadData()
+        // Initial filters → triggers SSOT observation
+        viewModel.setFilters(null, null)
+
+        // Load staff list
         userViewModel.loadUsers(Roles.TEACHER)
     }
+
+    /* ============================================================
+       🔹 TOOLBAR
+       ============================================================ */
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
@@ -75,69 +80,97 @@ class SalaryActivity : AppCompatActivity() {
         }
     }
 
+    /* ============================================================
+       🔹 RECYCLER VIEW
+       ============================================================ */
+
     private fun setupRecyclerView() {
         salaryAdapter = SalaryAdapter(
-            onEdit = { salary -> showAddEditDialog(salary) },
+            onEdit = { showAddEditDialog(it) },
             onDelete = { salary ->
                 DialogUtils.showConfirmation(
-                    this@SalaryActivity,
+                    this,
                     title = "Delete Salary",
-                    message = "Are you sure you want to delete this salary record?",
-                    onConfirmed = { viewModel.deleteSalary(salary.id) }
+                    message = "Are you sure you want to delete this salary?",
+                    onConfirmed = {
+                        viewModel.deleteSalary(salary.id)
+                    }
                 )
             },
             onMarkPaid = { salary ->
-                val updated = salary.copy(
-                    paymentStatus = "Paid",
-                    paymentDate = DateUtils.today()
-                ) // Use DateUtils.today()
-                viewModel.saveSalary(updated)
+                viewModel.saveSalary(
+                    salary.copy(
+                        paymentStatus = "PAID",
+                        paymentDate = DateUtils.today()
+                    )
+                )
             }
         )
+
         binding.rvSalaryList.apply {
             layoutManager = LinearLayoutManager(this@SalaryActivity)
             adapter = salaryAdapter
         }
     }
 
-    private fun setupMonthDropdown() {
-        val monthList = DateUtils.generateMonthListForPicker()
+    /* ============================================================
+       🔹 MONTH FILTER
+       ============================================================ */
 
-        val monthAdapter = ArrayAdapter(
+    private fun setupMonthDropdown() {
+        val months = DateUtils.generateMonthListForPicker()
+
+        val adapter = ArrayAdapter(
             this,
             android.R.layout.simple_dropdown_item_1line,
-            monthList
+            months
         )
-        binding.spinnerMonth.setAdapter(monthAdapter)
+
+        binding.spinnerMonth.setAdapter(adapter)
+        binding.spinnerMonth.setText(months.first(), false)
+
         binding.spinnerMonth.setOnItemClickListener { _, _, position, _ ->
-            selectedMonth = if (position == 0) null else monthList[position]
-            reloadData()
+            selectedMonth = if (position == 0) null else months[position]
+            viewModel.setFilters(selectedStaffId, selectedMonth)
         }
-        binding.spinnerMonth.setText(monthList[0], false)
     }
 
-    private fun populateStaffDropdown(teachers: List<User>) {
-        this.teacherList = teachers
-        val staffNames = mutableListOf("All Staff")
-        val staffIds = mutableListOf<String?>(null)
+    /* ============================================================
+       🔹 STAFF FILTER
+       ============================================================ */
 
-        teachers.forEach { teacher ->
-            staffNames.add(teacher.name)
-            staffIds.add(teacher.uid)
+    private fun populateStaffDropdown(staff: List<User>) {
+        teacherList = staff
+
+        val names = mutableListOf("All Staff")
+        val ids = mutableListOf<String?>(null)
+
+        staff.forEach {
+            names.add(it.name)
+            ids.add(it.uid)
         }
 
-        val staffAdapter =
-            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, staffNames)
-        binding.spinnerStaff.setAdapter(staffAdapter)
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_dropdown_item_1line,
+            names
+        )
+
+        binding.spinnerStaff.setAdapter(adapter)
+        binding.spinnerStaff.setText(names.first(), false)
+
         binding.spinnerStaff.setOnItemClickListener { _, _, position, _ ->
-            selectedStaffId = staffIds[position]
-            reloadData()
+            selectedStaffId = ids[position]
+            viewModel.setFilters(selectedStaffId, selectedMonth)
         }
-        binding.spinnerStaff.setText(staffNames[0], false)
     }
 
+    /* ============================================================
+       🔹 OBSERVERS (SSOT)
+       ============================================================ */
 
     private fun setupObservers() {
+
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userViewModel.userListState.collectLatest { state ->
@@ -152,9 +185,11 @@ class SalaryActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.salaryListState.collectLatest { state ->
                     when (state) {
-                        is UiState.Loading -> {
-                            DialogUtils.showLoading(supportFragmentManager, "Loading salaries...")
-                        }
+                        is UiState.Loading ->
+                            DialogUtils.showLoading(
+                                supportFragmentManager,
+                                "Loading salaries..."
+                            )
 
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
@@ -164,12 +199,10 @@ class SalaryActivity : AppCompatActivity() {
 
                         is UiState.Error -> {
                             DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(this@SalaryActivity, message = state.message)
+                            DialogUtils.showAlert(this@SalaryActivity, "Error", state.message)
                         }
 
-                        is UiState.Idle -> {
-                            // Do nothing on Idle
-                        }
+                        UiState.Idle -> Unit
                     }
                 }
             }
@@ -177,31 +210,31 @@ class SalaryActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.salaryMutationState.collectLatest { state ->
+                viewModel.mutationState.collectLatest { state ->
                     when (state) {
-                        is UiState.Loading -> {
-                            DialogUtils.showLoading(supportFragmentManager, "Saving...")
-                        }
+                        is UiState.Loading ->
+                            DialogUtils.showLoading(
+                                supportFragmentManager,
+                                "Saving..."
+                            )
 
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             DialogUtils.showAlert(
                                 this@SalaryActivity,
-                                message = "Salary updated successfully"
+                                "Operation successful",
+                                "Salary saved successfully"
                             )
-                            reloadData()
                             viewModel.resetMutationState()
                         }
 
                         is UiState.Error -> {
                             DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(this@SalaryActivity, message = state.message)
+                            DialogUtils.showAlert(this@SalaryActivity, "Error", state.message)
                             viewModel.resetMutationState()
                         }
 
-                        is UiState.Idle -> {
-                            // Do nothing on Idle
-                        }
+                        UiState.Idle -> Unit
                     }
                 }
             }
@@ -209,49 +242,39 @@ class SalaryActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.chartDataState.collectLatest { state ->
-                    when (state) {
-                        is UiState.Success -> setupChart(state.data)
-                        is UiState.Error -> {
-                            DialogUtils.showAlert(this@SalaryActivity, message = state.message)
-                        }
-
-                        else -> {}
+                viewModel.salaryChartState.collectLatest { state ->
+                    if (state is UiState.Success) {
+                        setupChart(state.data)
                     }
                 }
             }
         }
     }
 
+    /* ============================================================
+       📊 CHART
+       ============================================================ */
 
     private fun setupChart(data: Map<String, Double>) {
-        val barChart = binding.salaryChart
-
-        val chartEntries = data.entries.mapIndexed { index, entry ->
-            BarEntry(index.toFloat(), entry.value.toFloat())
+        val entries = data.entries.mapIndexed { index, e ->
+            BarEntry(index.toFloat(), e.value.toFloat())
         }
-        val monthLabels = data.keys.toList()
 
-        val dataSet = BarDataSet(chartEntries, "Monthly Salary Summary").apply {
-            valueTextSize = 10f
+        val dataSet = BarDataSet(entries, "Salary").apply {
             colors = ColorTemplate.MATERIAL_COLORS.toList()
+            valueTextSize = 10f
         }
 
-        val barData = BarData(dataSet).apply {
-            barWidth = 0.4f
-        }
-
-        barChart.apply {
-            this.data = barData
+        binding.salaryChart.apply {
+            this.data = BarData(dataSet)
             description.isEnabled = false
-            setFitBars(true)
             axisRight.isEnabled = false
-            animateY(1000)
+            animateY(800)
 
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
+                valueFormatter = IndexAxisValueFormatter(data.keys.toList())
                 granularity = 1f
-                valueFormatter = IndexAxisValueFormatter(monthLabels)
                 labelRotationAngle = -45f
             }
 
@@ -259,20 +282,27 @@ class SalaryActivity : AppCompatActivity() {
         }
     }
 
+    /* ============================================================
+       📈 SUMMARY
+       ============================================================ */
+
     private fun updateSummary(list: List<SalaryModel>) {
-        val totalPaid = list.filter { it.paymentStatus == "Paid" }.sumOf { it.netSalary }
-        val totalPending = list.filter { it.paymentStatus == "Pending" }.sumOf { it.netSalary }
-        val totalStaff = list.map { it.staffId }.distinct().size
+        val paid = list.filter { it.paymentStatus == "PAID" }.sumOf { it.netSalary }
+        val unpaid = list.filter { it.paymentStatus != "PAID" }.sumOf { it.netSalary }
+        val staffCount = list.map { it.staffId }.distinct().size
 
         val formatter = NumberFormat.getCurrencyInstance(
-            Locale.Builder().setLanguage("en").setRegion(
-                "IN"
-            ).build()
+            Locale.Builder().setLanguage("en").setRegion("IN").build()
         )
-        binding.tvTotalPaid.text = formatter.format(totalPaid)
-        binding.tvTotalPending.text = formatter.format(totalPending)
-        binding.tvTotalStaff.text = totalStaff.toString()
+
+        binding.tvTotalPaid.text = formatter.format(paid)
+        binding.tvTotalPending.text = formatter.format(unpaid)
+        binding.tvTotalStaff.text = staffCount.toString()
     }
+
+    /* ============================================================
+       ➕ FAB
+       ============================================================ */
 
     private fun setupFab() {
         binding.fabAddSalary.setOnClickListener {
@@ -281,14 +311,8 @@ class SalaryActivity : AppCompatActivity() {
     }
 
     private fun showAddEditDialog(salary: SalaryModel?) {
-        val dialog = AddEditSalaryDialog.newInstance(salary, teacherList)
-        dialog.show(supportFragmentManager, "AddEditSalaryDialog")
+        AddEditSalaryDialog
+            .newInstance(salary, teacherList)
+            .show(supportFragmentManager, "AddEditSalaryDialog")
     }
-
-    private fun reloadData() {
-        viewModel.loadSalaries(selectedStaffId, selectedMonth)
-        viewModel.loadSalaryChartData(selectedStaffId, selectedMonth)
-    }
-
-    // getToday() function has been removed
 }

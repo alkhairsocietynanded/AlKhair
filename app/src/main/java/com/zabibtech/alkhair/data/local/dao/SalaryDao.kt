@@ -24,6 +24,9 @@ interface SalaryDao {
     @Query("SELECT * FROM salary")
     fun getAllSalaries(): Flow<List<SalaryModel>>
 
+    @Query("SELECT * FROM salary WHERE (:staffId IS NULL OR staffId = :staffId) AND (:monthYear IS NULL OR monthYear = :monthYear)")
+    fun getFilteredSalaries(staffId: String?, monthYear: String?): Flow<List<SalaryModel>>
+
     @Query("DELETE FROM salary WHERE id = :id")
     suspend fun deleteSalary(id: String)
 

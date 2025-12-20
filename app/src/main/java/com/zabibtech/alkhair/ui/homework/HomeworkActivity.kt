@@ -27,23 +27,27 @@ class HomeworkActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         binding = ActivityHomeworkBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Apply window insets to handle system bars
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        setupWindowInsets()
         setupToolbar()
-
         setupRecyclerView()
         setupListeners()
         observeViewModel()
+    }
 
-        // Trigger the initial load of all homework
-        viewModel.loadAllHomework()
+    /* ============================================================
+       🔧 UI SETUP
+       ============================================================ */
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
     }
 
     private fun setupToolbar() {
@@ -57,79 +61,103 @@ class HomeworkActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         homeworkAdapter = HomeworkAdapter(
             onEdit = { homework ->
-                val dialog = AddHomeworkDialog.newInstance(homework)
-                dialog.show(supportFragmentManager, "EditHomeworkDialog")
+                AddHomeworkDialog.newInstance(homework)
+                    .show(supportFragmentManager, "EditHomeworkDialog")
             },
             onDelete = { homework ->
-                viewModel.deleteHomework(homework)
+                viewModel.deleteHomework(homework.id)
             }
         )
+
         binding.rvHomework.apply {
-            adapter = homeworkAdapter
             layoutManager = LinearLayoutManager(this@HomeworkActivity)
+            adapter = homeworkAdapter
+            setHasFixedSize(true)
         }
     }
 
     private fun setupListeners() {
         binding.fabAddHomework.setOnClickListener {
-            val dialog = AddHomeworkDialog.newInstance()
-            dialog.show(supportFragmentManager, "AddHomeworkDialog")
+            AddHomeworkDialog.newInstance()
+                .show(supportFragmentManager, "AddHomeworkDialog")
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.loadAllHomework()
+            // SSOT → Room → UI, no direct remote call
             binding.swipeRefreshLayout.isRefreshing = false
         }
     }
 
+    /* ============================================================
+       👀 STATE OBSERVERS
+       ============================================================ */
+
     private fun observeViewModel() {
-        // Observer for loading the list of homework
+
+        // 📦 Homework List (SSOT)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.homeworkState.collect { state ->
-                    binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
+                viewModel.homeworkListState.collect { state ->
+
+                    binding.swipeRefreshLayout.isRefreshing =
+                        state is UiState.Loading
 
                     when (state) {
                         is UiState.Success -> {
-                            val homework = state.data
-                            val isEmpty = homework.isEmpty()
-                            binding.tvEmptyState.isVisible = isEmpty
-                            binding.rvHomework.isVisible = !isEmpty
-                            if (!isEmpty) {
-                                homeworkAdapter.submitList(homework)
-                            }
-                            binding.tvEmptyState.text = "No homework assigned yet."
+                            val list = state.data
+                            homeworkAdapter.submitList(list)
+
+                            binding.rvHomework.isVisible = list.isNotEmpty()
+                            binding.tvEmptyState.isVisible = list.isEmpty()
+                            binding.tvEmptyState.text =
+                                if (list.isEmpty()) "No homework assigned yet"
+                                else ""
                         }
+
                         is UiState.Error -> {
-                            Toast.makeText(this@HomeworkActivity, state.message, Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                this@HomeworkActivity,
+                                state.message,
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            binding.tvEmptyState.isVisible =
+                                homeworkAdapter.itemCount == 0
                             binding.tvEmptyState.text = state.message
-                            binding.tvEmptyState.isVisible = homeworkAdapter.itemCount == 0
                         }
-                        else -> {
-                            // Handles Idle and Loading states where the main content is hidden
-                        }
+
+                        UiState.Loading -> Unit
+                        UiState.Idle -> Unit
                     }
                 }
             }
         }
 
-        // Observer for add, update, or delete operations
+        // ✍️ Create / Update / Delete Result
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.mutationState.collect { state ->
                     when (state) {
-                        is UiState.Loading -> {
-                        }
                         is UiState.Success -> {
-                            Toast.makeText(this@HomeworkActivity, "Operation successful", Toast.LENGTH_SHORT).show()
-                            viewModel.loadAllHomework() // Refresh the list
-                            viewModel.resetMutationState() // Reset state to prevent re-triggering
-                        }
-                        is UiState.Error -> {
-                            Toast.makeText(this@HomeworkActivity, state.message, Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                this@HomeworkActivity,
+                                "Operation successful",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             viewModel.resetMutationState()
                         }
-                        is UiState.Idle -> { /* Do nothing */ }
+
+                        is UiState.Error -> {
+                            Toast.makeText(
+                                this@HomeworkActivity,
+                                state.message,
+                                Toast.LENGTH_LONG
+                            ).show()
+                            viewModel.resetMutationState()
+                        }
+
+                        UiState.Loading -> Unit
+                        UiState.Idle -> Unit
                     }
                 }
             }
