@@ -25,8 +25,8 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    private val viewModel: MainViewModel by viewModels()
 
+    private val viewModel: MainViewModel by viewModels()
     private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,15 +34,21 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
+        setupWindowInsets()
+        progressBar = findViewById(R.id.progressBar)
+
+        observeUserSession()
+    }
+
+    private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
 
-        progressBar = findViewById(R.id.progressBar)
-
-        // Observe the user session state
+    private fun observeUserSession() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.userSessionState.collect { state ->
@@ -73,11 +79,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-
-        lifecycleScope.launch {
-            viewModel.syncData()
-            viewModel.checkUser()
-        }
     }
 
     private fun goToLogin() {
@@ -85,24 +86,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun routeToDashboard(user: User) {
-        // 1. Role ko saaf karein
         val cleanRole = user.role.trim().lowercase()
-
-        Log.d("com.zabibtech.alkhair", "Routing user. Role from ViewModel is: '${user.role}'")
-
-        if (cleanRole !in listOf("admin", "teacher", "student")) {
-            goToLogin()
-            finish() // MainActivity ko band karna na bhoolein
-            return   // Function se bahar nikal jayein
-        }
+        Log.d("MainActivity", "Routing user: ${user.name} ($cleanRole)")
 
         val destination = when (cleanRole) {
             "admin" -> AdminDashboardActivity::class.java
             "teacher" -> TeacherDashboardActivity::class.java
             "student" -> StudentDashboardActivity::class.java
-            else -> LoginActivity::class.java // Ye ab sirf ek fallback hai
+            else -> {
+                Log.e("MainActivity", "Unknown role: $cleanRole")
+                LoginActivity::class.java
+            }
         }
         startActivity(Intent(this, destination))
     }
-
 }

@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityLoginBinding
     private val viewModel: LoginViewModel by viewModels()
 
@@ -30,20 +31,25 @@ class LoginActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        setupWindowInsets()
+        setupListeners()
+        observeLoginState()
+    }
+
+    private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        setupListeners()
-        observeLoginState()
     }
 
     private fun setupListeners() {
         binding.btnLogin.setOnClickListener {
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString().trim()
+
             if (email.isEmpty() || password.isEmpty()) {
                 DialogUtils.showAlert(this, "Error", "Please fill all fields")
             } else {
@@ -68,12 +74,14 @@ class LoginActivity : AppCompatActivity() {
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             routeToDashboard(state.data)
-                            finish() // Finish LoginActivity after successful login
+                            viewModel.resetState() // Prevent re-triggering on back press
+                            finish()
                         }
 
                         is UiState.Error -> {
                             DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(this@LoginActivity, "Error", state.message)
+                            DialogUtils.showAlert(this@LoginActivity, "Login Failed", state.message)
+                            viewModel.resetState()
                         }
 
                         else -> {
@@ -86,18 +94,17 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun routeToDashboard(user: User) {
-        val destination = when (user.role) {
+        val destination = when (user.role.lowercase()) { // Added lowercase for safety
             "admin" -> AdminDashboardActivity::class.java
             "teacher" -> TeacherDashboardActivity::class.java
             "student" -> StudentDashboardActivity::class.java
-            else -> null // Handle unknown roles gracefully
+            else -> null
         }
 
         if (destination != null) {
             startActivity(Intent(this, destination))
         } else {
-            // Optional: Show an error or default to a certain screen
-            DialogUtils.showAlert(this, "Error", "Invalid user role. Please contact support.")
+            DialogUtils.showAlert(this, "Access Denied", "Invalid user role assigned. Please contact support.")
         }
     }
 }

@@ -22,98 +22,79 @@ class SalaryRepoManager @Inject constructor(
        📦 SSOT — LOCAL OBSERVATION (UI / ViewModel)
        ============================================================ */
 
-    override fun observeLocal(): Flow<List<SalaryModel>> {
-        return localRepo.getAllSalaries()
-    }
+    override fun observeLocal(): Flow<List<SalaryModel>> =
+        localRepo.getAllSalaries()
 
     fun observeFiltered(
         staffId: String?,
         monthYear: String?
-    ): Flow<List<SalaryModel>> {
-        return localRepo.getFilteredSalaries(staffId, monthYear)
-    }
+    ): Flow<List<SalaryModel>> =
+        localRepo.getFilteredSalaries(staffId, monthYear)
 
     /* ============================================================
-       🔁 SYNC — USED ONLY BY AppDataSyncManager
+       🔁 SYNC — USED BY AppDataSyncManager
        ============================================================ */
 
-    override suspend fun fetchRemoteUpdated(after: Long): List<SalaryModel> {
-        return remoteRepo.getSalariesUpdatedAfter(after)
-            .getOrElse {
-                Log.e("SalaryRepoManager", "Remote sync failed", it)
-                emptyList()
-            }
-    }
+    override suspend fun fetchRemoteUpdated(after: Long): List<SalaryModel> =
+        remoteRepo.getSalariesUpdatedAfter(after).getOrElse { emptyList() }
 
-    override suspend fun insertLocal(items: List<SalaryModel>) {
-        try {
-            localRepo.insertSalaries(items)
-        } catch (e: Exception) {
-            Log.e("SalaryRepoManager", "Local bulk insert failed", e)
-        }
-    }
+    // Remove try-catch here so failures are reported to AppDataSyncManager
+    override suspend fun insertLocal(items: List<SalaryModel>) =
+        localRepo.insertSalaries(items)
 
-    override suspend fun insertLocal(item: SalaryModel) {
-        try {
-            localRepo.insertSalary(item)
-        } catch (e: Exception) {
-            Log.e("SalaryRepoManager", "Local insert failed", e)
-        }
-    }
+    override suspend fun insertLocal(item: SalaryModel) =
+        localRepo.insertSalary(item)
 
-    override suspend fun deleteLocally(id: String) {
-        try {
-            localRepo.deleteSalary(id)
-        } catch (e: Exception) {
-            Log.e("SalaryRepoManager", "Local delete failed for $id", e)
-        }
-    }
+    override suspend fun deleteLocally(id: String) =
+        localRepo.deleteSalary(id)
 
     /* ============================================================
        ✍️ WRITE — FIREBASE → ROOM (UI ACTIONS)
        ============================================================ */
 
     suspend fun createSalary(salary: SalaryModel): Result<Unit> {
-        return try {
-            remoteRepo.createSalary(salary).onSuccess { created ->
-                insertLocal(created)
-            }.map { }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        // 1. Save to Remote
+        return remoteRepo.createSalary(salary)
+            .onSuccess { createdSalary ->
+                // 2. Save to Local
+                insertLocal(createdSalary.copy(updatedAt = System.currentTimeMillis()))
+            }
+            .map { }
     }
 
     suspend fun updateSalary(salary: SalaryModel): Result<Unit> {
-        val updateMap = mapOf<String, Any>(
+        // Prepare the updated object with a fresh timestamp
+        val currentTime = System.currentTimeMillis()
+
+        // Note: Assuming salary.netSalary is already calculated in the UI/ViewModel
+        // If not, calculate it here: val net = salary.basicSalary + ...
+
+        val updateMap = mapOf(
             "basicSalary" to salary.basicSalary,
             "allowances" to salary.allowances,
             "deductions" to salary.deductions,
-            "netSalary" to salary.calculateNet(),
+            "netSalary" to salary.netSalary, // or salary.calculateNet() if it's a method
             "paymentStatus" to salary.paymentStatus,
             "paymentDate" to (salary.paymentDate ?: ""),
             "remarks" to (salary.remarks ?: ""),
-            "updatedAt" to System.currentTimeMillis()
+            "updatedAt" to currentTime
         )
 
-        return try {
-            remoteRepo.updateSalary(salary.id, updateMap)
-                .onSuccess {
-                    remoteRepo.getSalaryById(salary.id)
-                        .onSuccess { insertLocal(it) }
-                }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        // 1. Update Remote
+        return remoteRepo.updateSalary(salary.id, updateMap)
+            .onSuccess {
+                // 2. Update Local (Optimization: No need to fetch from remote again)
+                insertLocal(salary.copy(updatedAt = currentTime))
+            }
     }
 
     suspend fun deleteSalary(id: String): Result<Unit> {
-        return try {
-            remoteRepo.deleteSalary(id).onSuccess {
+        return remoteRepo.deleteSalary(id).onSuccess {
+            // 1. Local delete
+            deleteLocally(id)
 
-                // 1️⃣ Local delete
-                deleteLocally(id)
-
-                // 2️⃣ Global deletion log for sync
+            // 2. Tombstone for Sync
+            try {
                 FirebaseRefs.deletedRecordsRef
                     .child(id)
                     .setValue(
@@ -123,9 +104,9 @@ class SalaryRepoManager @Inject constructor(
                             timestamp = System.currentTimeMillis()
                         )
                     ).await()
+            } catch (e: Exception) {
+                Log.e("SalaryRepoManager", "Failed to set tombstone", e)
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 }

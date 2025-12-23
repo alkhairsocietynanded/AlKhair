@@ -1,6 +1,5 @@
 package com.zabibtech.alkhair.ui.dashboard
 
-
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -41,14 +40,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
 
-
 @AndroidEntryPoint
 class TeacherDashboardActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityTeacherDashboardBinding
 
+    private lateinit var binding: ActivityTeacherDashboardBinding
     private lateinit var adapter: AnnouncementPagerAdapter
     private val mainViewModel: MainViewModel by viewModels()
-    val announcementViewModel: AnnouncementViewModel by viewModels()
+    private val announcementViewModel: AnnouncementViewModel by viewModels()
 
     @Inject
     lateinit var logoutManager: LogoutManager
@@ -58,58 +56,42 @@ class TeacherDashboardActivity : AppCompatActivity() {
         enableEdgeToEdge()
         binding = ActivityTeacherDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        setupWindowInsets()
+        setupToolbar()
+        setupListeners()
+        setupAnnouncementViewPager()
+
+        // Observers
+        observeLoadingState()
+        observeDashboardStats()
+        observeAnnouncements()
+    }
+
+    private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
 
-        setupToolbar()
-        setupListeners()
-        observeViewModelsLoadingState()
-        observeMainViewModel()
-        observeAnnouncementViewModel()
-        setupAnnouncementViewPager()
-
-        mainViewModel.loadDashboardStats()
-        announcementViewModel.loadFiveLatestAnnouncements()
-
-        binding.fabAnnounce.setOnClickListener {
-            val addAnnouncementSheet = AddAnnouncementSheet()
-            addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
-        }
-
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            announcementViewModel.loadFiveLatestAnnouncements()
-            mainViewModel.loadDashboardStats()
-        }
-
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
     }
 
     private fun setupListeners() {
-       /* binding.cardTeachers.setOnClickListener {
-            startActivity(
-                Intent(this, UserListActivity::class.java)
-                    .putExtra("role", "teacher")
-                    .putExtra("mode", "create")
-            )
-        }*/
-
+        // --- Navigation ---
         binding.cardStudents.setOnClickListener {
             startActivity(
                 Intent(this, UserListActivity::class.java)
-                    .putExtra("role", "student")
-                    .putExtra("mode", "create")
+                    .putExtra("role", Roles.STUDENT)
+                    .putExtra("mode", Modes.CREATE)
             )
         }
 
-        /*binding.cardClasses.setOnClickListener {
-            startActivity(Intent(this, ClassManagerActivity::class.java))
-        }*/
-
         binding.cardHomework.setOnClickListener {
-            val intent = Intent(this@TeacherDashboardActivity, HomeworkActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, HomeworkActivity::class.java))
         }
 
         binding.cardStudentAttendance.setOnClickListener {
@@ -119,13 +101,6 @@ class TeacherDashboardActivity : AppCompatActivity() {
             }
             startActivity(intent)
         }
-       /* binding.cardTeacherAttendance.setOnClickListener {
-            val intent = Intent(this, ClassManagerActivity::class.java).apply {
-                putExtra("mode", Modes.ATTENDANCE)
-                putExtra("role", Roles.TEACHER)
-            }
-            startActivity(intent)
-        }*/
 
         binding.cardFees.setOnClickListener {
             startActivity(Intent(this, FeesActivity::class.java))
@@ -135,22 +110,34 @@ class TeacherDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, SalaryActivity::class.java))
         }
 
+        // --- Actions ---
         binding.cardLogout.setOnClickListener {
             logoutManager.logout(this)
         }
+
+        binding.fabAnnounce.setOnClickListener {
+            val addAnnouncementSheet = AddAnnouncementSheet()
+            addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
+        }
+
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            // Data refreshes automatically via Flow when DB updates (Background sync)
+            binding.swipeRefreshLayout.isRefreshing = false
+        }
     }
 
-
-    private fun setupAnnouncementViewPager(announcements: List<Announcement> = emptyList()) {
+    private fun setupAnnouncementViewPager() {
         adapter = AnnouncementPagerAdapter(
-            announcements.toMutableList(),
+            mutableListOf(),
             onDelete = { announcement ->
                 DialogUtils.showConfirmation(
                     context = this,
                     title = "Delete announcement",
                     message = "Are you sure you want to delete ${announcement.title}?",
-                    onConfirmed = { announcementViewModel.deleteAnnouncement(announcement.id) })
-            })
+                    onConfirmed = { announcementViewModel.deleteAnnouncement(announcement.id) }
+                )
+            }
+        )
 
         binding.announcementPager.adapter = adapter
         binding.announcementPager.apply {
@@ -167,22 +154,24 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
 
         binding.announcementPager.setPageTransformer(compositePageTransformer)
-
-        TabLayoutMediator(binding.tabLayout, binding.announcementPager) { _, _ ->
-        }.attach()
+        TabLayoutMediator(binding.tabLayout, binding.announcementPager) { _, _ -> }.attach()
     }
 
-    private fun observeViewModelsLoadingState() {
+    /* ============================================================
+       👀 OBSERVERS
+       ============================================================ */
+
+    private fun observeLoadingState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
                     mainViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
-                    announcementViewModel.addUpdateAnnouncementState
-                ) { dashboardState, latestAnnouncementsState, addAnnouncementState ->
+                    announcementViewModel.mutationState // Updated here
+                ) { dashboardState, announcementListState, mutationState ->
                     dashboardState is UiState.Loading ||
-                            latestAnnouncementsState is UiState.Loading ||
-                            addAnnouncementState is UiState.Loading
+                            announcementListState is UiState.Loading ||
+                            mutationState is UiState.Loading
                 }.collectLatest { isLoading ->
                     binding.swipeRefreshLayout.isRefreshing = isLoading
                 }
@@ -190,40 +179,31 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun observeMainViewModel() {
+    private fun observeDashboardStats() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 mainViewModel.dashboardState.collectLatest { state ->
                     when (state) {
-                        is UiState.Success -> {
-                            updateDashboardUI(state.data)
-                        }
-
-                        is UiState.Error -> {
-                            //DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(
-                                this@TeacherDashboardActivity,
-                                "Error",
-                                state.message
-                            )
-                        }
-
-                        else -> {
-                        }
+                        is UiState.Success -> updateDashboardUI(state.data)
+                        is UiState.Error -> DialogUtils.showAlert(
+                            this@TeacherDashboardActivity, "Error", state.message
+                        )
+                        else -> Unit
                     }
                 }
             }
         }
     }
 
-    private fun observeAnnouncementViewModel() {
+    private fun observeAnnouncements() {
+        // 1. List Observer
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 announcementViewModel.latestAnnouncementsState.collectLatest { state ->
                     when (state) {
-
                         is UiState.Success -> {
-                            if (state.data.isEmpty()) {
+                            val list = state.data
+                            if (list.isEmpty()) {
                                 binding.announcementPager.visibility = View.GONE
                                 binding.tabLayout.visibility = View.GONE
                                 binding.announcementPlaceholder.visibility = View.VISIBLE
@@ -231,48 +211,33 @@ class TeacherDashboardActivity : AppCompatActivity() {
                                 binding.announcementPager.visibility = View.VISIBLE
                                 binding.tabLayout.visibility = View.VISIBLE
                                 binding.announcementPlaceholder.visibility = View.GONE
-                                adapter.updateData(state.data)
+                                adapter.updateData(list)
                             }
                         }
-
-                        is UiState.Error -> {
-                            DialogUtils.showAlert(
-                                this@TeacherDashboardActivity,
-                                "Error",
-                                state.message
-                            )
-                        }
-
-                        else -> {}
+                        is UiState.Error -> DialogUtils.showAlert(
+                            this@TeacherDashboardActivity, "Error", state.message
+                        )
+                        else -> Unit
                     }
                 }
             }
         }
 
+        // 2. Mutation Observer (Add/Delete results)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                announcementViewModel.addUpdateAnnouncementState.collectLatest { state ->
+                // Changed from addUpdateAnnouncementState to mutationState
+                announcementViewModel.mutationState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> {
-                            DialogUtils.hideLoading(supportFragmentManager)
-                            Toast.makeText(
-                                this@TeacherDashboardActivity,
-                                "Announcement Saved!",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            announcementViewModel.resetAddUpdateAnnouncementState()
+                            Toast.makeText(this@TeacherDashboardActivity, "Operation Successful", Toast.LENGTH_SHORT).show()
+                            announcementViewModel.resetMutationState()
                         }
-
                         is UiState.Error -> {
-                            DialogUtils.showAlert(
-                                this@TeacherDashboardActivity,
-                                "Error",
-                                state.message
-                            )
-                            announcementViewModel.resetAddUpdateAnnouncementState()
+                            DialogUtils.showAlert(this@TeacherDashboardActivity, "Error", state.message)
+                            announcementViewModel.resetMutationState()
                         }
-
-                        else -> {}
+                        else -> Unit
                     }
                 }
             }
@@ -287,9 +252,5 @@ class TeacherDashboardActivity : AppCompatActivity() {
         binding.progressAttendance.progress = stats.attendancePercentage
         binding.tvPresentCount.text = "Present: ${stats.presentCount}"
         binding.tvAbsentCount.text = "Absent: ${stats.absentCount}"
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
     }
 }

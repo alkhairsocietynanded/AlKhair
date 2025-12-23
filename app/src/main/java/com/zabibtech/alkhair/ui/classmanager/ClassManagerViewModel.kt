@@ -11,127 +11,89 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ClassManagerUiData(
+    val divisions: List<DivisionModel>,
+    val classes: List<ClassModel>
+)
+
 @HiltViewModel
 class ClassManagerViewModel @Inject constructor(
     private val repoManager: ClassDivisionRepoManager
 ) : ViewModel() {
 
-    // State for the list of divisions
-    private val _divisions = MutableStateFlow<UiState<List<DivisionModel>>>(UiState.Loading)
-    val divisions: StateFlow<UiState<List<DivisionModel>>> = _divisions
+    /* ============================================================
+       📦 REACTIVE UI STATE
+       ============================================================ */
 
-    // State for the list of classes
-    private val _classes = MutableStateFlow<UiState<List<ClassModel>>>(UiState.Loading)
-    val classes: StateFlow<UiState<List<ClassModel>>> = _classes
+    // Combines Classes and Divisions into a single UI State object
+    val uiState: StateFlow<UiState<ClassManagerUiData>> =
+        combine(
+            repoManager.observeDivisions(),
+            repoManager.observeClasses()
+        ) { divisions, classes ->
+            ClassManagerUiData(divisions, classes)
+        }
+            .map<ClassManagerUiData, UiState<ClassManagerUiData>> {
+                UiState.Success(it)
+            }
+            .onStart { emit(UiState.Loading) }
+            .catch { emit(UiState.Error(it.message ?: "Failed to load classes")) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                UiState.Idle
+            )
 
-    // State for individual operations like add, update, delete
+    /* ============================================================
+       ✍️ OPERATIONS (Add / Update / Delete)
+       ============================================================ */
+
     private val _operationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val operationState: StateFlow<UiState<Unit>> = _operationState
 
-    init {
-        // Initial data load
-        loadClassesAndDivisions()
-    }
-
-    private fun loadClassesAndDivisions() {
-        _divisions.value = UiState.Loading
-        viewModelScope.launch {
-            repoManager.getAllDivisions().fold(
-                onSuccess = { divisionList -> _divisions.value = UiState.Success(divisionList) },
-                onFailure = { e -> _divisions.value = UiState.Error(e.localizedMessage ?: "Error loading divisions") }
-            )
-        }
-
-        _classes.value = UiState.Loading
-        viewModelScope.launch {
-            repoManager.getAllClasses().fold(
-                onSuccess = { classList -> _classes.value = UiState.Success(classList) },
-                onFailure = { e -> _classes.value = UiState.Error(e.localizedMessage ?: "Error loading classes") }
-            )
-        }
-    }
-
-    fun refreshAll() {
-        loadClassesAndDivisions()
-    }
-
-    fun resetOperationState() {
-        _operationState.value = UiState.Idle
-    }
-
-    // =============================
-    // Division Operations
-    // =============================
+    // --- DIVISIONS ---
     fun addDivision(name: String) {
         if (name.isBlank()) {
             _operationState.value = UiState.Error("Division name cannot be empty.")
             return
         }
-        _operationState.value = UiState.Loading
-        viewModelScope.launch {
-            val newDivision = DivisionModel(name = name)
-            repoManager.addDivision(newDivision).fold(
-                onSuccess = { _operationState.value = UiState.Success(Unit) },
-                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to add division") }
-            )
-        }
-    }
-
-    fun updateDivision(division: DivisionModel) {
-        _operationState.value = UiState.Loading
-        viewModelScope.launch {
-            repoManager.updateDivision(division).fold(
-                onSuccess = { _operationState.value = UiState.Success(Unit) },
-                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to update division") }
-            )
-        }
+        launchOperation { repoManager.addDivision(DivisionModel(name = name)) }
     }
 
     fun deleteDivision(divisionId: String) {
-        _operationState.value = UiState.Loading
-        viewModelScope.launch {
-            repoManager.deleteDivision(divisionId).fold(
-                onSuccess = { _operationState.value = UiState.Success(Unit) },
-                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to delete division") }
-            )
-        }
+        launchOperation { repoManager.deleteDivision(divisionId) }
     }
 
-    // =============================
-    // Class Operations
-    // =============================
+    // --- CLASSES ---
     fun addClass(className: String, divisionName: String) {
         if (className.isBlank() || divisionName.isBlank()) {
-            _operationState.value = UiState.Error("Class and division names cannot be empty.")
+            _operationState.value = UiState.Error("Invalid input.")
             return
         }
-        _operationState.value = UiState.Loading
-        viewModelScope.launch {
-            val newClass = ClassModel(className = className, division = divisionName)
-            repoManager.addClass(newClass).fold(
-                onSuccess = { _operationState.value = UiState.Success(Unit) },
-                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to add class") }
-            )
-        }
+        val newClass = ClassModel(className = className, division = divisionName)
+        launchOperation { repoManager.addClass(newClass) }
     }
 
     fun updateClass(classModel: ClassModel) {
+        launchOperation { repoManager.updateClass(classModel) }
+    }
+
+    fun deleteClass(classId: String) {
+        launchOperation { repoManager.deleteClass(classId) }
+    }
+
+    // Helper to reduce boilerplate
+    private fun <T> launchOperation(block: suspend () -> Result<T>) {
         _operationState.value = UiState.Loading
         viewModelScope.launch {
-            repoManager.updateClass(classModel).fold(
+            block().fold(
                 onSuccess = { _operationState.value = UiState.Success(Unit) },
-                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to update class") }
+                onFailure = { _operationState.value = UiState.Error(it.message ?: "Operation failed") }
             )
         }
     }
 
-    fun deleteClass(classId: String) {
-        _operationState.value = UiState.Loading
-        viewModelScope.launch {
-            repoManager.deleteClass(classId).fold(
-                onSuccess = { _operationState.value = UiState.Success(Unit) },
-                onFailure = { e -> _operationState.value = UiState.Error(e.localizedMessage ?: "Failed to delete class") }
-            )
-        }
+    fun resetOperationState() {
+        _operationState.value = UiState.Idle
     }
 }

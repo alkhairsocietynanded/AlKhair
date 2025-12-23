@@ -19,6 +19,10 @@ class LocalAttendanceRepository @Inject constructor(
     fun getAttendanceByStudent(studentId: String): Flow<List<Attendance>> =
         attendanceDao.getAttendanceByStudent(studentId)
 
+    // ✅ ADDED for BaseRepoManager
+    fun getAllAttendance(): Flow<List<Attendance>> =
+        attendanceDao.getAllAttendance()
+
     suspend fun insertAttendance(attendance: Attendance) =
         attendanceDao.insertAttendance(attendance)
 

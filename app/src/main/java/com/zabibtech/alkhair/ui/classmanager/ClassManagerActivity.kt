@@ -2,17 +2,18 @@ package com.zabibtech.alkhair.ui.classmanager
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.snackbar.Snackbar
+import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.databinding.ActivityClassManagerBinding
 import com.zabibtech.alkhair.ui.attendance.AttendanceActivity
@@ -23,7 +24,6 @@ import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -33,7 +33,8 @@ class ClassManagerActivity : AppCompatActivity() {
     private val viewModel: ClassManagerViewModel by viewModels()
     private lateinit var adapter: ClassManagerAdapter
 
-    private var divisions: List<DivisionModel> = emptyList()
+    // Keep track for FAB action
+    private var currentDivisions: List<DivisionModel> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,165 +42,152 @@ class ClassManagerActivity : AppCompatActivity() {
         binding = ActivityClassManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupWindowInsets()
+        setupToolbar()
+        setupRecyclerView()
+        setupFab()
+
+        // Swipe Refresh just resets UI state in SSOT (Sync handles actual refresh)
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            binding.swipeRefreshLayout.isRefreshing = false
+        }
+
+        observeViewModel()
+    }
+
+    private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        setupToolbar()
-        setupRecyclerView()
-        setupFab()
-        setupSwipeRefreshLayout()
-        observeViewModel()
     }
 
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
-        }
+        binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun setupRecyclerView() {
         adapter = ClassManagerAdapter(
             onEdit = { classModel ->
-                val addClassSheet = AddClassSheet.newInstance(
-                    divisions = divisions.map { it.name },
+                val sheet = AddClassSheet.newInstance(
+                    divisions = currentDivisions.map { it.name },
                     existingDivision = classModel.division,
                     existingClassName = classModel.className,
                     existingClassId = classModel.id
                 )
-                addClassSheet.show(supportFragmentManager, AddClassSheet.TAG)
+                sheet.show(supportFragmentManager, AddClassSheet.TAG)
             },
             onDelete = { classModel ->
                 DialogUtils.showConfirmation(
-                    context = this,
-                    title = "Delete Class",
-                    message = "Are you sure you want to delete ${classModel.className}?",
+                    this, "Delete Class", "Delete ${classModel.className}?",
                     onConfirmed = { viewModel.deleteClass(classModel.id) }
                 )
             },
             onClick = { classModel ->
                 val mode = intent.getStringExtra("mode") ?: Modes.CREATE
                 val role = intent.getStringExtra("role") ?: Roles.STUDENT
-                val targetIntent = if (mode == Modes.ATTENDANCE) {
-                    Intent(this@ClassManagerActivity, AttendanceActivity::class.java)
+
+                val target = if (mode == Modes.ATTENDANCE) {
+                    Intent(this, AttendanceActivity::class.java)
                 } else {
-                    Intent(this@ClassManagerActivity, UserListActivity::class.java)
+                    Intent(this, UserListActivity::class.java)
                 }
 
-                targetIntent.apply {
+                target.apply {
                     putExtra("mode", mode)
                     putExtra("role", role)
                     putExtra("classId", classModel.id)
                     putExtra("className", classModel.className)
                     putExtra("division", classModel.division)
                 }
-                startActivity(targetIntent)
+                startActivity(target)
             }
         )
 
-        val gridLayoutManager = GridLayoutManager(this, 2)
-        gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+        val gridLayout = GridLayoutManager(this, 2)
+        gridLayout.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
-                return when (adapter.getItemViewType(position)) {
-                    ClassManagerAdapter.VIEW_TYPE_HEADER -> 2
-                    ClassManagerAdapter.VIEW_TYPE_ITEM -> 1
-                    else -> 1
-                }
+                return if (adapter.getItemViewType(position) == ClassManagerAdapter.VIEW_TYPE_HEADER) 2 else 1
             }
         }
 
-        binding.recyclerView.layoutManager = gridLayoutManager
+        binding.recyclerView.layoutManager = gridLayout
         binding.recyclerView.adapter = adapter
     }
 
     private fun setupFab() {
         binding.fabAddClass.setOnClickListener {
-            val addClassSheet = AddClassSheet.newInstance(divisions.map { it.name })
-            addClassSheet.show(supportFragmentManager, AddClassSheet.TAG)
-        }
-    }
-
-    private fun setupSwipeRefreshLayout() {
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.refreshAll() // Single call to refresh everything
+            val sheet = AddClassSheet.newInstance(currentDivisions.map { it.name })
+            sheet.show(supportFragmentManager, AddClassSheet.TAG)
         }
     }
 
     private fun observeViewModel() {
+        // 1. Data Observer
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collectLatest { state ->
+                    binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
 
-                // Combined observer for all UI states
-                launch {
-                    combine(
-                        viewModel.divisions,
-                        viewModel.classes,
-                        viewModel.operationState
-                    ) { divisionsState, classesState, operationState ->
-                        Triple(divisionsState, classesState, operationState)
-                    }.collectLatest { (divisionsState, classesState, operationState) ->
+                    when (state) {
+                        is UiState.Success -> {
+                            val data = state.data
+                            this@ClassManagerActivity.currentDivisions = data.divisions
 
-                        // --- Handle Loading State ---
-                        val isListLoading = (divisionsState is UiState.Loading || classesState is UiState.Loading) && (operationState !is UiState.Success && operationState !is UiState.Error)
-                        val isOperationRunning = operationState is UiState.Loading
-                        binding.swipeRefreshLayout.isRefreshing = isListLoading || isOperationRunning
+                            val listItems = buildListItems(data.divisions, data.classes)
+                            adapter.submitList(listItems)
 
-                        // --- Handle List Display ---
-                        if (operationState !is UiState.Loading) { // Only update list when no operation is running
-                            val isSuccess = divisionsState is UiState.Success && classesState is UiState.Success
-                            when {
-                                divisionsState is UiState.Error -> {
-                                    binding.emptyView.text = divisionsState.message
-                                    binding.emptyView.isVisible = true
-                                    adapter.submitList(emptyList())
-                                }
-                                classesState is UiState.Error -> {
-                                    binding.emptyView.text = classesState.message
-                                    binding.emptyView.isVisible = true
-                                    adapter.submitList(emptyList())
-                                }
-                                isSuccess -> {
-                                    val divisionsList = (divisionsState as UiState.Success).data
-                                    val classesList = (classesState as UiState.Success).data
-                                    this@ClassManagerActivity.divisions = divisionsList
-
-                                    val items = mutableListOf<ClassListItem>()
-                                    if (classesList.isNotEmpty() && divisionsList.isNotEmpty()) {
-                                        val groupedByDivision = classesList.groupBy { it.division }
-                                        divisionsList.forEach { division ->
-                                            val classesInDivision = groupedByDivision[division.name]
-                                            if (!classesInDivision.isNullOrEmpty()) {
-                                                items.add(ClassListItem.Header(division.name))
-                                                items.addAll(classesInDivision.map { ClassListItem.ClassItem(it) })
-                                            }
-                                        }
-                                    }
-                                    adapter.submitList(items)
-                                    binding.emptyView.isVisible = items.isEmpty()
-                                    binding.emptyView.text = "No classes found"
-                                }
-                            }
+                            binding.emptyView.visibility = if(listItems.isEmpty()) View.VISIBLE else View.GONE
                         }
-
-                        // --- Handle Operation Feedback (Snackbar) ---
-                        when (operationState) {
-                            is UiState.Success -> {
-                                Snackbar.make(binding.root, "Operation successful", Snackbar.LENGTH_SHORT).show()
-                                viewModel.resetOperationState()
-                            }
-                            is UiState.Error -> {
-                                Snackbar.make(binding.root, operationState.message, Snackbar.LENGTH_LONG).show()
-                                viewModel.resetOperationState()
-                            }
-                            else -> Unit // Idle or Loading
+                        is UiState.Error -> {
+                            binding.emptyView.text = state.message
+                            binding.emptyView.visibility = View.VISIBLE
                         }
+                        else -> Unit
                     }
                 }
             }
         }
+
+        // 2. Operation Observer
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.operationState.collectLatest { state ->
+                    when (state) {
+                        is UiState.Loading -> binding.swipeRefreshLayout.isRefreshing = true
+                        is UiState.Success -> {
+                            binding.swipeRefreshLayout.isRefreshing = false
+                            Snackbar.make(binding.root, "Success", Snackbar.LENGTH_SHORT).show()
+                            viewModel.resetOperationState()
+                        }
+                        is UiState.Error -> {
+                            binding.swipeRefreshLayout.isRefreshing = false
+                            Snackbar.make(binding.root, state.message, Snackbar.LENGTH_LONG).show()
+                            viewModel.resetOperationState()
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+        }
+    }
+
+    private fun buildListItems(divisions: List<DivisionModel>, classes: List<ClassModel>): List<ClassListItem> {
+        if (divisions.isEmpty()) return emptyList()
+
+        val items = mutableListOf<ClassListItem>()
+        val groupedClasses = classes.groupBy { it.division }
+
+        divisions.forEach { div ->
+            val classList = groupedClasses[div.name]
+            if (!classList.isNullOrEmpty()) {
+                items.add(ClassListItem.Header(div.name))
+                items.addAll(classList.map { ClassListItem.ClassItem(it) })
+            }
+        }
+        return items
     }
 }

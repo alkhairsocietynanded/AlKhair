@@ -3,6 +3,7 @@ package com.zabibtech.alkhair.ui.user
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -16,8 +17,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.datastore.ShiftDataStore
+import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityUserListBinding
-import com.zabibtech.alkhair.ui.user.helper.UserListUiController
+import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Modes
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.Shift
@@ -37,21 +39,21 @@ class UserListActivity : AppCompatActivity() {
     lateinit var shiftDataStore: ShiftDataStore
 
     private lateinit var adapter: UserAdapter
-    private lateinit var uiController: UserListUiController
 
+    // Intent Data
     private lateinit var mode: String
     private var role: String = Roles.STUDENT
     private var classId: String? = null
-    private var className: String? = null
     private var division: String? = null
-    private var currentShift: String? = "All"
+    private var className: String? = null
+
+    // State for FAB
+    private var currentShift: String = Shift.ALL
 
     private val userFormLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            userViewModel.loadUsers(role)
-        }
+        // No action needed; DB updates -> Flow updates -> UI updates
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,46 +62,27 @@ class UserListActivity : AppCompatActivity() {
         binding = ActivityUserListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        setupWindowInsets()
         setupToolbar()
-
         extractIntentData()
         setupRecyclerView()
-
-        uiController = UserListUiController(
-            this,
-            binding,
-            adapter,
-            userViewModel
-        ) { intent -> userFormLauncher.launch(intent) }
-
+        setupListeners()
         setupObservers()
-        setupChipFilterListeners()
 
-        lifecycleScope.launch {
-            val savedShift = shiftDataStore.getShift()
-            val chipId = when (savedShift) {
-                Shift.SUBAH -> R.id.chipSubah
-                Shift.DOPAHAR -> R.id.chipDopahar
-                Shift.SHAM -> R.id.chipShaam
-                else -> R.id.chipAll
-            }
-            binding.chipGroupShift.check(chipId)
+        // Initialize Filter State
+        userViewModel.setInitialFilters(role, classId, Shift.ALL)
+        restoreShiftState()
+    }
 
-            uiController.setupListeners(role, classId, division, currentShift)
+    /* ============================================================
+       🔧 UI SETUP
+       ============================================================ */
 
-            // Initialize SwipeRefreshLayout
-            /*            binding.swipeRefreshLayout.setColorSchemeResources(
-                            R.color.md_theme_primary,
-                            R.color.md_theme_onSurface
-                        )*/
-
-            // First-time load
-            userViewModel.loadUsers(role)
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
         }
     }
 
@@ -132,42 +115,18 @@ class UserListActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.user_list_menu, menu)
-        val searchItem = menu.findItem(R.id.action_search)
-        val searchView = searchItem.actionView as SearchView
-        searchView.queryHint = "Search by name..."
-
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                adapter.filter.filter(query)
-                return false
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                adapter.filter.filter(newText)
-                return true
-            }
-        })
-        return true
-    }
-
     private fun setupRecyclerView() {
         adapter = UserAdapter(
             onEdit = { user ->
-                if (mode == Modes.CREATE) {
-                    val intent = Intent(this, UserFormActivity::class.java).apply {
-                        putExtra("role", user.role)
-                        putExtra("mode", Modes.UPDATE)
-                        putExtra("user", user)
-                    }
-                    userFormLauncher.launch(intent)
+                val intent = Intent(this, UserFormActivity::class.java).apply {
+                    putExtra("role", user.role)
+                    putExtra("mode", Modes.UPDATE)
+                    putExtra("user", user)
                 }
+                userFormLauncher.launch(intent)
             },
             onDelete = { user ->
-                if (mode == Modes.CREATE) {
-                    uiController.confirmDelete(user)
-                }
+                confirmDelete(user)
             },
             onClick = { user ->
                 val intent = Intent(this, UserDetailActivity::class.java).apply {
@@ -177,46 +136,157 @@ class UserListActivity : AppCompatActivity() {
                 startActivity(intent)
             }
         )
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = adapter
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(this@UserListActivity)
+            adapter = this@UserListActivity.adapter
+        }
     }
 
-    private fun setupChipFilterListeners() {
+    private fun setupListeners() {
+        // FAB Click
+        binding.fabAddUser.setOnClickListener {
+            val intent = Intent(this, UserFormActivity::class.java).apply {
+                putExtra("role", role)
+                putExtra("mode", Modes.CREATE)
+                putExtra("classId", classId)
+                putExtra("division", division)
+                putExtra("currentShift", currentShift)
+            }
+            userFormLauncher.launch(intent)
+        }
+
+        // Swipe Refresh
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            // Flow is live, no need to manually reload.
+            // If you had a sync mechanism, you would trigger it here.
+            binding.swipeRefreshLayout.isRefreshing = false
+        }
+
+        // Shift Chips
         binding.chipGroupShift.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isEmpty()) return@setOnCheckedStateChangeListener
 
-            currentShift = when (checkedIds.first()) {
+            val selectedShift = when (checkedIds.first()) {
                 R.id.chipSubah -> Shift.SUBAH
                 R.id.chipDopahar -> Shift.DOPAHAR
-                R.id.chipShaam -> Shift.SHAM
+                R.id.chipShaam -> Shift.SHAAM
                 else -> Shift.ALL
             }
 
+            // Update local state for FAB
+            currentShift = selectedShift
+
+            // Save preference
             lifecycleScope.launch {
-                shiftDataStore.saveShift(currentShift ?: "All")
+                shiftDataStore.saveShift(selectedShift)
             }
 
-            uiController.setupListeners(role, classId, division, currentShift)
-            userViewModel.loadUsers(role)
+            // Update VM Filter
+            userViewModel.setShiftFilter(selectedShift)
         }
     }
 
+    private fun restoreShiftState() {
+        lifecycleScope.launch {
+            val savedShift = shiftDataStore.getShift()
+            val chipId = when (savedShift) {
+                Shift.SUBAH -> R.id.chipSubah
+                Shift.DOPAHAR -> R.id.chipDopahar
+                Shift.SHAAM -> R.id.chipShaam
+                else -> R.id.chipAll
+            }
+            binding.chipGroupShift.check(chipId)
+
+            // Sync state
+            currentShift = savedShift
+            userViewModel.setShiftFilter(savedShift)
+        }
+    }
+
+    /* ============================================================
+       👀 OBSERVERS
+       ============================================================ */
+
     private fun setupObservers() {
+        // 1. List Data
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userViewModel.userListState.collectLatest { state ->
-                    binding.swipeRefreshLayout.isRefreshing = state is UiState.Loading
-                    uiController.handleListState(state, role, classId, currentShift)
+                    when (state) {
+                        is UiState.Loading -> {
+                            // Optional: binding.swipeRefreshLayout.isRefreshing = true
+                        }
+                        is UiState.Success -> {
+                            binding.swipeRefreshLayout.isRefreshing = false
+                            val list = state.data
+                            adapter.submitList(list) // Adapter handles diff/updates
+
+                            binding.recyclerView.visibility = if (list.isEmpty()) View.GONE else View.VISIBLE
+                            binding.emptyView.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                        }
+                        is UiState.Error -> {
+                            binding.swipeRefreshLayout.isRefreshing = false
+                            DialogUtils.showAlert(this@UserListActivity, "Error", state.message)
+                        }
+                        else -> Unit
+                    }
                 }
             }
         }
 
+        // 2. Mutation (Save/Delete) Results
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                userViewModel.userState.collectLatest { state ->
-                    uiController.handleUserState(state, role)
+                userViewModel.mutationState.collectLatest { state ->
+                    when (state) {
+                        is UiState.Loading -> binding.swipeRefreshLayout.isRefreshing = true
+                        is UiState.Success -> {
+                            binding.swipeRefreshLayout.isRefreshing = false
+                            // DialogUtils.showAlert(this@UserListActivity, "Success", "Operation successful") // Optional toast
+                            userViewModel.resetMutationState()
+                        }
+                        is UiState.Error -> {
+                            binding.swipeRefreshLayout.isRefreshing = false
+                            DialogUtils.showAlert(this@UserListActivity, "Error", state.message)
+                            userViewModel.resetMutationState()
+                        }
+                        else -> Unit
+                    }
                 }
             }
         }
+    }
+
+    /* ============================================================
+       🛠 ACTIONS
+       ============================================================ */
+
+    private fun confirmDelete(user: User) {
+        DialogUtils.showConfirmation(
+            this,
+            title = "Confirm Deletion",
+            message = "Are you sure you want to delete ${user.name}?",
+            onConfirmed = { userViewModel.deleteUser(user.uid) }
+        )
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.user_list_menu, menu)
+        val searchItem = menu.findItem(R.id.action_search)
+        val searchView = searchItem.actionView as SearchView
+        searchView.queryHint = "Search by name..."
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                userViewModel.setSearchQuery(query ?: "")
+                return false
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                userViewModel.setSearchQuery(newText ?: "")
+                return true
+            }
+        })
+        return true
     }
 }

@@ -3,8 +3,6 @@ package com.zabibtech.alkhair.ui.user
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -13,21 +11,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ItemUserBinding
-import java.util.Locale
+import com.zabibtech.alkhair.utils.Shift
 
 class UserAdapter(
     private val onEdit: (User) -> Unit,
     private val onDelete: (User) -> Unit,
     private val onClick: (User) -> Unit,
-) : ListAdapter<User, UserAdapter.UserViewHolder>(DiffCallback), Filterable {
+) : ListAdapter<User, UserAdapter.UserViewHolder>(DiffCallback) {
 
-    private var fullList: List<User> = emptyList()
-
-    // This method is called from the UI Controller to set the base list for filtering.
-    fun setFullList(list: List<User>?) {
-        fullList = list ?: emptyList()
-        submitList(list) // Update the displayed list.
-    }
+    // ❌ Removed: Filterable implementation, fullList, and getFilter().
+    // The ViewModel now filters the data and passes the final list here.
 
     inner class UserViewHolder(private val binding: ItemUserBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -36,31 +29,21 @@ class UserAdapter(
             tvName.text = user.name
             tvEmail.text = user.email
             tvPhone.text = user.phone
-//            tvRole.text = user.role
 
             tvClass.text = user.className
             tvDivision.text = user.divisionName
-//            tvShift.text = user.shift
             chipShift.text = user.shift
 
+            // Set Shift Color
             val shiftColor = when (user.shift.lowercase()) {
-                "subah".lowercase() -> ContextCompat.getColor(
-                    binding.root.context,
-                    R.color.subah
-                )
-
-                "dopahar".lowercase() -> ContextCompat.getColor(
-                    binding.root.context,
-                    R.color.dopahar
-                )
-
-                else -> ContextCompat.getColor(
-                    binding.root.context,
-                    R.color.shaam
-                )
+                Shift.SUBAH.lowercase() -> ContextCompat.getColor(root.context, R.color.subah)
+                Shift.DOPAHAR.lowercase() -> ContextCompat.getColor(root.context, R.color.dopahar)
+                Shift.SHAAM.lowercase() -> ContextCompat.getColor(root.context, R.color.shaam)
+                else -> ContextCompat.getColor(root.context, R.color.md_theme_error)
             }
             chipShift.chipBackgroundColor = ColorStateList.valueOf(shiftColor)
 
+            // Popup Menu
             btnMore.setOnClickListener { view ->
                 val popup = PopupMenu(view.context, view)
                 popup.menuInflater.inflate(R.menu.menu_user_item, popup.menu)
@@ -87,36 +70,14 @@ class UserAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
-        val binding = ItemUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemUserBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
         return UserViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         holder.bind(getItem(position))
-    }
-
-    override fun submitList(list: List<User>?) {
-        super.submitList(list)
-        if (list != null) fullList = list
-    }
-
-    override fun getFilter(): Filter {
-        return object : Filter() {
-            override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val query = constraint?.toString()?.lowercase(Locale.getDefault()) ?: ""
-                val filtered = if (query.isEmpty()) fullList else fullList.filter {
-                    it.name.lowercase(Locale.getDefault()).contains(query) ||
-                            it.email.lowercase(Locale.getDefault()).contains(query) ||
-                            it.phone.contains(query)
-                }
-                return FilterResults().apply { values = filtered }
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                super@UserAdapter.submitList(results?.values as? List<User> ?: emptyList())
-            }
-        }
     }
 
     object DiffCallback : DiffUtil.ItemCallback<User>() {

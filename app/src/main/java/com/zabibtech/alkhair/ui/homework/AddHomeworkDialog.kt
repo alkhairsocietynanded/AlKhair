@@ -15,6 +15,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.Homework
 import com.zabibtech.alkhair.databinding.DialogAddHomeworkBinding
+import com.zabibtech.alkhair.utils.Shift
 import com.zabibtech.alkhair.utils.UiState
 import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
@@ -162,7 +163,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
         }
 
         // ⏰ Shift (static)
-        val shifts = listOf("Subah", "Dopahar", "Shaam")
+        val shifts = listOf(Shift.SUBAH, Shift.DOPAHAR, Shift.SHAAM)
         val shiftAdapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_dropdown_item_1line,

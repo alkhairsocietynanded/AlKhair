@@ -30,44 +30,32 @@ class HomeworkViewModel @Inject constructor(
 ) : ViewModel() {
 
     /* ============================================================
-   📘 CLASS & DIVISION DROPDOWNS
-   ============================================================ */
+       📘 CLASS & DIVISION DROPDOWNS (Reactive)
+       ============================================================ */
 
-    private val _classesState =
-        MutableStateFlow<UiState<List<ClassModel>>>(UiState.Idle)
-    val classesState: StateFlow<UiState<List<ClassModel>>> = _classesState
+    // Replaced manual loading with direct observation of the Repo Flows
 
-    private val _divisionsState =
-        MutableStateFlow<UiState<List<DivisionModel>>>(UiState.Idle)
-    val divisionsState: StateFlow<UiState<List<DivisionModel>>> = _divisionsState
-
-    init {
-        loadClassesAndDivisions()
-    }
-
-    private fun loadClassesAndDivisions() {
-        viewModelScope.launch {
-            _classesState.value = UiState.Loading
-            classDivisionRepoManager.getAllClasses().fold(
-                onSuccess = { _classesState.value = UiState.Success(it) },
-                onFailure = {
-                    _classesState.value =
-                        UiState.Error(it.message ?: "Failed to load classes")
-                }
+    val classesState: StateFlow<UiState<List<ClassModel>>> =
+        classDivisionRepoManager.observeClasses()
+            .map<List<ClassModel>, UiState<List<ClassModel>>> { UiState.Success(it) }
+            .onStart { emit(UiState.Loading) }
+            .catch { emit(UiState.Error(it.message ?: "Failed to load classes")) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                UiState.Idle
             )
-        }
 
-        viewModelScope.launch {
-            _divisionsState.value = UiState.Loading
-            classDivisionRepoManager.getAllDivisions().fold(
-                onSuccess = { _divisionsState.value = UiState.Success(it) },
-                onFailure = {
-                    _divisionsState.value =
-                        UiState.Error(it.message ?: "Failed to load divisions")
-                }
+    val divisionsState: StateFlow<UiState<List<DivisionModel>>> =
+        classDivisionRepoManager.observeDivisions()
+            .map<List<DivisionModel>, UiState<List<DivisionModel>>> { UiState.Success(it) }
+            .onStart { emit(UiState.Loading) }
+            .catch { emit(UiState.Error(it.message ?: "Failed to load divisions")) }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                UiState.Idle
             )
-        }
-    }
 
     /* ============================================================
        🔹 FILTER STATE

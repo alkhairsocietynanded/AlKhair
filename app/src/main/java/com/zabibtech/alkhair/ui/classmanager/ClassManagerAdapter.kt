@@ -11,6 +11,7 @@ import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.databinding.ItemClassBinding
 import com.zabibtech.alkhair.databinding.ItemDivisionHeaderBinding
 
+// Sealed class for heterogeneous list (Headers + Items)
 sealed class ClassListItem {
     data class Header(val divisionName: String) : ClassListItem()
     data class ClassItem(val classModel: ClassModel) : ClassListItem()
@@ -20,50 +21,11 @@ class ClassManagerAdapter(
     private val onEdit: (ClassModel) -> Unit,
     private val onDelete: (ClassModel) -> Unit,
     private val onClick: (ClassModel) -> Unit
-) : ListAdapter<ClassListItem, RecyclerView.ViewHolder>(ClassDiffCallback()) {
+) : ListAdapter<ClassListItem, RecyclerView.ViewHolder>(ClassDiffCallback) {
 
     companion object {
         const val VIEW_TYPE_HEADER = 0
         const val VIEW_TYPE_ITEM = 1
-    }
-
-    inner class ClassViewHolder(private val binding: ItemClassBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-        fun bind(classItem: ClassListItem.ClassItem) {
-            val classModel = classItem.classModel
-            binding.tvClassName.text = classModel.className
-
-            // Regular click for navigation
-            binding.root.setOnClickListener { onClick(classModel) }
-
-            // Long click for context menu (edit/delete)
-            binding.root.setOnLongClickListener { view ->
-                val popup = PopupMenu(view.context, view)
-                popup.menuInflater.inflate(R.menu.menu_item_actions, popup.menu)
-                popup.setOnMenuItemClickListener { menuItem ->
-                    when (menuItem.itemId) {
-                        R.id.action_edit -> {
-                            onEdit(classModel)
-                            true
-                        }
-                        R.id.action_delete -> {
-                            onDelete(classModel)
-                            true
-                        }
-                        else -> false
-                    }
-                }
-                popup.show()
-                true // Indicate the long press was handled
-            }
-        }
-    }
-
-    inner class HeaderViewHolder(private val binding: ItemDivisionHeaderBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-        fun bind(headerItem: ClassListItem.Header) {
-            binding.tvDivisionName.text = headerItem.divisionName
-        }
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -95,23 +57,68 @@ class ClassManagerAdapter(
         }
     }
 
-    class ClassDiffCallback : DiffUtil.ItemCallback<ClassListItem>() {
+    // --- ViewHolders ---
+
+    inner class HeaderViewHolder(private val binding: ItemDivisionHeaderBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+        fun bind(headerItem: ClassListItem.Header) {
+            binding.tvDivisionName.text = headerItem.divisionName
+        }
+    }
+
+    inner class ClassViewHolder(private val binding: ItemClassBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(classItem: ClassListItem.ClassItem) {
+            val classModel = classItem.classModel
+            binding.tvClassName.text = classModel.className
+
+            // Navigate on Click
+            binding.root.setOnClickListener { onClick(classModel) }
+
+            // Context Menu on Long Click
+            binding.root.setOnLongClickListener { view ->
+                showPopupMenu(view, classModel)
+                true
+            }
+        }
+
+        private fun showPopupMenu(view: android.view.View, classModel: ClassModel) {
+            val popup = PopupMenu(view.context, view)
+            popup.menuInflater.inflate(R.menu.menu_item_actions, popup.menu)
+            popup.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.action_edit -> {
+                        onEdit(classModel)
+                        true
+                    }
+                    R.id.action_delete -> {
+                        onDelete(classModel)
+                        true
+                    }
+                    else -> false
+                }
+            }
+            popup.show()
+        }
+    }
+
+    // --- DiffUtil ---
+
+    object ClassDiffCallback : DiffUtil.ItemCallback<ClassListItem>() {
         override fun areItemsTheSame(oldItem: ClassListItem, newItem: ClassListItem): Boolean {
             return when {
-                oldItem is ClassListItem.Header && newItem is ClassListItem.Header -> oldItem.divisionName == newItem.divisionName
-                oldItem is ClassListItem.ClassItem && newItem is ClassListItem.ClassItem -> oldItem.classModel.id == newItem.classModel.id
+                oldItem is ClassListItem.Header && newItem is ClassListItem.Header ->
+                    oldItem.divisionName == newItem.divisionName
+                oldItem is ClassListItem.ClassItem && newItem is ClassListItem.ClassItem ->
+                    oldItem.classModel.id == newItem.classModel.id
                 else -> false
             }
         }
 
         override fun areContentsTheSame(oldItem: ClassListItem, newItem: ClassListItem): Boolean {
-            return when {
-                oldItem is ClassListItem.Header && newItem is ClassListItem.Header -> oldItem.divisionName == newItem.divisionName
-                oldItem is ClassListItem.ClassItem && newItem is ClassListItem.ClassItem ->
-                    oldItem.classModel.className == newItem.classModel.className &&
-                    oldItem.classModel.division == newItem.classModel.division
-                else -> false
-            }
+            // Since ClassListItem uses data classes, we can rely on standard equality ==
+            return oldItem == newItem
         }
     }
 }

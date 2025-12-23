@@ -9,121 +9,67 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.zabibtech.alkhair.R
-import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ItemAttendanceBinding
+import com.zabibtech.alkhair.utils.Shift
 
 class AttendanceAdapter(
-    private val onClick: (User) -> Unit
-) : ListAdapter<User, AttendanceAdapter.AttendanceViewHolder>(DiffCallback) {
-
-    private val attendanceMap = mutableMapOf<String, String>() // uid -> status
-    private var fullList: List<User> = emptyList()
-    private var hasUserMadeChanges = false // Track if user has modified attendance
-
-    // Listener to notify when all attendance is marked
-    var attendanceCompleteListener: ((Boolean) -> Unit)? = null
+    private val onStatusChange: (String, String) -> Unit
+) : ListAdapter<AttendanceUiModel, AttendanceAdapter.AttendanceViewHolder>(DiffCallback) {
 
     inner class AttendanceViewHolder(val binding: ItemAttendanceBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(user: User) {
-            binding.apply {
-                tvName.text = user.name
-                tvEmail.text = user.email
-                chipShift.text = user.shift
-                val shiftColor = when (user.shift.lowercase()) {
-                    "subah".lowercase() -> ContextCompat.getColor(
-                        binding.root.context,
-                        R.color.subah
-                    )
 
-                    "dopahar".lowercase() -> ContextCompat.getColor(
-                        binding.root.context,
-                        R.color.dopahar
-                    )
+        fun bind(item: AttendanceUiModel) = with(binding) {
+            val user = item.user
 
-                    else -> ContextCompat.getColor(
-                        binding.root.context,
-                        R.color.shaam
-                    )
-                }
-                chipShift.chipBackgroundColor = ColorStateList.valueOf(shiftColor)
+            // 1. Bind User Data
+            tvName.text = user.name
+            tvEmail.text = user.email
+            chipShift.text = user.shift
 
-                // Clear previous listener to avoid multiple triggers on recycled views
-                toggleButtonGroup.clearOnButtonCheckedListeners()
+            // 2. Set Shift Color
+            val shiftColorRes = when (user.shift.lowercase()) {
+                Shift.SUBAH.lowercase() -> R.color.subah
+                Shift.DOPAHAR.lowercase() -> R.color.dopahar
+                Shift.SHAAM.lowercase() -> R.color.shaam
+                else -> R.color.md_theme_error
+            }
+            chipShift.chipBackgroundColor = ColorStateList.valueOf(
+                ContextCompat.getColor(root.context, shiftColorRes)
+            )
 
-                // Restore selection state without triggering the listener
-                when (attendanceMap[user.uid]) {
-                    "Present" -> toggleButtonGroup.check(btnPresent.id)
-                    "Absent" -> toggleButtonGroup.check(btnAbsent.id)
-                    "Leave" -> toggleButtonGroup.check(btnLeave.id)
-                    else -> toggleButtonGroup.clearChecked()
-                }
+            // 3. Handle Button State
+            // IMPORTANT: Clear listeners before setting state to avoid infinite loops or wrong callbacks
+            toggleButtonGroup.clearOnButtonCheckedListeners()
 
-                // Set the listener for user interactions
-                toggleButtonGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
-                    if (isChecked) {
-                        // A button was checked
-                        val status = when (checkedId) {
-                            btnPresent.id -> "Present"
-                            btnAbsent.id -> "Absent"
-                            btnLeave.id -> "Leave"
-                            else -> null
-                        }
-                        status?.let { attendanceMap[user.uid] = it }
-                    } else {
-                        // A button was unchecked. If no button is selected now, remove from map.
-                        if (group.checkedButtonId == View.NO_ID) {
-                            attendanceMap.remove(user.uid)
-                        }
+            // Set the checked button based on the status from ViewModel
+            when (item.status) {
+                "Present" -> toggleButtonGroup.check(btnPresent.id)
+                "Absent" -> toggleButtonGroup.check(btnAbsent.id)
+                "Leave" -> toggleButtonGroup.check(btnLeave.id)
+                else -> toggleButtonGroup.clearChecked() // No status (null/empty)
+            }
+
+            // 4. Attach Listener for User Interaction
+            toggleButtonGroup.addOnButtonCheckedListener { group, checkedId, isChecked ->
+                if (isChecked) {
+                    val status = when (checkedId) {
+                        btnPresent.id -> "Present"
+                        btnAbsent.id -> "Absent"
+                        btnLeave.id -> "Leave"
+                        else -> ""
                     }
-                    // Mark that user has made changes
-                    hasUserMadeChanges = true
-                    // Notify the activity/fragment that the attendance state might have changed
-                    attendanceCompleteListener?.invoke(isAttendanceComplete() && hasUserMadeChanges)
+                    // Notify ViewModel
+                    onStatusChange(user.uid, status)
+                } else {
+                    // If the user unchecks the currently selected button (resulting in NO selection)
+                    if (group.checkedButtonId == View.NO_ID) {
+                        onStatusChange(user.uid, "") // Send empty string to remove status
+                    }
                 }
-
-                root.setOnClickListener { onClick(user) }
             }
         }
     }
-
-    // --- Public helper functions ---
-
-    fun clearAttendance() {
-        attendanceMap.clear()
-        hasUserMadeChanges = false
-        notifyDataSetChanged() // To update the UI and clear selections
-        attendanceCompleteListener?.invoke(false) // Hide FAB
-    }
-
-    fun setAttendanceMap(prefilled: Map<String, String>) {
-        attendanceMap.clear()
-        attendanceMap.putAll(prefilled)
-        hasUserMadeChanges = false // Reset flag when loading from DB
-        notifyDataSetChanged()
-        // Don't show FAB on initial load
-        attendanceCompleteListener?.invoke(false)
-    }
-
-    fun isAttendanceComplete(): Boolean {
-        if (fullList.isEmpty()) return false
-        return fullList.all { user -> attendanceMap.containsKey(user.uid) }
-    }
-
-    fun getAttendanceMap(): Map<String, String> = attendanceMap
-
-    fun getAttendanceSummary(): Triple<Int, Int, Int> {
-        val present = fullList.count { attendanceMap[it.uid] == "Present" }
-        val absent = fullList.count { attendanceMap[it.uid] == "Absent" }
-        val leave = fullList.count { attendanceMap[it.uid] == "Leave" }
-        return Triple(present, absent, leave)
-    }
-
-    fun resetChangeFlag() {
-        hasUserMadeChanges = false
-    }
-
-    // --- ViewHolder and DiffUtil boilerplate ---
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AttendanceViewHolder {
         val binding =
@@ -135,15 +81,21 @@ class AttendanceAdapter(
         holder.bind(getItem(position))
     }
 
-    override fun submitList(list: List<User>?) {
-        super.submitList(list)
-        if (list != null) fullList = list
-        // Initial check when the list is submitted
-        attendanceCompleteListener?.invoke(isAttendanceComplete())
-    }
+    object DiffCallback : DiffUtil.ItemCallback<AttendanceUiModel>() {
+        override fun areItemsTheSame(
+            oldItem: AttendanceUiModel,
+            newItem: AttendanceUiModel
+        ): Boolean {
+            // Same User ID
+            return oldItem.user.uid == newItem.user.uid
+        }
 
-    object DiffCallback : DiffUtil.ItemCallback<User>() {
-        override fun areItemsTheSame(oldItem: User, newItem: User) = oldItem.uid == newItem.uid
-        override fun areContentsTheSame(oldItem: User, newItem: User) = oldItem == newItem
+        override fun areContentsTheSame(
+            oldItem: AttendanceUiModel,
+            newItem: AttendanceUiModel
+        ): Boolean {
+            // Data Class equality check (compares User data AND Status)
+            return oldItem == newItem
+        }
     }
 }

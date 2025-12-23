@@ -7,15 +7,15 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.viewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.zabibtech.alkhair.data.models.Announcement
 import com.zabibtech.alkhair.databinding.BottomSheetAddAnnouncementBinding
-import com.zabibtech.alkhair.utils.DateUtils
 
 class AddAnnouncementSheet : BottomSheetDialogFragment() {
 
     private var _binding: BottomSheetAddAnnouncementBinding? = null
     private val binding get() = _binding!!
-    private val announcementViewModel: AnnouncementViewModel by viewModels(ownerProducer = { requireParentFragment() }) // Use parent fragment's ViewModel
+
+    // Get ViewModel from Activity scope to trigger the mutation there
+    private val announcementViewModel: AnnouncementViewModel by viewModels({ requireActivity() })
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,18 +34,11 @@ class AddAnnouncementSheet : BottomSheetDialogFragment() {
             val content = binding.etAnnouncementContent.text.toString().trim()
 
             if (title.isNotEmpty() && content.isNotEmpty()) {
-                val newAnnouncement = Announcement(
-                    title = title,
-                    content = content,
-                    timeStamp = DateUtils.getCurrentTimestamp()
-                )
-                // ✅ Activity ko cast karein aur uska public function call karein
-                announcementViewModel.createAnnouncement(newAnnouncement)
-
-                dismiss() // Data bhej kar bottom sheet ko band kar dein
+                // Logic moved to ViewModel
+                announcementViewModel.createAnnouncement(title, content)
+                dismiss()
             } else {
-                Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
             }
         }
     }

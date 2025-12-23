@@ -24,6 +24,10 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance WHERE studentId = :studentId")
     fun getAttendanceByStudent(studentId: String): Flow<List<Attendance>>
 
+    // ✅ ADDED for BaseRepoManager
+    @Query("SELECT * FROM attendance")
+    fun getAllAttendance(): Flow<List<Attendance>>
+
     @Query("DELETE FROM attendance")
     suspend fun clearAllAttendance()
 }

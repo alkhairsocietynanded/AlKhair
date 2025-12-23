@@ -15,7 +15,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import com.google.android.material.tabs.TabLayoutMediator
-import com.zabibtech.alkhair.data.models.Announcement
 import com.zabibtech.alkhair.databinding.ActivityAdminDashboardBinding
 import com.zabibtech.alkhair.ui.announcement.AddAnnouncementSheet
 import com.zabibtech.alkhair.ui.announcement.AnnouncementPagerAdapter
@@ -56,48 +55,44 @@ class AdminDashboardActivity : AppCompatActivity() {
         binding = ActivityAdminDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupWindowInsets()
+        setupToolbar()
+        setupListeners()
+        setupAnnouncementViewPager()
+
+        // Observers
+        observeLoadingState()
+        observeDashboardStats()
+        observeAnnouncements()
+    }
+
+    private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
 
-        setupToolbar()
-        setupListeners()
-        observeViewModelsLoadingState()
-        observeMainViewModel()
-        observeAnnouncementViewModel()
-        setupAnnouncementViewPager()
-
-        mainViewModel.loadDashboardStats()
-        announcementViewModel.loadFiveLatestAnnouncements()
-
-        binding.fabAnnounce.setOnClickListener {
-            val addAnnouncementSheet = AddAnnouncementSheet()
-            addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
-        }
-
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            announcementViewModel.loadFiveLatestAnnouncements()
-            mainViewModel.loadDashboardStats()
-        }
-
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
     }
 
     private fun setupListeners() {
+        // --- Navigation ---
         binding.cardTeachers.setOnClickListener {
             startActivity(
                 Intent(this, UserListActivity::class.java)
-                    .putExtra("role", "teacher")
-                    .putExtra("mode", "create")
+                    .putExtra("role", Roles.TEACHER)
+                    .putExtra("mode", Modes.CREATE)
             )
         }
 
         binding.cardStudents.setOnClickListener {
             startActivity(
                 Intent(this, UserListActivity::class.java)
-                    .putExtra("role", "student")
-                    .putExtra("mode", "create")
+                    .putExtra("role", Roles.STUDENT)
+                    .putExtra("mode", Modes.CREATE)
             )
         }
 
@@ -106,8 +101,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
         binding.cardHomework.setOnClickListener {
-            val intent = Intent(this@AdminDashboardActivity, HomeworkActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, HomeworkActivity::class.java))
         }
 
         binding.cardStudentAttendance.setOnClickListener {
@@ -133,15 +127,26 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, SalaryActivity::class.java))
         }
 
+        // --- Actions ---
         binding.cardLogout.setOnClickListener {
             logoutManager.logout(this)
         }
+
+        binding.fabAnnounce.setOnClickListener {
+            val addAnnouncementSheet = AddAnnouncementSheet()
+            addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
+        }
+
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            // In SSOT, swipe refresh triggers a Sync. The UI updates via Flow automatically.
+            // mainViewModel.syncData() // If exposed. For now, just reset the loader.
+            binding.swipeRefreshLayout.isRefreshing = false
+        }
     }
 
-
-    private fun setupAnnouncementViewPager(announcements: List<Announcement> = emptyList()) {
+    private fun setupAnnouncementViewPager() {
         adapter = AnnouncementPagerAdapter(
-            announcements.toMutableList(),
+            mutableListOf(),
             onDelete = { announcement ->
                 DialogUtils.showConfirmation(
                     context = this,
@@ -166,21 +171,24 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         binding.announcementPager.setPageTransformer(compositePageTransformer)
 
-        TabLayoutMediator(binding.tabLayout, binding.announcementPager) { _, _ ->
-        }.attach()
+        TabLayoutMediator(binding.tabLayout, binding.announcementPager) { _, _ -> }.attach()
     }
 
-    private fun observeViewModelsLoadingState() {
+    /* ============================================================
+       👀 OBSERVERS
+       ============================================================ */
+
+    private fun observeLoadingState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
                     mainViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
-                    announcementViewModel.addUpdateAnnouncementState
-                ) { dashboardState, latestAnnouncementsState, addAnnouncementState ->
+                    announcementViewModel.mutationState // Updated here
+                ) { dashboardState, announcementListState, mutationState ->
                     dashboardState is UiState.Loading ||
-                            latestAnnouncementsState is UiState.Loading ||
-                            addAnnouncementState is UiState.Loading
+                            announcementListState is UiState.Loading ||
+                            mutationState is UiState.Loading
                 }.collectLatest { isLoading ->
                     binding.swipeRefreshLayout.isRefreshing = isLoading
                 }
@@ -188,40 +196,31 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun observeMainViewModel() {
+    private fun observeDashboardStats() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 mainViewModel.dashboardState.collectLatest { state ->
                     when (state) {
-                        is UiState.Success -> {
-//                            DialogUtils.hideLoading(supportFragmentManager)
-                            updateDashboardUI(state.data)
-                        }
-
-                        is UiState.Error -> {
-                            //DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(
-                                this@AdminDashboardActivity,
-                                "Error",
-                                state.message
-                            )
-                        }
-
-                        else -> {
-                        }
+                        is UiState.Success -> updateDashboardUI(state.data)
+                        is UiState.Error -> DialogUtils.showAlert(
+                            this@AdminDashboardActivity, "Error", state.message
+                        )
+                        else -> Unit
                     }
                 }
             }
         }
     }
 
-    private fun observeAnnouncementViewModel() {
+    private fun observeAnnouncements() {
+        // 1. List Observer
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 announcementViewModel.latestAnnouncementsState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> {
-                            if (state.data.isEmpty()) {
+                            val list = state.data
+                            if (list.isEmpty()) {
                                 binding.announcementPager.visibility = View.GONE
                                 binding.tabLayout.visibility = View.GONE
                                 binding.announcementPlaceholder.visibility = View.VISIBLE
@@ -229,48 +228,33 @@ class AdminDashboardActivity : AppCompatActivity() {
                                 binding.announcementPager.visibility = View.VISIBLE
                                 binding.tabLayout.visibility = View.VISIBLE
                                 binding.announcementPlaceholder.visibility = View.GONE
-                                adapter.updateData(state.data)
+                                adapter.updateData(list)
                             }
                         }
-
-                        is UiState.Error -> {
-                            DialogUtils.showAlert(
-                                this@AdminDashboardActivity,
-                                "Error",
-                                state.message
-                            )
-                        }
-
-                        else -> {}
+                        is UiState.Error -> DialogUtils.showAlert(
+                            this@AdminDashboardActivity, "Error", state.message
+                        )
+                        else -> Unit
                     }
                 }
             }
         }
 
+        // 2. Mutation Observer (Add/Delete results)
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                announcementViewModel.addUpdateAnnouncementState.collectLatest { state ->
+                // Changed from addUpdateAnnouncementState to mutationState
+                announcementViewModel.mutationState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> {
-                            DialogUtils.hideLoading(supportFragmentManager)
-                            Toast.makeText(
-                                this@AdminDashboardActivity,
-                                "Announcement Saved!",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            announcementViewModel.resetAddUpdateAnnouncementState()
+                            Toast.makeText(this@AdminDashboardActivity, "Operation Successful", Toast.LENGTH_SHORT).show()
+                            announcementViewModel.resetMutationState()
                         }
-
                         is UiState.Error -> {
-                            DialogUtils.showAlert(
-                                this@AdminDashboardActivity,
-                                "Error",
-                                state.message
-                            )
-                            announcementViewModel.resetAddUpdateAnnouncementState()
+                            DialogUtils.showAlert(this@AdminDashboardActivity, "Error", state.message)
+                            announcementViewModel.resetMutationState()
                         }
-
-                        else -> {}
+                        else -> Unit
                     }
                 }
             }
@@ -285,9 +269,5 @@ class AdminDashboardActivity : AppCompatActivity() {
         binding.progressAttendance.progress = stats.attendancePercentage
         binding.tvPresentCount.text = "Present: ${stats.presentCount}"
         binding.tvAbsentCount.text = "Absent: ${stats.absentCount}"
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
     }
 }

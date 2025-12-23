@@ -9,6 +9,7 @@ import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseClassRepository
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseDivisionRepository
 import com.zabibtech.alkhair.utils.FirebaseRefs
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -22,202 +23,119 @@ class ClassDivisionRepoManager @Inject constructor(
     private val firebaseDivisionRepo: FirebaseDivisionRepository
 ) {
 
-    // =============================
-    // Division Logic
-    // =============================
+    /* ============================================================
+       📦 READ — SSOT (Flow from Room)
+       ============================================================ */
 
-    suspend fun getAllDivisions(): Result<List<DivisionModel>> {
-        val localData = try {
-            localDivisionRepo.getAllDivisions().first()
+    fun observeClasses(): Flow<List<ClassModel>> =
+        localClassRepo.getAllClasses() // Ensure DAO returns Flow
+
+    fun observeDivisions(): Flow<List<DivisionModel>> =
+        localDivisionRepo.getAllDivisions() // Ensure DAO returns Flow
+
+    // ✅ One-Shot Getters (for ViewModel initialization / checks)
+    suspend fun getAllClassesSnapshot(): Result<List<ClassModel>> {
+        return try {
+            val list = localClassRepo.getAllClasses().first()
+            Result.success(list)
         } catch (e: Exception) {
-            Log.w("ClassDivisionRepoManager", "Could not get all local divisions", e)
-            emptyList()
-        }
-
-        if (localData.isNotEmpty()) {
-            return Result.success(localData)
-        }
-
-        val remoteResult = firebaseDivisionRepo.getAllDivisions()
-        return remoteResult.fold(
-            onSuccess = { remoteList ->
-                try {
-                    val updatedList = remoteList.map { it.copy(updatedAt = System.currentTimeMillis()) }
-                    localDivisionRepo.insertDivisions(updatedList)
-                } catch (e: Exception) {
-                    Log.e("ClassDivisionRepoManager", "Failed to cache initial divisions", e)
-                }
-                Result.success(remoteList)
-            },
-            onFailure = { exception ->
-                Result.failure(exception)
-            }
-        )
-    }
-
-    suspend fun syncDivisions(lastSync: Long) {
-        firebaseDivisionRepo.getDivisionsUpdatedAfter(lastSync).onSuccess { divisions ->
-            if (divisions.isNotEmpty()) {
-                try {
-                    val updatedList = divisions.map { it.copy(updatedAt = System.currentTimeMillis()) }
-                    localDivisionRepo.insertDivisions(updatedList)
-                } catch (e: Exception) {
-                    Log.e("ClassDivisionRepoManager", "Failed to cache synced divisions", e)
-                }
-            }
+            Result.failure(e)
         }
     }
 
+    suspend fun getAllDivisionsSnapshot(): Result<List<DivisionModel>> {
+        return try {
+            val list = localDivisionRepo.getAllDivisions().first()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /* ============================================================
+       ✍️ WRITE — (Remote First -> Then Local)
+       ============================================================ */
+
+    // --- DIVISIONS ---
     suspend fun addDivision(division: DivisionModel): Result<DivisionModel> {
-        val result = firebaseDivisionRepo.addDivision(division)
-        result.onSuccess { newDivision ->
-            try {
-                localDivisionRepo.insertDivision(newDivision.copy(updatedAt = System.currentTimeMillis()))
-            } catch (e: Exception) {
-                Log.e("ClassDivisionManager", "Failed to cache new division", e)
-            }
+        return firebaseDivisionRepo.addDivision(division).onSuccess { newDivision ->
+            localDivisionRepo.insertDivision(newDivision.copy(updatedAt = System.currentTimeMillis()))
         }
-        return result
     }
 
     suspend fun updateDivision(division: DivisionModel): Result<Unit> {
         val divisionToUpdate = division.copy(updatedAt = System.currentTimeMillis())
-        val result = firebaseDivisionRepo.updateDivision(divisionToUpdate)
-        result.onSuccess { _ ->
-            try {
-                localDivisionRepo.insertDivision(divisionToUpdate)
-            } catch (e: Exception) {
-                Log.e("ClassDivisionManager", "Failed to cache updated division", e)
-            }
+        return firebaseDivisionRepo.updateDivision(divisionToUpdate).onSuccess {
+            localDivisionRepo.insertDivision(divisionToUpdate)
         }
-        return result
     }
 
     suspend fun deleteDivision(divisionId: String): Result<Unit> {
-        val result = firebaseDivisionRepo.deleteDivision(divisionId)
-        result.onSuccess { _ ->
-            try {
-                localDivisionRepo.deleteDivision(divisionId)
-                val deletedRecord = DeletedRecord(id = divisionId, type = "division", timestamp = System.currentTimeMillis())
-                FirebaseRefs.deletedRecordsRef.child(divisionId).setValue(deletedRecord).await()
-            } catch (e: Exception) {
-                Log.e("ClassDivisionManager", "Failed to process division deletion", e)
-            }
-        }
-        return result
-    }
-
-    suspend fun deleteDivisionLocally(id: String) {
-        try {
-            localDivisionRepo.deleteDivision(id)
-        } catch (e: Exception) {
-            Log.e("ClassDivisionManager", "Failed to delete division locally", e)
+        return firebaseDivisionRepo.deleteDivision(divisionId).onSuccess {
+            localDivisionRepo.deleteDivision(divisionId)
+            createTombstone(divisionId, "division")
         }
     }
 
-    // =============================
-    // Class Logic
-    // =============================
-    suspend fun getAllClasses(): Result<List<ClassModel>> {
-        val localData = try {
-            localClassRepo.getAllClasses().first()
-        } catch (e: Exception) {
-            Log.w("ClassDivisionRepoManager", "Could not get all local classes", e)
-            emptyList()
-        }
-
-        if (localData.isNotEmpty()) {
-            return Result.success(localData)
-        }
-
-        val remoteResult = firebaseClassRepo.getAllClasses()
-        return remoteResult.fold(
-            onSuccess = { remoteList ->
-                try {
-                    val updatedList = remoteList.map { it.copy(updatedAt = System.currentTimeMillis()) }
-                    localClassRepo.insertClasses(updatedList)
-                } catch (e: Exception) {
-                    Log.e("ClassDivisionRepoManager", "Failed to cache initial classes", e)
-                }
-                Result.success(remoteList)
-            },
-            onFailure = { exception ->
-                Result.failure(exception)
-            }
-        )
-    }
-
-    suspend fun syncClasses(lastSync: Long) {
-        firebaseClassRepo.getClassesUpdatedAfter(lastSync).onSuccess { classes ->
-            if (classes.isNotEmpty()) {
-                try {
-                    val updatedList = classes.map { it.copy(updatedAt = System.currentTimeMillis()) }
-                    localClassRepo.insertClasses(updatedList)
-                } catch (e: Exception) {
-                    Log.e("ClassDivisionRepoManager", "Failed to cache synced classes", e)
-                }
-            }
-        }
-    }
-
+    // --- CLASSES ---
     suspend fun addClass(classModel: ClassModel): Result<ClassModel> {
-        val divisionExistsResult = firebaseDivisionRepo.doesDivisionExist(classModel.division)
-
-        if (divisionExistsResult.isFailure) {
-            return Result.failure(divisionExistsResult.exceptionOrNull() ?: Exception("Failed to check division existence"))
+        // Ensure division exists remotely
+        val divExists = firebaseDivisionRepo.doesDivisionExist(classModel.division).getOrElse { false }
+        if (!divExists) {
+            addDivision(DivisionModel(name = classModel.division))
         }
 
-        if (divisionExistsResult.getOrNull() == false) {
-            val newDivision = DivisionModel(name = classModel.division)
-            val addDivisionResult = addDivision(newDivision)
-            if (addDivisionResult.isFailure) {
-                return Result.failure(addDivisionResult.exceptionOrNull() ?: Exception("Failed to create new division"))
-            }
+        return firebaseClassRepo.addClass(classModel).onSuccess { newClass ->
+            localClassRepo.insertClass(newClass.copy(updatedAt = System.currentTimeMillis()))
         }
-
-        val classResult = firebaseClassRepo.addClass(classModel)
-        classResult.onSuccess { newClass ->
-            try {
-                localClassRepo.insertClass(newClass.copy(updatedAt = System.currentTimeMillis()))
-            } catch (e: Exception) {
-                Log.e("ClassDivisionManager", "Failed to cache new class", e)
-            }
-        }
-        return classResult
     }
 
     suspend fun updateClass(classModel: ClassModel): Result<Unit> {
         val classToUpdate = classModel.copy(updatedAt = System.currentTimeMillis())
-        val result = firebaseClassRepo.updateClass(classToUpdate)
-        result.onSuccess { _ ->
-            try {
-                localClassRepo.insertClass(classToUpdate)
-            } catch (e: Exception) {
-                Log.e("ClassDivisionManager", "Failed to cache updated class", e)
-            }
+        return firebaseClassRepo.updateClass(classToUpdate).onSuccess {
+            localClassRepo.insertClass(classToUpdate)
         }
-        return result
     }
 
     suspend fun deleteClass(classId: String): Result<Unit> {
-        val result = firebaseClassRepo.deleteClass(classId)
-        result.onSuccess { _ ->
-            try {
-                localClassRepo.deleteClass(classId)
-                val deletedRecord = DeletedRecord(id = classId, type = "class", timestamp = System.currentTimeMillis())
-                FirebaseRefs.deletedRecordsRef.child(classId).setValue(deletedRecord).await()
-            } catch (e: Exception) {
-                Log.e("ClassDivisionManager", "Failed to process class deletion", e)
-            }
+        return firebaseClassRepo.deleteClass(classId).onSuccess {
+            localClassRepo.deleteClass(classId)
+            createTombstone(classId, "class")
         }
-        return result
     }
 
-    suspend fun deleteClassLocally(id: String) {
+    /* ============================================================
+       🔁 SYNC LOGIC
+       ============================================================ */
+
+    suspend fun syncDivisions(lastSync: Long): Result<Unit> {
+        return firebaseDivisionRepo.getDivisionsUpdatedAfter(lastSync).onSuccess { list ->
+            if (list.isNotEmpty()) {
+                val updated = list.map { it.copy(updatedAt = System.currentTimeMillis()) }
+                localDivisionRepo.insertDivisions(updated)
+            }
+        }.map { }
+    }
+
+    suspend fun syncClasses(lastSync: Long): Result<Unit> {
+        return firebaseClassRepo.getClassesUpdatedAfter(lastSync).onSuccess { list ->
+            if (list.isNotEmpty()) {
+                val updated = list.map { it.copy(updatedAt = System.currentTimeMillis()) }
+                localClassRepo.insertClasses(updated)
+            }
+        }.map { }
+    }
+
+    // Helper for Deletions
+    private suspend fun createTombstone(id: String, type: String) {
         try {
-            localClassRepo.deleteClass(id)
-        } catch(e: Exception) {
-            Log.e("ClassDivisionManager", "Failed to delete class locally", e)
+            val record = DeletedRecord(id = id, type = type, timestamp = System.currentTimeMillis())
+            FirebaseRefs.deletedRecordsRef.child(id).setValue(record).await()
+        } catch (e: Exception) {
+            Log.e("ClassDivisionRepo", "Failed to create tombstone", e)
         }
     }
+
+    suspend fun deleteClassLocally(id: String) = localClassRepo.deleteClass(id)
+    suspend fun deleteDivisionLocally(id: String) = localDivisionRepo.deleteDivision(id)
 }

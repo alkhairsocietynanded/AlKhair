@@ -10,6 +10,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,64 +45,67 @@ class AppDataSyncManager @Inject constructor(
 
                 Log.d("AppDataSyncManager", "Starting sync. Last sync: $lastSync")
 
-                coroutineScope {
+                val allSuccessful = coroutineScope {
                     val isFirstSync = lastSync == 0L
-                    val syncTime = if (isFirstSync) 0L else lastSync
-
-                    Log.d(
-                        "AppDataSyncManager",
-                        "Performing ${if (isFirstSync) "FULL" else "INCREMENTAL"} SYNC from $syncTime"
+                    val syncTime = if (isFirstSync) 0L else (lastSync + 1)
+                    // Launch syncs in parallel
+                    val jobs = listOf(
+                        async { userRepoManager.sync(syncTime) },
+                        async { classDivisionRepoManager.syncClasses(syncTime) },
+                        async { classDivisionRepoManager.syncDivisions(syncTime) },
+                        async { feesRepoManager.sync(syncTime) },
+                        async { salaryRepoManager.sync(syncTime) },
+                        async { homeworkRepoManager.sync(syncTime) },
+                        async { announcementRepoManager.sync(syncTime) },
+                        async { if (!isFirstSync) syncDeletions(syncTime) else Result.success(Unit) }
                     )
 
-                    // Launch all sync operations in parallel
-                    val userSync = async { userRepoManager.syncUsers(syncTime) }
-                    val classSync = async { classDivisionRepoManager.syncClasses(syncTime) }
-                    val divisionSync = async { classDivisionRepoManager.syncDivisions(syncTime) }
-                    val feesSync = async { feesRepoManager.sync(syncTime) }
-                    val salarySync = async { salaryRepoManager.sync(syncTime) }
-                    val homeworkSync = async { homeworkRepoManager.sync(syncTime) }
-                    val announcementSync =
-                        async { announcementRepoManager.syncAnnouncements(syncTime) }
-                    val deletionSync = async { if (!isFirstSync) syncDeletions(syncTime) }
-
-                    // Sync Attendance for Current Month (Range Sync) - This can also run in parallel
-                    val attendanceSync = async {
-                        val calendar = java.util.Calendar.getInstance()
-                        val todayDate = SimpleDateFormat(
-                            "yyyy-MM-dd",
-                            Locale.getDefault()
-                        ).format(calendar.time)
-                        calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
-                        val startOfMonth = SimpleDateFormat(
-                            "yyyy-MM-dd",
-                            Locale.getDefault()
-                        ).format(calendar.time)
-                        attendanceRepoManager.syncAttendanceRange(startOfMonth, todayDate)
+                    // Attendance Sync (Range)
+                    val attendanceJob = async {
+                        try {
+                            val calendar = Calendar.getInstance()
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val todayDate = dateFormat.format(calendar.time)
+                            calendar.set(Calendar.DAY_OF_MONTH, 1)
+                            val startOfMonth = dateFormat.format(calendar.time)
+                            attendanceRepoManager.syncAttendanceRange(startOfMonth, todayDate)
+                            Result.success(Unit)
+                        } catch (e: Exception) {
+                            Result.failure(e)
+                        }
                     }
 
-                    // Await all jobs to complete
-                    listOf(
-                        userSync, classSync, divisionSync, feesSync, salarySync,
-                        homeworkSync, announcementSync, deletionSync, attendanceSync
-                    ).forEach { it.await() }
+                    // Await and check results
+                    val results = (jobs + attendanceJob).map { it.await() }
+
+                    // Return true if all succeeded (or at least critical ones)
+                    results.all { it.isSuccess }
                 }
 
-                // Update Sync Time after all operations are successful
-                appDataStore.saveString(KEY_LAST_SYNC, currentTime.toString())
-                Log.d("AppDataSyncManager", "Sync completed successfully")
+                // Only update the timestamp if operations didn't crash significantly
+                if (allSuccessful) {
+                    appDataStore.saveString(KEY_LAST_SYNC, currentTime.toString())
+                    Log.d("AppDataSyncManager", "Sync completed successfully")
+                } else {
+                    Log.w("AppDataSyncManager", "Sync completed with some errors")
+                }
+
                 Result.success(Unit)
 
             } catch (e: Exception) {
-                Log.e("AppDataSyncManager", "Sync failed", e)
+                Log.e("AppDataSyncManager", "Sync crashed", e)
                 Result.failure(e)
             }
         }
 
-    private suspend fun syncDeletions(lastSync: Long) {
-        try {
+    private suspend fun syncDeletions(lastSync: Long): Result<Unit> {
+        return try {
+            // Added +1 here as well for safety
+            val queryTimestamp = (lastSync + 1).toDouble()
+
             val snapshot = FirebaseRefs.deletedRecordsRef
                 .orderByChild("timestamp")
-                .startAt(lastSync.toDouble())
+                .startAt(queryTimestamp)
                 .get()
                 .await()
 
@@ -113,27 +117,23 @@ class AppDataSyncManager @Inject constructor(
                 deletedRecords.forEach { record ->
                     try {
                         when (record.type) {
-                            "user" -> userRepoManager.deleteUserLocally(record.id)
+                            "user" -> userRepoManager.deleteLocally(record.id)
                             "class" -> classDivisionRepoManager.deleteClassLocally(record.id)
                             "division" -> classDivisionRepoManager.deleteDivisionLocally(record.id)
                             "fees" -> feesRepoManager.deleteLocally(record.id)
                             "salary" -> salaryRepoManager.deleteLocally(record.id)
                             "homework" -> homeworkRepoManager.deleteLocally(record.id)
-                            "announcement" -> announcementRepoManager.deleteAnnouncementLocally(
-                                record.id
-                            )
+                            "announcement" -> announcementRepoManager.deleteLocally(record.id)
                         }
                     } catch (e: Exception) {
-                        Log.e(
-                            "AppDataSyncManager",
-                            "Failed to process deletion for ${record.id}",
-                            e
-                        )
+                        Log.e("AppDataSyncManager", "Failed to delete: ${record.id}", e)
                     }
                 }
             }
+            Result.success(Unit)
         } catch (e: Exception) {
             Log.e("AppDataSyncManager", "Failed to sync deletions", e)
+            Result.failure(e)
         }
     }
 }
