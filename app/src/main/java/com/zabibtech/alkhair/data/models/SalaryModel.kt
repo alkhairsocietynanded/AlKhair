@@ -27,8 +27,9 @@ data class SalaryModel(
 
     // New field for combined indexing
     val staffMonth: String = "${staffId}_${monthYear}",
-    val updatedAt: Long = System.currentTimeMillis()
-) : Parcelable {
+    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+) : Syncable, // ✅ Interface implement karein,
+    Parcelable {
     fun calculateNet(): Double {
         return basicSalary + allowances - deductions
     }

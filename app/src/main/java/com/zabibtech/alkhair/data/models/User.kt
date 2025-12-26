@@ -39,5 +39,5 @@ data class User(
     val salary: String = "",
     val paidSalary: String = "",
     val dueSalary: String = "",
-    val updatedAt: Long = System.currentTimeMillis()
-) : Parcelable
+    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+) : Parcelable, Syncable // ✅ Interface implement karein

@@ -22,6 +22,5 @@ data class FeesModel(
     val paymentDate: String = "",
     val remarks: String? = null,
     val paymentStatus: String = "Pending", // Pending, Paid
-    val updatedAt: Long = System.currentTimeMillis()
-
-) : Parcelable
+    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+) :Parcelable, Syncable // ✅ Interface implement karein :

@@ -16,21 +16,30 @@ class AttendanceRepoManager @Inject constructor(
 ) : BaseRepoManager<Attendance>() {
 
     /* ============================================================
-       📦 BASE REPO MANAGER IMPLEMENTATION (SSOT)
+       📦 SSOT — LOCAL OBSERVATION
        ============================================================ */
 
-    // Direct pipe from Room DB.
-    // Note: Ensure your LocalAttendanceRepository has getAllAttendance()
     override fun observeLocal(): Flow<List<Attendance>> =
         localAttendanceRepo.getAllAttendance()
 
-    /**
-     * Attendance syncing is Range-Based (e.g., Sync current month).
-     * Global timestamp sync is inefficient for the Attendance data structure in Firebase.
-     * We return empty here and use [syncAttendanceRange] explicitly in AppDataSyncManager.
-     */
+    // UI Helpers
+    fun observeAttendanceByDate(date: String): Flow<List<Attendance>> =
+        localAttendanceRepo.getAttendanceByDate(date)
+
+    fun observeAttendanceByStudent(studentId: String): Flow<List<Attendance>> =
+        localAttendanceRepo.getAttendanceByStudent(studentId)
+
+    /* ============================================================
+       🔁 SYNC (Standard Timestamp Logic)
+       ============================================================ */
+
+    // ✅ AB YEH KAAM KAREGA: Kyunki Firebase Repo ab "updatedAt" query support karta hai
     override suspend fun fetchRemoteUpdated(after: Long): List<Attendance> {
-        return emptyList()
+        return firebaseAttendanceRepo.getAttendanceUpdatedAfter(after)
+            .getOrElse {
+                Log.e("AttendanceRepoManager", "Sync failed", it)
+                emptyList()
+            }
     }
 
     override suspend fun insertLocal(items: List<Attendance>) =
@@ -40,24 +49,12 @@ class AttendanceRepoManager @Inject constructor(
         localAttendanceRepo.insertAttendance(item)
 
     override suspend fun deleteLocally(id: String) {
-        // Attendance uses composite keys (studentId + date + classId).
-        // Standard ID-based deletion is complex here.
-        // If needed, you can parse the 'id' string if it follows a format like "uid_date_class"
-        // For now, we leave this empty as deletion is rarely synced for historical attendance.
+        // Attendance usually composite keys use karta hai, standard delete complex hai.
+        // Filhal ise empty chhod sakte hain ya custom logic laga sakte hain.
     }
 
     /* ============================================================
-       🔭 SPECIFIC OBSERVABLES (Used by ViewModel)
-       ============================================================ */
-
-    fun observeAttendanceByDate(date: String): Flow<List<Attendance>> =
-        localAttendanceRepo.getAttendanceByDate(date)
-
-    fun observeAttendanceByStudent(studentId: String): Flow<List<Attendance>> =
-        localAttendanceRepo.getAttendanceByStudent(studentId)
-
-    /* ============================================================
-       ✍️ WRITE OPERATIONS (Remote First -> Then Local)
+       ✍️ WRITE — (Remote First -> Then Local)
        ============================================================ */
 
     suspend fun saveAttendance(
@@ -65,40 +62,15 @@ class AttendanceRepoManager @Inject constructor(
         date: String,
         attendanceList: List<Attendance>
     ): Result<Unit> {
-        // 1. Prepare data for Firebase (Map<StudentId, Status>)
-        val attendanceMap = attendanceList.associate { it.studentId to it.status }
+        // Convert List back to Map for the specific Firebase Method signature
+        // Or refactor Firebase repo to take List directly (Recommended)
+        val map = attendanceList.associate { it.studentId to it.status }
 
-        // 2. Save to Remote (Firebase)
-        return firebaseAttendanceRepo.saveAttendanceForClass(classId, date, attendanceMap)
+        return firebaseAttendanceRepo.saveAttendanceForClass(classId, date, map)
             .onSuccess {
-                // 3. Save to Local (Room) - This triggers the Flow to update UI automatically
-                try {
-                    insertLocal(attendanceList)
-                } catch (e: Exception) {
-                    Log.e("AttendanceRepoManager", "Failed to cache local attendance", e)
-                }
+                // Save to Local immediately with fresh timestamps
+                val updatedList = attendanceList.map { it.copy(updatedAt = System.currentTimeMillis()) }
+                insertLocal(updatedList)
             }
-    }
-
-    /* ============================================================
-       🔁 RANGE SYNC (Specific to Attendance)
-       ============================================================ */
-
-    suspend fun syncAttendanceRange(startDate: String, endDate: String): Result<Unit> {
-        return firebaseAttendanceRepo.getAttendanceForDateRange(startDate, endDate)
-            .onSuccess { list ->
-                if (list.isNotEmpty()) {
-                    try {
-                        insertLocal(list)
-                        Log.d(
-                            "AttendanceRepoManager",
-                            "Synced ${list.size} records ($startDate to $endDate)"
-                        )
-                    } catch (e: Exception) {
-                        Log.e("AttendanceRepoManager", "Failed to cache synced attendance range", e)
-                    }
-                }
-            }
-            .map { } // Convert Result<List> to Result<Unit>
     }
 }

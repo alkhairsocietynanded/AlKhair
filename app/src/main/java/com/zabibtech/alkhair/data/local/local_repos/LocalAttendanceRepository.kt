@@ -10,18 +10,19 @@ import javax.inject.Singleton
 class LocalAttendanceRepository @Inject constructor(
     private val attendanceDao: AttendanceDao
 ) {
+    // ✅ Required for BaseRepoManager (SSOT)
+    fun getAllAttendance(): Flow<List<Attendance>> =
+        attendanceDao.getAllAttendance()
+
     fun getAttendance(studentId: String, date: String): Flow<Attendance?> =
         attendanceDao.getAttendance(studentId, date)
 
+    // Specific Queries
     fun getAttendanceByDate(date: String): Flow<List<Attendance>> =
         attendanceDao.getAttendanceByDate(date)
 
     fun getAttendanceByStudent(studentId: String): Flow<List<Attendance>> =
         attendanceDao.getAttendanceByStudent(studentId)
-
-    // ✅ ADDED for BaseRepoManager
-    fun getAllAttendance(): Flow<List<Attendance>> =
-        attendanceDao.getAllAttendance()
 
     suspend fun insertAttendance(attendance: Attendance) =
         attendanceDao.insertAttendance(attendance)
@@ -29,5 +30,8 @@ class LocalAttendanceRepository @Inject constructor(
     suspend fun insertAttendanceList(attendanceList: List<Attendance>) =
         attendanceDao.insertAttendanceList(attendanceList)
 
+    suspend fun deleteAttendance(studentId: String, classId: String, date: String) {
+        // DAO me delete query honi chahiye agar individual delete support karna hai
+    }
     suspend fun clearAll() = attendanceDao.clearAllAttendance()
 }

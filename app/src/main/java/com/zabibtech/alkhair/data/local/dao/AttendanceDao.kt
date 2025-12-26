@@ -28,6 +28,8 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance")
     fun getAllAttendance(): Flow<List<Attendance>>
 
+
+
     @Query("DELETE FROM attendance")
     suspend fun clearAllAttendance()
 }

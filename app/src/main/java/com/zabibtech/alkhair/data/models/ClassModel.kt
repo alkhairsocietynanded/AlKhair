@@ -10,5 +10,5 @@ data class ClassModel(
     val id: String = "",
     val division: String = "",
     val className: String = "",
-    val updatedAt: Long = System.currentTimeMillis()
-)
+    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+) : Syncable // ✅ Interface implement karein

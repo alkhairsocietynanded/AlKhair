@@ -3,8 +3,6 @@ package com.zabibtech.alkhair.data.remote.firebase
 import android.util.Log
 import com.zabibtech.alkhair.data.models.Attendance
 import com.zabibtech.alkhair.utils.FirebaseRefs.attendanceRef
-import com.zabibtech.alkhair.utils.FirebaseRefs.dateAttendanceRef
-import com.zabibtech.alkhair.utils.FirebaseRefs.userAttendanceRef
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,6 +10,12 @@ import javax.inject.Singleton
 @Singleton
 class FirebaseAttendanceRepository @Inject constructor() {
 
+    // ... (Save logic wahi rahega jo aapne bheja tha) ...
+
+    /**
+     * ✅ SAVE (Flat Structure)
+     * Saves data with composite key "classId_date_studentId"
+     */
     suspend fun saveAttendanceForClass(
         classId: String,
         date: String,
@@ -22,161 +26,105 @@ class FirebaseAttendanceRepository @Inject constructor() {
                 throw IllegalArgumentException("Class ID and date cannot be blank.")
             }
 
-            val attendanceUpdates = mutableMapOf<String, Any>()
-            val userAttendanceUpdates = mutableMapOf<String, Any>()
-            val dateAttendanceUpdates = mutableMapOf<String, Any>() // Naya map add kiya hai
+            val updates = mutableMapOf<String, Any>()
+            val currentTime = System.currentTimeMillis()
 
             attendanceMap.forEach { (uid, status) ->
-                // Update for attendanceRef: /attendance/{classId}/{date}/{uid}
-                attendanceUpdates["$classId/$date/$uid"] = status
-                // Update for userAttendanceRef: /user_attendance/{uid}/{classId}/{date}
-                userAttendanceUpdates["$uid/$classId/$date"] = status
-                // Update for dateAttendanceRef: /date_attendance/{date}/{classId}/{uid}
-                dateAttendanceUpdates["$date/$classId/$uid"] = status // Naya update add kiya hai
+                val key = "${classId}_${date}_${uid}"
+                val attendance = Attendance(
+                    studentId = uid,
+                    classId = classId,
+                    date = date,
+                    status = status,
+                    updatedAt = currentTime
+                )
+                updates[key] = attendance
             }
 
-            if (attendanceUpdates.isEmpty()) {
-                return Result.success(Unit) // Nothing to update
-            }
+            if (updates.isEmpty()) return Result.success(Unit)
 
-            // Perform multi-path update for attendanceRef
-            attendanceRef.updateChildren(attendanceUpdates).await()
-
-            // Perform multi-path update for userAttendanceRef
-            if (userAttendanceUpdates.isNotEmpty()) {
-                userAttendanceRef.updateChildren(userAttendanceUpdates).await()
-            }
-
-            // Perform multi-path update for dateAttendanceRef
-            if (dateAttendanceUpdates.isNotEmpty()) {
-                dateAttendanceRef.updateChildren(dateAttendanceUpdates).await() // Naya update perform kiya hai
-            }
-
+            attendanceRef.updateChildren(updates).await()
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("FirebaseAttendanceRepo", "Error saving attendance for class $classId on $date", e)
+            Log.e("FirebaseAttendanceRepo", "Error saving attendance", e)
             Result.failure(e)
         }
     }
+
+    /**
+     * ✅ ADMIN/TEACHER SYNC (Global Sync)
+     * यह पूरी स्कूल/क्लास का बदला हुआ डेटा लाता है।
+     * Use Case: Admin Dashboard
+     */
+    suspend fun getAttendanceUpdatedAfter(timestamp: Long): Result<List<Attendance>> {
+        return try {
+            val snapshot = attendanceRef
+                .orderByChild("updatedAt")
+                .startAt((timestamp + 1).toDouble())
+                .get()
+                .await()
+
+            val list = snapshot.children.mapNotNull { it.getValue(Attendance::class.java) }
+            Result.success(list)
+        } catch (e: Exception) {
+            Log.e("FirebaseAttendanceRepo", "Error fetching updated attendance (Global)", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * ✅ STUDENT SYNC (Targeted Sync) - **NEW FUNCTION**
+     * यह सिर्फ एक स्पेसिफिक स्टूडेंट का डेटा लाता है।
+     * Use Case: Student Dashboard (Security & Performance)
+     */
+    suspend fun getAttendanceForStudentUpdatedAfter(studentId: String, timestamp: Long): Result<List<Attendance>> {
+        return try {
+            // 1. Firebase se sirf is Student ka data mangwao (Server-Side Filter)
+            // Note: Iske liye "studentId" par Index hona zaroori hai
+            val snapshot = attendanceRef
+                .orderByChild("studentId")
+                .equalTo(studentId)
+                .get()
+                .await()
+
+            // 2. Timestamp check Client-Side karo
+            // (Firebase RDB me 2 field par query ek sath nahi ho sakti)
+            val list = snapshot.children.mapNotNull { it.getValue(Attendance::class.java) }
+                .filter { it.updatedAt > timestamp }
+
+            Result.success(list)
+        } catch (e: Exception) {
+            Log.e("FirebaseAttendanceRepo", "Error fetching student attendance", e)
+            Result.failure(e)
+        }
+    }
+
+    // ... (Baaki supporting methods jaise getAttendanceForClass wahi rahenge) ...
 
     suspend fun getAttendanceForClass(classId: String, date: String): Result<Map<String, String>> {
         return try {
-            if (classId.isBlank() || date.isBlank()) {
-                throw IllegalArgumentException("Class ID and date cannot be blank.")
-            }
-            val snapshot = attendanceRef.child(classId).child(date).get().await()
+            val startKey = "${classId}_${date}_"
+            val endKey = "${classId}_${date}_\uf8ff"
+
+            val snapshot = attendanceRef.orderByKey().startAt(startKey).endAt(endKey).get().await()
             val result = mutableMapOf<String, String>()
-            if (snapshot.exists()) {
-                snapshot.children.forEach { child ->
-                    val uid = child.key
-                    val status = child.getValue(String::class.java)
-                    if (uid != null && status != null) {
-                        result[uid] = status
-                    }
-                }
+            snapshot.children.forEach { child ->
+                val attendance = child.getValue(Attendance::class.java)
+                if (attendance != null) result[attendance.studentId] = attendance.status
             }
             Result.success(result)
         } catch (e: Exception) {
-            Log.e("FirebaseAttendanceRepo", "Error getting attendance for class $classId on $date", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getAttendanceForUser(userId: String): Result<Map<String, Map<String, String>>> {
-        return try {
-            if (userId.isBlank()) {
-                throw IllegalArgumentException("User ID cannot be blank.")
-            }
-            // Efficient Query: Directly query user_attendance for the specific user
-            val snapshot = userAttendanceRef.child(userId).get().await()
-            val result = mutableMapOf<String, MutableMap<String, String>>()
-
-            if (snapshot.exists()) {
-                snapshot.children.forEach { classSnapshot -> // Each child is a classId
-                    val classId = classSnapshot.key
-                    if (classId != null) {
-                        classSnapshot.children.forEach { dateSnapshot -> // Each child is a date
-                            val date = dateSnapshot.key
-                            val status = dateSnapshot.getValue(String::class.java)
-                            if (date != null && status != null) {
-                                val dateMap = result.getOrPut(classId) { mutableMapOf() }
-                                dateMap[date] = status
-                            }
-                        }
-                    }
-                }
-            }
-            Result.success(result)
-        } catch (e: Exception) {
-            Log.e("FirebaseAttendanceRepo", "Error getting attendance for user $userId", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getAttendanceForDate(date: String): Result<Map<String, Map<String, String>>> {
-        return try {
-            if (date.isBlank()) {
-                throw IllegalArgumentException("Date cannot be blank.")
-            }
-            // Efficient Query: Directly query date_attendance for the specific date
-            val snapshot = dateAttendanceRef.child(date).get().await() // Optimized query
-            val result = mutableMapOf<String, MutableMap<String, String>>()
-            if (snapshot.exists()) {
-                snapshot.children.forEach { classSnapshot -> // Each child is a classId
-                    val classId = classSnapshot.key
-                    if (classId != null) {
-                        val attendanceData = mutableMapOf<String, String>()
-                        classSnapshot.children.forEach { userSnapshot -> // Each child is a uid
-                            val uid = userSnapshot.key
-                            val status = userSnapshot.getValue(String::class.java)
-                            if (uid != null && status != null) {
-                                attendanceData[uid] = status
-                            }
-                        }
-                        if (attendanceData.isNotEmpty()){
-                            result[classId] = attendanceData
-                        }
-                    }
-                }
-            }
-            Result.success(result)
-        } catch (e: Exception) {
-            Log.e("FirebaseAttendanceRepo", "Error getting attendance for date $date", e)
             Result.failure(e)
         }
     }
 
     suspend fun getAttendanceForDateRange(startDate: String, endDate: String): Result<List<Attendance>> {
         return try {
-            val snapshot = dateAttendanceRef.orderByKey().startAt(startDate).endAt(endDate).get().await()
-            val attendanceList = mutableListOf<Attendance>()
-
-            if (snapshot.exists()) {
-                snapshot.children.forEach { dateSnapshot ->
-                    val date = dateSnapshot.key ?: return@forEach
-                    dateSnapshot.children.forEach { classSnapshot ->
-                        val classId = classSnapshot.key ?: return@forEach
-                        classSnapshot.children.forEach { userEntry ->
-                            // Assuming map is <uid, status>
-                            val uid = userEntry.key ?: return@forEach
-                            val status = userEntry.getValue(String::class.java) ?: return@forEach
-
-                            attendanceList.add(
-                                Attendance(
-                                    studentId = uid,
-                                    classId = classId,
-                                    date = date,
-                                    status = status,
-                                    updatedAt = System.currentTimeMillis()
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-            Result.success(attendanceList)
+            // Note: Flat structure me Date query ke liye 'date' field par index zaroori hai
+            val snapshot = attendanceRef.orderByChild("date").startAt(startDate).endAt(endDate).get().await()
+            val list = snapshot.children.mapNotNull { it.getValue(Attendance::class.java) }
+            Result.success(list)
         } catch (e: Exception) {
-            Log.e("FirebaseAttendanceRepo", "Error getting attendance range", e)
             Result.failure(e)
         }
     }

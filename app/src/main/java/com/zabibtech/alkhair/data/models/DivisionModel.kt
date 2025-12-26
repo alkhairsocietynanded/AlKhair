@@ -9,5 +9,5 @@ data class DivisionModel(
     @PrimaryKey
     val id: String = "",
     val name: String = "",
-    val updatedAt: Long = System.currentTimeMillis()
-)
+    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+) : Syncable // ✅ Interface implement karein

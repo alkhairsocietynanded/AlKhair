@@ -20,5 +20,5 @@ data class Homework(
     val date: String = "",
     val teacherId: String = "",
     val attachmentUrl: String? = null,
-    val updatedAt: Long = System.currentTimeMillis()
-) : Parcelable
+    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+) :Parcelable, Syncable // ✅ Interface implement karein
