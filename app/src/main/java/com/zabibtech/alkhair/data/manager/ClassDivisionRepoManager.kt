@@ -59,7 +59,7 @@ class ClassDivisionRepoManager @Inject constructor(
     // --- DIVISIONS ---
     suspend fun addDivision(division: DivisionModel): Result<DivisionModel> {
         return firebaseDivisionRepo.addDivision(division).onSuccess { newDivision ->
-            localDivisionRepo.insertDivision(newDivision.copy(updatedAt = System.currentTimeMillis()))
+            localDivisionRepo.insertDivision(newDivision)
         }
     }
 
@@ -86,7 +86,7 @@ class ClassDivisionRepoManager @Inject constructor(
         }
 
         return firebaseClassRepo.addClass(classModel).onSuccess { newClass ->
-            localClassRepo.insertClass(newClass.copy(updatedAt = System.currentTimeMillis()))
+            localClassRepo.insertClass(newClass)
         }
     }
 

@@ -57,7 +57,7 @@ class SalaryRepoManager @Inject constructor(
         return remoteRepo.createSalary(salary)
             .onSuccess { createdSalary ->
                 // 2. Save to Local
-                insertLocal(createdSalary.copy(updatedAt = System.currentTimeMillis()))
+                insertLocal(createdSalary)
             }
             .map { }
     }

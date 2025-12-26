@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "classes")
+@com.google.firebase.database.IgnoreExtraProperties
 data class ClassModel(
     @PrimaryKey
     val id: String = "",

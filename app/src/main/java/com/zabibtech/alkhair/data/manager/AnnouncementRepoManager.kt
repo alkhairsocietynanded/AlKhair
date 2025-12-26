@@ -54,7 +54,7 @@ class AnnouncementRepoManager @Inject constructor(
         return firebaseAnnouncementRepo.createAnnouncement(announcement)
             .onSuccess { newAnnouncement ->
                 // Save to local immediately to update UI
-                insertLocal(newAnnouncement.copy(updatedAt = System.currentTimeMillis()))
+                insertLocal(newAnnouncement)
             }
             .map { }
     }

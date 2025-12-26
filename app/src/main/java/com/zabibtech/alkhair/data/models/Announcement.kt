@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "announcements")
+@com.google.firebase.database.IgnoreExtraProperties
 data class Announcement(
     @PrimaryKey
     val id: String = "",

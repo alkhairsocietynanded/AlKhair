@@ -7,6 +7,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 @Entity(tableName = "homework")
+@com.google.firebase.database.IgnoreExtraProperties
 data class Homework(
     @PrimaryKey
     val id: String = "",

@@ -57,8 +57,9 @@ class UserRepoManager @Inject constructor(
     override suspend fun fetchRemoteUpdated(after: Long): List<User> =
         firebaseUserRepository.getUsersUpdatedAfter(after).getOrElse { emptyList() }
 
-    override suspend fun insertLocal(items: List<User>) =
-        localUserRepository.insertUsers(items)
+    override suspend fun insertLocal(items: List<User>) {
+        Log.d("UserRepoManager", "insertLocal: user inserted in local ${items.size}")
+        localUserRepository.insertUsers(items)}
 
     override suspend fun insertLocal(item: User) =
         localUserRepository.insertUser(item)
@@ -73,7 +74,7 @@ class UserRepoManager @Inject constructor(
     suspend fun createUser(user: User): Result<User> {
         return firebaseUserRepository.createUser(user)
             .onSuccess { newUser ->
-                insertLocal(newUser.copy(updatedAt = System.currentTimeMillis()))
+                insertLocal(newUser)
             }
     }
 

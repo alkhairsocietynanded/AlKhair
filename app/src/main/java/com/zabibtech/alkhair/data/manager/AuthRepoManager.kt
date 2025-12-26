@@ -38,7 +38,7 @@ class AuthRepoManager @Inject constructor(
                             if (remoteUser != null) {
                                 // 3. Save to Local DB (Sync)
                                 // ERROR FIXED: insertLocal is protected. Use saveUserLocally (see UserRepoManager note below)
-                                userRepoManager.saveUserLocally(remoteUser.copy(updatedAt = System.currentTimeMillis()))
+                                userRepoManager.saveUserLocally(remoteUser)
                                 Result.success(remoteUser)
                             } else {
                                 Result.failure(Exception("User profile not found in database."))

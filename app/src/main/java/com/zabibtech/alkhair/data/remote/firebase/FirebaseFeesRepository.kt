@@ -99,8 +99,10 @@ class FirebaseFeesRepository @Inject constructor() {
 
     suspend fun getFeesUpdatedAfter(timestamp: Long): Result<List<FeesModel>> {
         return try {
-            val snapshot = feesRef.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
+            val snapshot =
+                feesRef.orderByChild("updatedAt").startAt(timestamp.toDouble()).get().await()
             val fees = snapshot.children.mapNotNull { it.getValue(FeesModel::class.java) }
+            Log.d("FirebaseFeesRepository", "Fetched ${fees.size} Fees records after $timestamp")
             Result.success(fees)
         } catch (e: Exception) {
             Log.e("FirebaseFeesRepo", "Error getting updated fees", e)

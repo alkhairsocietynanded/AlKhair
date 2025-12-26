@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.ProgressBar
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -15,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.User
+import com.zabibtech.alkhair.databinding.ActivityMainBinding
 import com.zabibtech.alkhair.ui.auth.LoginActivity
 import com.zabibtech.alkhair.ui.dashboard.AdminDashboardActivity
 import com.zabibtech.alkhair.ui.dashboard.StudentDashboardActivity
@@ -26,18 +26,21 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
-    private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         setupWindowInsets()
-        progressBar = findViewById(R.id.progressBar)
-
         observeUserSession()
+
+        lifecycleScope.launch {
+            viewModel.checkUserSession()
+        }
     }
 
     private fun setupWindowInsets() {
@@ -54,11 +57,11 @@ class MainActivity : AppCompatActivity() {
                 viewModel.userSessionState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {
-                            progressBar.visibility = View.VISIBLE
+                            binding.progressBar.visibility = View.VISIBLE
                         }
 
                         is UiState.Success -> {
-                            progressBar.visibility = View.GONE
+                            binding.progressBar.visibility = View.GONE
                             val user = state.data
                             if (user == null) {
                                 goToLogin()
@@ -69,7 +72,7 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         is UiState.Error -> {
-                            progressBar.visibility = View.GONE
+                            binding.progressBar.visibility = View.GONE
                             goToLogin()
                             finish()
                         }

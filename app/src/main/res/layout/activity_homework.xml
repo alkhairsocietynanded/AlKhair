@@ -72,7 +72,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="Add new homework"
-        android:text="Add"
+        android:text="Add Homework"
         android:textAppearance="?attr/textAppearanceLabelLarge"
         android:textColor="?attr/colorOnPrimary"
         app:backgroundTint="?attr/colorPrimary"

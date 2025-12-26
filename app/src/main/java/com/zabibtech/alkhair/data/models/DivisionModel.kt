@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "divisions")
+@com.google.firebase.database.IgnoreExtraProperties
 data class DivisionModel(
     @PrimaryKey
     val id: String = "",

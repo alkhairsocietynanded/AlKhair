@@ -73,10 +73,7 @@ class AttendanceRepoManager @Inject constructor(
             .onSuccess {
                 // 3. Save to Local (Room) - This triggers the Flow to update UI automatically
                 try {
-                    val updatedList = attendanceList.map {
-                        it.copy(updatedAt = System.currentTimeMillis())
-                    }
-                    insertLocal(updatedList)
+                    insertLocal(attendanceList)
                 } catch (e: Exception) {
                     Log.e("AttendanceRepoManager", "Failed to cache local attendance", e)
                 }
@@ -92,10 +89,11 @@ class AttendanceRepoManager @Inject constructor(
             .onSuccess { list ->
                 if (list.isNotEmpty()) {
                     try {
-                        // Mark synced data with current timestamp for local freshness
-                        val updatedList = list.map { it.copy(updatedAt = System.currentTimeMillis()) }
-                        insertLocal(updatedList)
-                        Log.d("AttendanceRepoManager", "Synced ${list.size} records ($startDate to $endDate)")
+                        insertLocal(list)
+                        Log.d(
+                            "AttendanceRepoManager",
+                            "Synced ${list.size} records ($startDate to $endDate)"
+                        )
                     } catch (e: Exception) {
                         Log.e("AttendanceRepoManager", "Failed to cache synced attendance range", e)
                     }

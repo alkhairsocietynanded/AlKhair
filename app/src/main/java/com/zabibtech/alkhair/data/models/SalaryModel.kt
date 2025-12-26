@@ -9,6 +9,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 @Entity(tableName = "salary")
+@com.google.firebase.database.IgnoreExtraProperties
 data class SalaryModel(
     @PrimaryKey
     val id: String = "",

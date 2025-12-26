@@ -16,7 +16,6 @@ import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import com.google.android.material.tabs.TabLayoutMediator
 import com.zabibtech.alkhair.R
-import com.zabibtech.alkhair.data.models.Announcement
 import com.zabibtech.alkhair.databinding.ActivityTeacherDashboardBinding
 import com.zabibtech.alkhair.ui.announcement.AddAnnouncementSheet
 import com.zabibtech.alkhair.ui.announcement.AnnouncementPagerAdapter
@@ -24,8 +23,6 @@ import com.zabibtech.alkhair.ui.announcement.AnnouncementViewModel
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
 import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.homework.HomeworkActivity
-import com.zabibtech.alkhair.ui.main.DashboardStats
-import com.zabibtech.alkhair.ui.main.MainViewModel
 import com.zabibtech.alkhair.ui.salary.SalaryActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.utils.DialogUtils
@@ -45,7 +42,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTeacherDashboardBinding
     private lateinit var adapter: AnnouncementPagerAdapter
-    private val mainViewModel: MainViewModel by viewModels()
+    private val adminDashboardViewModel: AdminDashboardViewModel by viewModels()
     private val announcementViewModel: AnnouncementViewModel by viewModels()
 
     @Inject
@@ -165,7 +162,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
-                    mainViewModel.dashboardState,
+                    adminDashboardViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
                     announcementViewModel.mutationState // Updated here
                 ) { dashboardState, announcementListState, mutationState ->
@@ -182,7 +179,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
     private fun observeDashboardStats() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.dashboardState.collectLatest { state ->
+                adminDashboardViewModel.dashboardState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> updateDashboardUI(state.data)
                         is UiState.Error -> DialogUtils.showAlert(

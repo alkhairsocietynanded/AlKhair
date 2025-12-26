@@ -18,6 +18,6 @@ class MyApp : Application() {
             PlayIntegrityAppCheckProviderFactory.getInstance()
         )
         // Offline persistence
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        FirebaseDatabase.getInstance().setPersistenceEnabled(false)
     }
 }

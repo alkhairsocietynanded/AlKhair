@@ -22,8 +22,6 @@ import com.zabibtech.alkhair.ui.announcement.AnnouncementViewModel
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
 import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.homework.HomeworkActivity
-import com.zabibtech.alkhair.ui.main.DashboardStats
-import com.zabibtech.alkhair.ui.main.MainViewModel
 import com.zabibtech.alkhair.ui.salary.SalaryActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.utils.DialogUtils
@@ -43,7 +41,7 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAdminDashboardBinding
     private lateinit var adapter: AnnouncementPagerAdapter
-    private val mainViewModel: MainViewModel by viewModels()
+    private val adminDashboardViewModel: AdminDashboardViewModel by viewModels()
     private val announcementViewModel: AnnouncementViewModel by viewModels()
 
     @Inject
@@ -182,7 +180,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
-                    mainViewModel.dashboardState,
+                    adminDashboardViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
                     announcementViewModel.mutationState // Updated here
                 ) { dashboardState, announcementListState, mutationState ->
@@ -199,12 +197,13 @@ class AdminDashboardActivity : AppCompatActivity() {
     private fun observeDashboardStats() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.dashboardState.collectLatest { state ->
+                adminDashboardViewModel.dashboardState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> updateDashboardUI(state.data)
                         is UiState.Error -> DialogUtils.showAlert(
                             this@AdminDashboardActivity, "Error", state.message
                         )
+
                         else -> Unit
                     }
                 }
@@ -231,9 +230,11 @@ class AdminDashboardActivity : AppCompatActivity() {
                                 adapter.updateData(list)
                             }
                         }
+
                         is UiState.Error -> DialogUtils.showAlert(
                             this@AdminDashboardActivity, "Error", state.message
                         )
+
                         else -> Unit
                     }
                 }
@@ -247,13 +248,23 @@ class AdminDashboardActivity : AppCompatActivity() {
                 announcementViewModel.mutationState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> {
-                            Toast.makeText(this@AdminDashboardActivity, "Operation Successful", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this@AdminDashboardActivity,
+                                "Operation Successful",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             announcementViewModel.resetMutationState()
                         }
+
                         is UiState.Error -> {
-                            DialogUtils.showAlert(this@AdminDashboardActivity, "Error", state.message)
+                            DialogUtils.showAlert(
+                                this@AdminDashboardActivity,
+                                "Error",
+                                state.message
+                            )
                             announcementViewModel.resetMutationState()
                         }
+
                         else -> Unit
                     }
                 }
