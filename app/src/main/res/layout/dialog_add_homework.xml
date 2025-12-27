@@ -15,9 +15,9 @@
             android:id="@+id/tvDialogTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_marginBottom="24dp"
             android:text="New Homework"
-            android:layout_gravity="center"
             android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
             android:textColor="?attr/colorPrimary" />
 
@@ -131,6 +131,26 @@
 
         </LinearLayout>
 
+        <!-- ✅ NEW: Date Picker Field -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilDate"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Date">
+
+            <!-- focusable=false aur inputType=none rakha hai taaki keyboard na khule -->
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="false"
+                android:inputType="none" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
 
         <!-- Attachment Section -->
         <LinearLayout
@@ -182,9 +202,9 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSubmitHomework"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                style="@style/Widget.Material3.Button.IconButton.Filled"
                 android:paddingHorizontal="36dp"
                 android:text="Add Homework" />
 

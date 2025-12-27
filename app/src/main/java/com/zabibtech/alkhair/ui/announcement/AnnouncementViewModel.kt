@@ -22,9 +22,8 @@ class AnnouncementViewModel @Inject constructor(
 ) : ViewModel() {
 
     /* ============================================================
-       📦 READ STREAMS (SSOT)
+       📦 READ STREAMS
        ============================================================ */
-
     val latestAnnouncementsState: StateFlow<UiState<List<Announcement>>> =
         announcementRepoManager.observeLatestAnnouncements()
             .map { UiState.Success(it) as UiState<List<Announcement>> }
@@ -37,14 +36,17 @@ class AnnouncementViewModel @Inject constructor(
             )
 
     /* ============================================================
-       ✍️ MUTATIONS (Create / Update / Delete)
+       ✍️ MUTATIONS
        ============================================================ */
-
-    // Renamed to match other modules
     private val _mutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val mutationState: StateFlow<UiState<Unit>> = _mutationState
 
-    fun createAnnouncement(title: String, content: String) {
+    /**
+     * ✅ UPDATED:
+     * 1. 'target' parameter added (Default = "ALL").
+     * 2. UUID generation REMOVED.
+     */
+    fun createAnnouncement(title: String, content: String, target: String = "ALL") {
         if (title.isBlank() || content.isBlank()) {
             _mutationState.value = UiState.Error("Title and content cannot be empty.")
             return
@@ -52,10 +54,13 @@ class AnnouncementViewModel @Inject constructor(
 
         _mutationState.value = UiState.Loading
         viewModelScope.launch {
-            // We generate ID locally to allow immediate insertion into Room DB (Offline support)
+
+            // ✅ ID is empty string here.
+            // Repo will see empty ID and generate one using Firebase push().key
             val newAnnouncement = Announcement(
                 title = title,
                 content = content,
+                target = target,
                 timeStamp = System.currentTimeMillis()
             )
 

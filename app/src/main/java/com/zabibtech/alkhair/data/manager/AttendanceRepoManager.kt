@@ -30,18 +30,55 @@ class AttendanceRepoManager @Inject constructor(
         localAttendanceRepo.getAttendanceByStudent(studentId)
 
     /* ============================================================
-       🔁 SYNC (Standard Timestamp Logic)
+       🔁 SYNC LOGIC (Timestamp Based)
        ============================================================ */
 
-    // ✅ AB YEH KAAM KAREGA: Kyunki Firebase Repo ab "updatedAt" query support karta hai
+    /**
+     * 👑 ADMIN  SYNC (GLOBAL)
+     * यह फंक्शन `AppDataSyncManager` द्वारा बुलाया जाता है जब `User Role` Admin हो।
+     * यह पूरे स्कूल का अपडेटेड डेटा लाता है।
+     */
     override suspend fun fetchRemoteUpdated(after: Long): List<Attendance> {
         return firebaseAttendanceRepo.getAttendanceUpdatedAfter(after)
             .getOrElse {
-                Log.e("AttendanceRepoManager", "Sync failed", it)
+                Log.e("AttendanceRepoManager", "Global Sync failed", it)
                 emptyList()
             }
     }
 
+    /**
+     * 👨‍🏫 TEACHER SYNC (TARGETED)
+     * टीचर के लिए सिर्फ उनकी क्लास का डेटा लाएं।
+     */
+    suspend fun syncClassAttendance(classId: String, lastSync: Long): Result<Unit> {
+        return firebaseAttendanceRepo.getAttendanceForClassUpdatedAfter(classId, lastSync)
+            .onSuccess { list ->
+                if (list.isNotEmpty()) {
+                    insertLocal(list)
+                    Log.d("AttendanceRepo", "Synced ${list.size} records for class $classId")
+                }
+            }
+            .map { }
+    }
+
+    /**
+     * 🎓 STUDENT SYNC (TARGETED) - ✅ NEW Added
+     * यह फंक्शन `AppDataSyncManager` द्वारा तब बुलाया जाएगा जब `User Role` Student हो।
+     * यह सिर्फ उस स्टूडेंट का डेटा लाता है, जिससे बैंडविड्थ बचती है।
+     */
+    suspend fun syncStudentAttendance(studentId: String, lastSync: Long): Result<Unit> {
+        return firebaseAttendanceRepo.getAttendanceForStudentUpdatedAfter(studentId, lastSync)
+            .onSuccess { list ->
+                if (list.isNotEmpty()) {
+                    // Local DB me insert karein (updatedAt pehle se set hai Firebase se)
+                    insertLocal(list)
+                    Log.d("AttendanceRepo", "Synced ${list.size} records for student $studentId")
+                }
+            }
+            .map { } // Result<List> -> Result<Unit> conversion
+    }
+
+    // BaseRepoManager implementation
     override suspend fun insertLocal(items: List<Attendance>) =
         localAttendanceRepo.insertAttendanceList(items)
 
@@ -49,8 +86,7 @@ class AttendanceRepoManager @Inject constructor(
         localAttendanceRepo.insertAttendance(item)
 
     override suspend fun deleteLocally(id: String) {
-        // Attendance usually composite keys use karta hai, standard delete complex hai.
-        // Filhal ise empty chhod sakte hain ya custom logic laga sakte hain.
+        // Composite keys deletion logic if needed in future
     }
 
     /* ============================================================
@@ -62,13 +98,15 @@ class AttendanceRepoManager @Inject constructor(
         date: String,
         attendanceList: List<Attendance>
     ): Result<Unit> {
-        // Convert List back to Map for the specific Firebase Method signature
-        // Or refactor Firebase repo to take List directly (Recommended)
+        // UI List bhejta hai, lekin Firebase Repo (legacy reasons se) Map le raha tha.
+        // Hamne Firebase Repo update kar diya hai lekin method signature wahi hai.
         val map = attendanceList.associate { it.studentId to it.status }
 
         return firebaseAttendanceRepo.saveAttendanceForClass(classId, date, map)
             .onSuccess {
                 // Save to Local immediately with fresh timestamps
+                // Note: Firebase Repo save karte waqt timestamp generate karta hai,
+                // lekin local consistency ke liye hum yahan bhi update kar dete hain.
                 val updatedList = attendanceList.map { it.copy(updatedAt = System.currentTimeMillis()) }
                 insertLocal(updatedList)
             }

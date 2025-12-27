@@ -14,7 +14,7 @@ class AddAnnouncementSheet : BottomSheetDialogFragment() {
     private var _binding: BottomSheetAddAnnouncementBinding? = null
     private val binding get() = _binding!!
 
-    // Get ViewModel from Activity scope to trigger the mutation there
+    // Using requireActivity() to access the shared ViewModel instance
     private val announcementViewModel: AnnouncementViewModel by viewModels({ requireActivity() })
 
     override fun onCreateView(
@@ -34,8 +34,13 @@ class AddAnnouncementSheet : BottomSheetDialogFragment() {
             val content = binding.etAnnouncementContent.text.toString().trim()
 
             if (title.isNotEmpty() && content.isNotEmpty()) {
-                // Logic moved to ViewModel
+
+                // ✅ UPDATED CALL:
+                // Ab hum yahan model create nahi kar rahe, seedha values pass kar rahe hain.
+                // Default target "ALL" rahega.
+                // Agar future me class dropdown lagate hain, to teesra parameter yahan pass karein.
                 announcementViewModel.createAnnouncement(title, content)
+
                 dismiss()
             } else {
                 Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()

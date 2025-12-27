@@ -11,5 +11,6 @@ data class Announcement(
     val title: String = "",
     val content: String = "",
     val timeStamp: Long = 0,
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
-) : Syncable // ✅ Interface implement karein
+    val target: String = "ALL", // Values: "ALL" or Class Name (e.g., "Class 10")
+    override val updatedAt: Long = System.currentTimeMillis()
+) : Syncable

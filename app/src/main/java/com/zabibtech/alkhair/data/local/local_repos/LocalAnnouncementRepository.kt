@@ -10,27 +10,27 @@ import javax.inject.Singleton
 class LocalAnnouncementRepository @Inject constructor(
     private val announcementDao: AnnouncementDao
 ) {
-    fun getAllAnnouncements(): Flow<List<Announcement>> = announcementDao.getAllAnnouncements()
+    fun getAllAnnouncements(): Flow<List<Announcement>> =
+        announcementDao.getAllAnnouncements()
 
-    suspend fun insertAnnouncement(announcement: Announcement) = 
-        announcementDao.insertAnnouncement(announcement)
-
-    suspend fun insertAnnouncements(announcements: List<Announcement>) = 
-        announcementDao.insertAnnouncements(announcements)
-
-    suspend fun clearAll() = announcementDao.clearAllAnnouncements()
-
-    // New methods added for local-first architecture support
+    // ✅ Renamed/Aliased function as requested
+    fun getFiveLatestAnnouncementsFlow(): Flow<List<Announcement>> =
+        announcementDao.getFiveLatestAnnouncements()
 
     fun getAnnouncementById(announcementId: String): Flow<Announcement?> =
         announcementDao.getAnnouncementById(announcementId)
 
-    fun getFiveLatestAnnouncements(): Flow<List<Announcement>> =
-        announcementDao.getFiveLatestAnnouncements()
+    suspend fun insertAnnouncement(announcement: Announcement) =
+        announcementDao.insertAnnouncement(announcement)
+
+    suspend fun insertAnnouncements(announcements: List<Announcement>) =
+        announcementDao.insertAnnouncements(announcements)
 
     suspend fun updateAnnouncement(announcement: Announcement) =
         announcementDao.updateAnnouncement(announcement)
 
     suspend fun deleteAnnouncement(announcementId: String) =
         announcementDao.deleteAnnouncementById(announcementId)
+
+    suspend fun clearAll() = announcementDao.clearAllAnnouncements()
 }

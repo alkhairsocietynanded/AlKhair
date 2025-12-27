@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
 
+// UI Model: User Details + Attendance Status
 data class AttendanceUiModel(
     val user: User,
     val status: String? = null
@@ -27,16 +28,21 @@ class AttendanceViewModel @Inject constructor(
     private val userRepoManager: UserRepoManager
 ) : ViewModel() {
 
+    // --- State Holders ---
     private val _selectedDate = MutableStateFlow(DateUtils.formatDate(Calendar.getInstance()))
     private val _classIdFilter = MutableStateFlow<String?>(null)
     private val _roleFilter = MutableStateFlow(Roles.STUDENT)
     private val _shiftFilter = MutableStateFlow("All")
 
-    // Local cache for edits (StudentId -> Status)
+    // Local Cache for unsaved edits (UI updates immediately, DB updates on Save)
     private val _editCache = MutableStateFlow<Map<String, String>>(emptyMap())
 
+    // Save Operation State
+    private val _saveState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val saveState: StateFlow<UiState<Unit>> = _saveState
+
     /* ============================================================
-       🔹 ACTIONS
+       🔹 ACTIONS (UI Events)
        ============================================================ */
 
     fun setFilters(classId: String?, role: String) {
@@ -48,7 +54,8 @@ class AttendanceViewModel @Inject constructor(
         val newDate = DateUtils.formatDate(calendar)
         if (_selectedDate.value != newDate) {
             _selectedDate.value = newDate
-            _editCache.value = emptyMap() // Clear edits when moving to a new date
+            // Date change hone par local edits clear karein
+            _editCache.value = emptyMap()
         }
     }
 
@@ -59,7 +66,7 @@ class AttendanceViewModel @Inject constructor(
     fun markAttendance(studentId: String, status: String) {
         val current = _editCache.value.toMutableMap()
         if (status.isBlank()) {
-            current.remove(studentId) // Remove edit (Revert to DB state)
+            current.remove(studentId) // Uncheck (Revert to original state)
         } else {
             current[studentId] = status
         }
@@ -67,7 +74,7 @@ class AttendanceViewModel @Inject constructor(
     }
 
     /* ============================================================
-       📦 REACTIVE UI STATE
+       📦 REACTIVE UI PIPELINE (SSOT Pattern)
        ============================================================ */
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -81,21 +88,24 @@ class AttendanceViewModel @Inject constructor(
         ) { date, classId, role, shift, edits ->
             Params(date, classId, role, shift, edits)
         }.flatMapLatest { params ->
-            // 1. Get Users
+            // 1. Observe Users from Local DB
             val usersFlow = userRepoManager.observeUsersByRole(params.role)
-            // 2. Get Attendance (from Local DB)
+
+            // 2. Observe Attendance for specific date from Local DB
             val attendanceFlow = attendanceRepoManager.observeAttendanceByDate(params.date)
 
             combine(usersFlow, attendanceFlow) { users, attendanceRecords ->
-                // 3. Filter Users
+                // 3. Filter Users in Memory (Class & Shift)
                 val filteredUsers = users.filter { user ->
                     val matchClass = params.classId == null || user.classId == params.classId
+                    // Note: Ensure 'Shift' spelling matches DB (e.g. "Subah" vs "subah")
                     val matchShift = params.shift == "All" || user.shift.equals(params.shift, ignoreCase = true)
                     matchClass && matchShift
                 }
 
-                // 4. Merge Data (User + DB Status + Local Edit)
+                // 4. Merge Data (User + DB Status + Local Edits)
                 val uiList = filteredUsers.map { user ->
+                    // Priority: Local Edit > DB Record > Null
                     val dbRecord = attendanceRecords.find { it.studentId == user.uid }
                     val localStatus = params.edits[user.uid]
 
@@ -105,6 +115,7 @@ class AttendanceViewModel @Inject constructor(
                     )
                 }
 
+                // Explicit Cast for Type Safety
                 UiState.Success(uiList) as UiState<List<AttendanceUiModel>>
             }
         }
@@ -119,9 +130,6 @@ class AttendanceViewModel @Inject constructor(
     /* ============================================================
        ✍️ SAVE LOGIC
        ============================================================ */
-
-    private val _saveState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
-    val saveState: StateFlow<UiState<Unit>> = _saveState
 
     fun saveCurrentAttendance() {
         val currentState = uiState.value
@@ -138,23 +146,24 @@ class AttendanceViewModel @Inject constructor(
 
         _saveState.value = UiState.Loading
         viewModelScope.launch {
-            // Create proper Attendance Entities
-            // Note: updatedAt is handled by the Repo Manager during save
+            // Convert UI Models to Entity Models
             val attendanceEntities = list
-                .filter { !it.status.isNullOrBlank() }
-                .map {
+                .filter { !it.status.isNullOrBlank() } // Only save marked records
+                .map { uiModel ->
                     Attendance(
-                        studentId = it.user.uid,
+                        studentId = uiModel.user.uid,
                         classId = classId,
                         date = date,
-                        status = it.status!!
+                        status = uiModel.status!!
+                        // updatedAt will be set by RepoManager
                     )
                 }
 
+            // Pass the List directly to RepoManager
             attendanceRepoManager.saveAttendance(classId, date, attendanceEntities).fold(
                 onSuccess = {
                     _saveState.value = UiState.Success(Unit)
-                    _editCache.value = emptyMap() // Clear local edits
+                    _editCache.value = emptyMap() // Clear local edits after successful save
                 },
                 onFailure = {
                     _saveState.value = UiState.Error(it.message ?: "Failed to save")
@@ -167,7 +176,7 @@ class AttendanceViewModel @Inject constructor(
         _saveState.value = UiState.Idle
     }
 
-    // Helper class for combine logic
+    // Helper Data Class for Combine
     private data class Params(
         val date: String,
         val classId: String?,

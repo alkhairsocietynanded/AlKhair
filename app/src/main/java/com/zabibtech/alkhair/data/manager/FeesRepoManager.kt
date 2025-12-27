@@ -19,22 +19,102 @@ class FeesRepoManager @Inject constructor(
 ) : BaseRepoManager<FeesModel>() {
 
     /* ============================================================
-       📦 SSOT — ROOM (BaseRepoManager Implementation)
+       📦 READ — SSOT (Flow from Room)
        ============================================================ */
 
+    // Admin/Teacher View (All Fees)
     override fun observeLocal(): Flow<List<FeesModel>> =
         localRepo.getAllFees()
 
-    // अगर आपको Specific Filtering DB लेवल पर चाहिए (Optional)
+    // Student View (My Fees)
     fun observeFeesForStudent(studentId: String): Flow<List<FeesModel>> =
         localRepo.getFeesByStudentId(studentId)
 
     /* ============================================================
-       🔁 SYNC — BaseRepoManager Implementation
+       🔁 SYNC LOGIC (Optimized)
        ============================================================ */
 
+    // 1. GLOBAL SYNC (For Admin) - Fetches updates for ALL students
     override suspend fun fetchRemoteUpdated(after: Long): List<FeesModel> =
-        remoteRepo.getFeesUpdatedAfter(after).getOrElse { emptyList() }
+        remoteRepo.getFeesUpdatedAfter(after).getOrElse {
+            Log.e("FeesRepoManager", "Global sync failed", it)
+            emptyList()
+        }
+
+    // 2. TARGETED SYNC (For Student) - Fetches only THEIR updates using Composite Key
+    suspend fun syncStudentFees(studentId: String, lastSync: Long): Result<Unit> {
+        return remoteRepo.getFeesForStudentUpdatedAfter(studentId, lastSync)
+            .onSuccess { list ->
+                if (list.isNotEmpty()) {
+                    insertLocal(list)
+                    Log.d("FeesRepoManager", "Synced ${list.size} fees for student $studentId")
+                }
+            }
+            .map { }
+    }
+
+    /* ============================================================
+       ✍️ WRITE — (Remote First -> Then Local)
+       ============================================================ */
+
+    suspend fun createFee(feesModel: FeesModel): Result<Unit> {
+        return remoteRepo.saveFee(feesModel)
+            .onSuccess { savedFee ->
+                // Save to Local immediately with fresh timestamp from Remote
+                insertLocal(savedFee)
+            }
+            .map { }
+    }
+
+    suspend fun updateFee(feesModel: FeesModel): Result<Unit> {
+        val currentTime = System.currentTimeMillis()
+
+        // ✅ CRITICAL: Map mein 'studentId' bhejna zaroori hai
+        // taaki FirebaseRepo 'student_sync_key' ko update/maintain kar sake.
+        val updateMap = mapOf(
+            "studentId" to feesModel.studentId, // Required for Composite Key
+            "studentName" to feesModel.studentName,
+            "monthYear" to feesModel.monthYear,
+            "baseAmount" to feesModel.baseAmount,
+            "paidAmount" to feesModel.paidAmount,
+            "discounts" to feesModel.discounts,
+            "dueAmount" to feesModel.dueAmount,
+            "netFees" to feesModel.netFees,
+            "paymentStatus" to feesModel.paymentStatus,
+            "paymentDate" to feesModel.paymentDate,
+            "remarks" to (feesModel.remarks ?: ""),
+            "updatedAt" to currentTime
+        )
+
+        return remoteRepo.updateFee(feesModel.id, updateMap)
+            .onSuccess {
+                // Update Local immediately to reflect changes in UI
+                val updatedLocalFee = feesModel.copy(updatedAt = currentTime)
+                insertLocal(updatedLocalFee)
+            }
+    }
+
+    suspend fun deleteFee(id: String): Result<Unit> =
+        remoteRepo.deleteFee(id).onSuccess {
+            // 1. Delete Locally
+            deleteLocally(id)
+
+            // 2. Create Tombstone for Sync
+            try {
+                val record = DeletedRecord(
+                    id = id,
+                    type = "fees",
+                    timestamp = System.currentTimeMillis()
+                )
+                FirebaseRefs.deletedRecordsRef.child(id).setValue(record).await()
+            } catch (e: Exception) {
+                Log.e("FeesRepoManager", "Failed to create delete record", e)
+            }
+        }
+
+    /* ============================================================
+       🔧 LOCAL HELPER OVERRIDES
+       ============================================================ */
 
     override suspend fun insertLocal(items: List<FeesModel>) =
         localRepo.insertFees(items)
@@ -44,72 +124,4 @@ class FeesRepoManager @Inject constructor(
 
     override suspend fun deleteLocally(id: String) =
         localRepo.deleteFee(id)
-
-    /* ============================================================
-       ✍️ WRITE — UI Operations (Remote First -> Then Local)
-       ============================================================ */
-
-    /**
-     * Create New Fee
-     */
-    suspend fun createFee(feesModel: FeesModel): Result<Unit> {
-        // 1. Firebase में create करें
-        return remoteRepo.saveFee(feesModel)
-            .onSuccess { savedFee ->
-                // 2. Success होने पर Local DB में डालें (SSOT update)
-                insertLocal(savedFee)
-            }
-            .map { } // Result<FeesModel> को Result<Unit> में convert करें
-    }
-
-    /**
-     * Update Existing Fee
-     */
-    suspend fun updateFee(feesModel: FeesModel): Result<Unit> {
-        // 1. Firebase में update map तैयार करें
-        val updateMap = mapOf<String, Any>(
-            "studentId" to feesModel.studentId,
-            "studentName" to feesModel.studentName,
-            "monthYear" to feesModel.monthYear,
-            "baseAmount" to feesModel.baseAmount,
-            "paidAmount" to feesModel.paidAmount,
-            "discounts" to feesModel.discounts,
-            "dueAmount" to feesModel.dueAmount,
-            "netFees" to feesModel.netFees,
-            "paymentStatus" to feesModel.paymentStatus,
-            "remarks" to (feesModel.remarks ?: ""),
-            "updatedAt" to System.currentTimeMillis()
-        )
-
-        // 2. Firebase कॉल
-        return remoteRepo.updateFee(feesModel.id, updateMap)
-            .onSuccess {
-                // 3. Success होने पर Local DB को update करें
-                // हम updated timestamp के साथ object save कर रहे हैं
-                insertLocal(feesModel.copy(updatedAt = System.currentTimeMillis()))
-            }
-    }
-
-    /**
-     * Delete Fee
-     */
-    suspend fun deleteFee(id: String): Result<Unit> =
-        remoteRepo.deleteFee(id).onSuccess {
-            // 1. Local DB से हटाएं
-            deleteLocally(id)
-
-            // 2. Tombstone (Deleted Record) बनाएं ताकि सिंक को पता चले
-            try {
-                FirebaseRefs.deletedRecordsRef.child(id)
-                    .setValue(
-                        DeletedRecord(
-                            id = id,
-                            type = "fees",
-                            timestamp = System.currentTimeMillis()
-                        )
-                    ).await()
-            } catch (e: Exception) {
-                Log.e("FeesRepoManager", "Failed to create delete record", e)
-            }
-        }
 }

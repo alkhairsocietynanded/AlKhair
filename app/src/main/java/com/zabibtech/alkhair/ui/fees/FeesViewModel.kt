@@ -22,7 +22,7 @@ class FeesViewModel @Inject constructor(
 ) : ViewModel() {
 
     /* ============================================================
-       🔹 FILTER STATE
+       🔹 FILTER STATE (For Overview)
        ============================================================ */
 
     private val _monthFilter = MutableStateFlow<String?>(null)
@@ -32,7 +32,7 @@ class FeesViewModel @Inject constructor(
     }
 
     /* ============================================================
-       📦 STUDENTS DATA
+       📦 STUDENTS DATA (Cached for calculations)
        ============================================================ */
 
     private val _studentsFlow = MutableStateFlow<List<User>>(emptyList())
@@ -43,6 +43,7 @@ class FeesViewModel @Inject constructor(
 
     private fun loadStudents() {
         viewModelScope.launch {
+            // Fetch students to calculate "Unpaid Count" and link names
             userRepoManager.getUsersByRole(Roles.STUDENT).onSuccess {
                 _studentsFlow.value = it
             }
@@ -50,23 +51,24 @@ class FeesViewModel @Inject constructor(
     }
 
     /* ============================================================
-       📦 FEES OVERVIEW — REACTIVE PIPELINE
+       📊 FEES OVERVIEW — REACTIVE PIPELINE (Admin Dashboard)
        ============================================================ */
 
     val feesOverviewState: StateFlow<UiState<FeesOverviewData>> =
         combine(
             _monthFilter,
-            feesRepoManager.observeLocal(),
+            feesRepoManager.observeLocal(), // SSOT: Observe Room DB
             _studentsFlow
         ) { month, allFees, students ->
             Triple(month, allFees, students)
         }
-            // यहाँ भी Type Inference को मदद करने के लिए explicit type दिया जा सकता है,
-            // लेकिन calculateOverview का return type already UiState है, तो यह usually चल जाता है।
             .map { (month, allFees, students) ->
                 if (month == null) return@map UiState.Idle
 
+                // 1. Filter by Month
                 val feesForMonth = allFees.filter { it.monthYear == month }
+
+                // 2. Calculate Stats
                 calculateOverview(feesForMonth, students)
             }
             .onStart { emit(UiState.Loading) }
@@ -86,10 +88,11 @@ class FeesViewModel @Inject constructor(
         val totalStudents = students.size
         val feesByStudentId = feesForMonth.groupBy { it.studentId }
 
+        // Logic: Count students who have pending dues
         val unpaidStudentsCount = students.count { student ->
             val studentFees = feesByStudentId[student.uid]
             if (studentFees.isNullOrEmpty()) {
-                true
+                true // No record = Unpaid (Assuming monthly fee logic)
             } else {
                 val due = studentFees.sumOf { it.baseAmount } -
                         studentFees.sumOf { it.paidAmount } -
@@ -103,6 +106,7 @@ class FeesViewModel @Inject constructor(
         val totalDiscount = feesForMonth.sumOf { it.discounts }
         val totalDue = totalFees - totalCollected - totalDiscount
 
+        // Group collection by Class Name
         val collectedByClass = students
             .filter { it.className.isNotBlank() }
             .groupBy { it.className }
@@ -113,6 +117,7 @@ class FeesViewModel @Inject constructor(
                     .sumOf { it.paidAmount }
             }
 
+        // ✅ Explicit Cast to avoid Type Mismatch with Loading state
         return UiState.Success(
             FeesOverviewData(
                 totalStudents = totalStudents,
@@ -123,11 +128,12 @@ class FeesViewModel @Inject constructor(
                 unpaidCount = unpaidStudentsCount,
                 classWiseCollected = collectedByClass
             )
-        )
+        ) as UiState<FeesOverviewData>
     }
 
     /* ============================================================
-       🎓 STUDENT SPECIFIC FEES LIST (Reactive) - FIXED HERE 🔧
+       🎓 STUDENT SPECIFIC FEES LIST (Reactive)
+       Used in Student Profile / Student Dashboard
        ============================================================ */
 
     private val _studentIdFilter = MutableStateFlow<String?>(null)
@@ -140,11 +146,11 @@ class FeesViewModel @Inject constructor(
     val studentFeesListState: StateFlow<UiState<List<FeesModel>>> = _studentIdFilter
         .flatMapLatest { id ->
             if (id == null) flowOf(emptyList())
-            else feesRepoManager.observeFeesForStudent(id)
+            else feesRepoManager.observeFeesForStudent(id) // Observe Local DB
         }
-        // 👇 FIX: Added <List<FeesModel>, UiState<List<FeesModel>>> explicit typing
-        .map<List<FeesModel>, UiState<List<FeesModel>>> { fees ->
-            UiState.Success(fees)
+        .map { fees ->
+            // ✅ Explicit Cast to avoid Type Mismatch
+            UiState.Success(fees) as UiState<List<FeesModel>>
         }
         .onStart { emit(UiState.Loading) }
         .catch { emit(UiState.Error(it.message ?: "Failed to load fees")) }
@@ -164,6 +170,7 @@ class FeesViewModel @Inject constructor(
     fun saveFee(feesModel: FeesModel) {
         _mutationState.value = UiState.Loading
         viewModelScope.launch {
+            // Decide Create vs Update based on ID
             val result = if (feesModel.id.isEmpty()) {
                 feesRepoManager.createFee(feesModel)
             } else {
