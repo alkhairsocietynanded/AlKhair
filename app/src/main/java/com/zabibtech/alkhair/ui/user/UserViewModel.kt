@@ -1,5 +1,6 @@
 package com.zabibtech.alkhair.ui.user
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zabibtech.alkhair.data.manager.AuthRepoManager
@@ -19,6 +20,14 @@ class UserViewModel @Inject constructor(
     private val userRepoManager: UserRepoManager
 ) : ViewModel() {
 
+    companion object {
+        private const val TAG = "UserViewModel"
+    }
+
+    init {
+        Log.d(TAG, "init: ViewModel created")
+    }
+
     /* ============================================================
        🔹 FILTER STATES
        ============================================================ */
@@ -33,16 +42,19 @@ class UserViewModel @Inject constructor(
        ============================================================ */
 
     fun setInitialFilters(role: String, classId: String?, shift: String) {
+        Log.d(TAG, "setInitialFilters: role=$role, classId=$classId, shift=$shift")
         _roleFilter.value = role
         _classIdFilter.value = classId
         _shiftFilter.value = shift
     }
 
     fun setShiftFilter(shift: String) {
+        Log.d(TAG, "setShiftFilter: shift=$shift")
         _shiftFilter.value = shift
     }
 
     fun setSearchQuery(query: String) {
+        Log.d(TAG, "setSearchQuery: query=$query")
         _searchQuery.value = query
     }
 
@@ -54,21 +66,29 @@ class UserViewModel @Inject constructor(
     val userListState: StateFlow<UiState<List<User>>> =
         combine(
             // 1. Database Stream (Depends on Role)
-            _roleFilter.flatMapLatest { role -> userRepoManager.observeUsersByRole(role) },
+            _roleFilter.flatMapLatest { role ->
+                Log.d(TAG, "flatMapLatest: role changed to $role, observing users by role")
+                userRepoManager.observeUsersByRole(role)
+            },
             // 2. Filter States
             _shiftFilter,
             _classIdFilter,
             _searchQuery
         ) { users, shift, classId, query ->
+            Log.d(TAG, "combine: Applying filters - shift=$shift, classId=$classId, query='$query' to ${users.size} users")
             // 3. Apply Filtering Logic
             filterUsers(users, shift, classId, query)
         }
             .map { filteredList ->
+                Log.d(TAG, "map: Filtered list size: ${filteredList.size}")
                 // 4. Convert to UiState
                 UiState.Success(filteredList) as UiState<List<User>>
             }
             .onStart { emit(UiState.Loading) }
-            .catch { emit(UiState.Error(it.message ?: "Failed to load users")) }
+            .catch { e ->
+                Log.e(TAG, "catch: Error in user list flow", e)
+                emit(UiState.Error(e.message ?: "Failed to load users"))
+            }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5000),
@@ -85,7 +105,7 @@ class UserViewModel @Inject constructor(
         classId: String?,
         query: String
     ): List<User> {
-        return users.filter { user ->
+        val filtered = users.filter { user ->
             // 1. Match Shift
             val matchesShift = shift == "All" || user.shift.equals(shift, ignoreCase = true)
 
@@ -100,6 +120,8 @@ class UserViewModel @Inject constructor(
 
             matchesShift && matchesClass && matchesQuery
         }
+        // Log.d(TAG, "filterUsers: ${users.size} -> ${filtered.size}") // Can be too verbose
+        return filtered
     }
 
     /* ============================================================
@@ -110,41 +132,62 @@ class UserViewModel @Inject constructor(
     val mutationState: StateFlow<UiState<User>> = _mutationState
 
     fun createUser(user: User) {
+        Log.d(TAG, "createUser: Attempting to create user: ${user.email}")
         _mutationState.value = UiState.Loading
         viewModelScope.launch {
             authRepoManager.signup(user.email, user.password, user).fold(
-                onSuccess = { _mutationState.value = UiState.Success(it) },
-                onFailure = { _mutationState.value = UiState.Error(it.message ?: "Signup failed") }
+                onSuccess = {
+                    Log.d(TAG, "createUser: Success for user: ${it.email}")
+                    _mutationState.value = UiState.Success(it)
+                },
+                onFailure = { e ->
+                    Log.e(TAG, "createUser: Failure for user: ${user.email}", e)
+                    _mutationState.value = UiState.Error(e.message ?: "Signup failed")
+                }
             )
         }
     }
 
     fun updateUser(user: User) {
+        Log.d(TAG, "updateUser: Attempting to update user: ${user.uid}")
         _mutationState.value = UiState.Loading
         viewModelScope.launch {
             userRepoManager.updateUser(user).fold(
-                onSuccess = { _mutationState.value = UiState.Success(it) },
-                onFailure = { _mutationState.value = UiState.Error(it.message ?: "Update failed") }
+                onSuccess = {
+                    Log.d(TAG, "updateUser: Success for user: ${it.uid}")
+                    _mutationState.value = UiState.Success(it)
+                },
+                onFailure = { e ->
+                    Log.e(TAG, "updateUser: Failure for user: ${user.uid}", e)
+                    _mutationState.value = UiState.Error(e.message ?: "Update failed")
+                }
             )
         }
     }
 
     fun deleteUser(uid: String) {
+        Log.d(TAG, "deleteUser: Attempting to delete user: $uid")
         _mutationState.value = UiState.Loading
         viewModelScope.launch {
             userRepoManager.deleteUser(uid).fold(
                 onSuccess = {
+                    Log.d(TAG, "deleteUser: Success for user: $uid")
                     if (authRepoManager.getCurrentUserUid() == uid) {
+                        Log.d(TAG, "deleteUser: Deleted user was current user, logging out.")
                         authRepoManager.logout()
                     }
-                    _mutationState.value = UiState.Success(User())
+                    _mutationState.value = UiState.Success(User()) // Using empty user as success signal
                 },
-                onFailure = { _mutationState.value = UiState.Error(it.message ?: "Delete failed") }
+                onFailure = { e ->
+                    Log.e(TAG, "deleteUser: Failure for user: $uid", e)
+                    _mutationState.value = UiState.Error(e.message ?: "Delete failed")
+                }
             )
         }
     }
 
     fun resetMutationState() {
+        Log.d(TAG, "resetMutationState: Resetting mutation state to Idle.")
         _mutationState.value = UiState.Idle
     }
 }

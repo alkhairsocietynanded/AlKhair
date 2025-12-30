@@ -11,6 +11,7 @@ import kotlinx.parcelize.Parcelize
 data class Homework(
     @PrimaryKey
     val id: String = "",
+    val classId: String = "",
     val className: String = "",
     val division: String = "",
     val shift: String = "",

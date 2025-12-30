@@ -2,6 +2,7 @@ package com.zabibtech.alkhair.ui.dashboard
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,7 @@ import com.zabibtech.alkhair.ui.announcement.AnnouncementViewModel
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
 import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.homework.HomeworkActivity
+import com.zabibtech.alkhair.ui.main.Temp
 import com.zabibtech.alkhair.ui.salary.SalaryActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.utils.DialogUtils
@@ -62,7 +64,9 @@ class AdminDashboardActivity : AppCompatActivity() {
         observeLoadingState()
         observeDashboardStats()
         observeAnnouncements()
+
     }
+
 
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->

@@ -42,8 +42,8 @@ class HomeworkRepoManager @Inject constructor(
         remoteRepo.getHomeworkUpdatedAfter(after).getOrElse { emptyList() }
 
     // 2. Class Targeted Sync (Student) - ✅ New Optimization
-    suspend fun syncClassHomework(className: String, lastSync: Long): Result<Unit> {
-        return remoteRepo.getHomeworkForClassUpdatedAfter(className, lastSync)
+    suspend fun syncClassHomework(classId: String, lastSync: Long): Result<Unit> {
+        return remoteRepo.getHomeworkForClassUpdatedAfter(classId, lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) insertLocal(list)
             }
@@ -109,7 +109,8 @@ class HomeworkRepoManager @Inject constructor(
         // 2️⃣ Update Firebase
         // ✅ We explicitly include 'className' for the Composite Key logic in Repo
         val updateMap = mapOf(
-            "className" to finalHomework.className, // Required for class_sync_key
+            "classId" to finalHomework.classId, // Required for Sync Key
+            "className" to finalHomework.className,
             "division" to finalHomework.division,
             "shift" to finalHomework.shift,
             "subject" to finalHomework.subject,

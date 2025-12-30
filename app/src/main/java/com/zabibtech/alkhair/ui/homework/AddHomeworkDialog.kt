@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.Homework
 import com.zabibtech.alkhair.databinding.DialogAddHomeworkBinding
 import com.zabibtech.alkhair.utils.DateUtils
@@ -33,6 +34,8 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
 
     private var isEditMode = false
     private var existingHomework: Homework? = null
+    private var selectedClassId: String? = null // ✅ Store selected ID
+    private var classList: List<ClassModel> = emptyList() // Store full list
 
     // Date selection ke liye calendar object
     private var selectedDate = Calendar.getInstance()
@@ -92,6 +95,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
 
     private fun prefillDataForEdit() {
         if (isEditMode) {
+            selectedClassId = existingHomework?.classId
             binding.etSubject.setText(existingHomework?.subject)
             binding.etTitle.setText(existingHomework?.title)
             binding.etDescription.setText(existingHomework?.description)
@@ -112,9 +116,15 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     }
 
     private fun submitDataToViewModel() {
+        // Validation check
+        if (selectedClassId.isNullOrBlank()) {
+            val name = binding.etClass.text.toString()
+            selectedClassId = classList.find { it.className == name }?.id
+        }
         viewModel.createOrUpdateHomework(
             isEditMode = isEditMode,
             existingHomework = existingHomework,
+            classId = selectedClassId ?: "", // ✅ Pass ID
             className = binding.etClass.text.toString().trim(),
             division = binding.etDivision.text.toString().trim(),
             shift = binding.etShift.text.toString().trim(),
@@ -161,9 +171,16 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.classesState.collect { state ->
                     if (state is UiState.Success) {
+                        classList = state.data
                         val classNames = state.data.map { it.className }.distinct()
                         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, classNames)
                         binding.etClass.setAdapter(adapter)
+                        // ✅ Capture ID on selection
+                        binding.etClass.setOnItemClickListener { _, _, position, _ ->
+                            val selectedName = adapter.getItem(position)
+                            val selectedObj = classList.find { it.className == selectedName }
+                            selectedClassId = selectedObj?.id
+                        }
                     }
                 }
             }

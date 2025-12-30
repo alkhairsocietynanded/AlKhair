@@ -53,6 +53,14 @@ class FeesRepoManager @Inject constructor(
             .map { }
     }
 
+    // 3. Class Sync (For Teacher)
+    suspend fun syncClassFees(classId: String, lastSync: Long): Result<Unit> {
+        return remoteRepo.getFeesForClassUpdatedAfter(classId, lastSync)
+            .onSuccess { list ->
+                if (list.isNotEmpty()) insertLocal(list)
+            }
+            .map { }
+    }
     /* ============================================================
        ✍️ WRITE — (Remote First -> Then Local)
        ============================================================ */
@@ -72,8 +80,9 @@ class FeesRepoManager @Inject constructor(
         // ✅ CRITICAL: Map mein 'studentId' bhejna zaroori hai
         // taaki FirebaseRepo 'student_sync_key' ko update/maintain kar sake.
         val updateMap = mapOf(
-            "studentId" to feesModel.studentId, // Required for Composite Key
+            "studentId" to feesModel.studentId,
             "studentName" to feesModel.studentName,
+            "classId" to feesModel.classId,
             "monthYear" to feesModel.monthYear,
             "baseAmount" to feesModel.baseAmount,
             "paidAmount" to feesModel.paidAmount,

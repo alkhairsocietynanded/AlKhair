@@ -158,6 +158,7 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
             val fees = existingFees?.copy(
                 studentId = student.uid,
                 studentName = student.name,
+                classId = student.classId,
                 monthYear = "$year-$month",
                 baseAmount = base,
                 paidAmount = paid,
@@ -170,6 +171,7 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 id = UUID.randomUUID().toString(),
                 studentId = student.uid,
                 studentName = student.name,
+                classId = student.classId,
                 monthYear = "$year-$month",
                 baseAmount = base,
                 paidAmount = paid,

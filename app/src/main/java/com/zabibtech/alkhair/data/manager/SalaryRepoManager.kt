@@ -19,7 +19,7 @@ class SalaryRepoManager @Inject constructor(
 ) : BaseRepoManager<SalaryModel>() {
 
     /* ============================================================
-       📦 SSOT — LOCAL OBSERVATION (UI / ViewModel)
+       📦 SSOT — LOCAL OBSERVATION
        ============================================================ */
 
     override fun observeLocal(): Flow<List<SalaryModel>> =
@@ -32,59 +32,56 @@ class SalaryRepoManager @Inject constructor(
         localRepo.getFilteredSalaries(staffId, monthYear)
 
     /* ============================================================
-       🔁 SYNC — USED BY AppDataSyncManager
+       🔁 SYNC LOGIC (Optimized)
        ============================================================ */
 
+    // 1. Global Sync (Admin)
     override suspend fun fetchRemoteUpdated(after: Long): List<SalaryModel> =
         remoteRepo.getSalariesUpdatedAfter(after).getOrElse { emptyList() }
 
-    // Remove try-catch here so failures are reported to AppDataSyncManager
-    override suspend fun insertLocal(items: List<SalaryModel>) =
-        localRepo.insertSalaries(items)
-
-    override suspend fun insertLocal(item: SalaryModel) =
-        localRepo.insertSalary(item)
-
-    override suspend fun deleteLocally(id: String) =
-        localRepo.deleteSalary(id)
+    // 2. Staff Targeted Sync (Teacher) - ✅ New Optimization
+    suspend fun syncStaffSalary(staffId: String, lastSync: Long): Result<Unit> {
+        return remoteRepo.getSalariesForStaffUpdatedAfter(staffId, lastSync)
+            .onSuccess { list ->
+                if (list.isNotEmpty()) insertLocal(list)
+            }
+            .map { }
+    }
 
     /* ============================================================
-       ✍️ WRITE — FIREBASE → ROOM (UI ACTIONS)
+       ✍️ WRITE — UI ACTIONS
        ============================================================ */
 
     suspend fun createSalary(salary: SalaryModel): Result<Unit> {
-        // 1. Save to Remote
         return remoteRepo.createSalary(salary)
             .onSuccess { createdSalary ->
-                // 2. Save to Local
                 insertLocal(createdSalary)
             }
             .map { }
     }
 
     suspend fun updateSalary(salary: SalaryModel): Result<Unit> {
-        // Prepare the updated object with a fresh timestamp
         val currentTime = System.currentTimeMillis()
 
-        // Note: Assuming salary.netSalary is already calculated in the UI/ViewModel
-        // If not, calculate it here: val net = salary.basicSalary + ...
-
+        // ✅ CRITICAL: Map mein 'staffId' bhejna zaroori hai
+        // taaki FirebaseRepo 'staff_sync_key' ko update/maintain kar sake.
         val updateMap = mapOf(
+            "staffId" to salary.staffId, // Required for Composite Key logic
             "basicSalary" to salary.basicSalary,
             "allowances" to salary.allowances,
             "deductions" to salary.deductions,
-            "netSalary" to salary.netSalary, // or salary.calculateNet() if it's a method
+            "netSalary" to salary.calculateNet(), // Ensure updated net amount is sent
             "paymentStatus" to salary.paymentStatus,
             "paymentDate" to (salary.paymentDate ?: ""),
             "remarks" to (salary.remarks ?: ""),
             "updatedAt" to currentTime
         )
 
-        // 1. Update Remote
         return remoteRepo.updateSalary(salary.id, updateMap)
             .onSuccess {
-                // 2. Update Local (Optimization: No need to fetch from remote again)
-                insertLocal(salary.copy(updatedAt = currentTime))
+                // Update Local immediately to reflect changes in UI
+                val updatedLocalSalary = salary.copy(updatedAt = currentTime)
+                insertLocal(updatedLocalSalary)
             }
     }
 
@@ -109,4 +106,9 @@ class SalaryRepoManager @Inject constructor(
             }
         }
     }
+
+    // Base Implementations (Ensure these methods exist in LocalRepo)
+    override suspend fun insertLocal(items: List<SalaryModel>) = localRepo.insertSalaries(items)
+    override suspend fun insertLocal(item: SalaryModel) = localRepo.insertSalary(item)
+    override suspend fun deleteLocally(id: String) = localRepo.deleteSalary(id)
 }

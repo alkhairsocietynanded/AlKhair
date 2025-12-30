@@ -63,6 +63,8 @@ class TeacherDashboardActivity : AppCompatActivity() {
         observeLoadingState()
         observeDashboardStats()
         observeAnnouncements()
+
+//        adminDashboardViewModel.runMigrationScript()
     }
 
     private fun setupWindowInsets() {

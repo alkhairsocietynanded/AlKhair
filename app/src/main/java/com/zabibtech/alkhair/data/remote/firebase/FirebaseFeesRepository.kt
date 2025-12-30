@@ -32,6 +32,7 @@ class FirebaseFeesRepository @Inject constructor() {
                 "id" to newFeesModel.id,
                 "studentId" to newFeesModel.studentId,
                 "studentName" to newFeesModel.studentName,
+                "classId" to newFeesModel.classId,
                 "monthYear" to newFeesModel.monthYear,
                 "baseAmount" to newFeesModel.baseAmount,
                 "paidAmount" to newFeesModel.paidAmount,
@@ -45,7 +46,11 @@ class FirebaseFeesRepository @Inject constructor() {
 
                 // 🔥 OPTIMIZATION KEY: StudentID + Timestamp
                 // Isse hum efficiently sirf specific student ka naya data fetch kar payenge
-                "student_sync_key" to "${newFeesModel.studentId}_$currentTime"
+                // 🔥 EXISTING KEY (Student ke liye)
+                "student_sync_key" to "${newFeesModel.studentId}_$currentTime",
+
+                // 🔥 NEW KEY (Teacher ke liye)
+                "class_sync_key" to "${newFeesModel.classId}_$currentTime"
             )
 
             feesRef.child(feeId).setValue(feeMap).await()
@@ -74,6 +79,11 @@ class FirebaseFeesRepository @Inject constructor() {
                 val sId = dataToUpdate["studentId"] as String
                 dataToUpdate["student_sync_key"] = "${sId}_$currentTime"
             }
+            // ✅ Class Key Update
+            if (dataToUpdate.containsKey("classId")) {
+                val cId = dataToUpdate["classId"] as String
+                dataToUpdate["class_sync_key"] = "${cId}_$currentTime"
+            }
 
             feesRef.child(feeId).updateChildren(dataToUpdate).await()
             Result.success(Unit)
@@ -88,7 +98,10 @@ class FirebaseFeesRepository @Inject constructor() {
      * यह सिर्फ उस स्टूडेंट का डेटा लाता है जो LastSync के बाद बदला है।
      * 0 Bandwidth Wastage!
      */
-    suspend fun getFeesForStudentUpdatedAfter(studentId: String, timestamp: Long): Result<List<FeesModel>> {
+    suspend fun getFeesForStudentUpdatedAfter(
+        studentId: String,
+        timestamp: Long
+    ): Result<List<FeesModel>> {
         return try {
             // Start: "Student_LastSync"
             val startKey = "${studentId}_${timestamp + 1}"
@@ -111,6 +124,25 @@ class FirebaseFeesRepository @Inject constructor() {
         }
     }
 
+    // ✅ TEACHER SYNC FUNCTION
+    suspend fun getFeesForClassUpdatedAfter(classId: String, timestamp: Long): Result<List<FeesModel>> {
+        return try {
+            val startKey = "${classId}_${timestamp + 1}"
+            val endKey = "${classId}_9999999999999"
+
+            val snapshot = feesRef
+                .orderByChild("class_sync_key") // ✅ Index Required
+                .startAt(startKey)
+                .endAt(endKey)
+                .get()
+                .await()
+
+            val list = snapshot.children.mapNotNull { it.getValue(FeesModel::class.java) }
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     /**
      * ✅ ADMIN SYNC (Global)
      * यह पूरे स्कूल का डेटा लाता है जो बदला है।

@@ -109,19 +109,21 @@ class HomeworkViewModel @Inject constructor(
     fun createOrUpdateHomework(
         isEditMode: Boolean,
         existingHomework: Homework?,
+        classId: String,
         className: String,
         division: String,
         shift: String,
         subject: String,
         title: String,
         description: String,
-        date: String, // ✅ Added Date parameter
+        date: String,
         newAttachmentUri: Uri?
     ) {
         val now = System.currentTimeMillis()
 
         val homework = Homework(
             id = existingHomework?.id ?: "", // Empty ID for new creates
+            classId = classId,
             className = className,
             division = division,
             shift = shift,

@@ -28,6 +28,7 @@ class FirebaseHomeworkRepository @Inject constructor() {
             // 2. Convert to Map to inject "class_sync_key"
             val homeworkMap = mapOf(
                 "id" to newHomework.id,
+                "classId" to newHomework.classId,
                 "className" to newHomework.className,
                 "division" to newHomework.division,
                 "shift" to newHomework.shift,
@@ -38,9 +39,8 @@ class FirebaseHomeworkRepository @Inject constructor() {
                 "attachmentUrl" to (newHomework.attachmentUrl ?: ""),
                 "updatedAt" to newHomework.updatedAt,
 
-                // 🔥 COMPOSITE KEY: ClassName + Timestamp
-                // Example: "Class_10_1766500000"
-                "class_sync_key" to "${newHomework.className}_$currentTime"
+                // 🔥 KEY CHANGED: ClassID + Timestamp
+                "class_sync_key" to "${newHomework.classId}_$currentTime"
             )
 
             homeworkRef.child(homeworkId).setValue(homeworkMap).await()
@@ -64,12 +64,12 @@ class FirebaseHomeworkRepository @Inject constructor() {
             dataToUpdate["updatedAt"] = currentTime
 
             // 2. Update Composite Key
-            // We assume 'className' is present in the map as passed from RepoManager
-            if (dataToUpdate.containsKey("className")) {
-                val className = dataToUpdate["className"] as String
-                dataToUpdate["class_sync_key"] = "${className}_$currentTime"
+            // Update Sync Key if classId exists
+            if (dataToUpdate.containsKey("classId")) {
+                val cId = dataToUpdate["classId"] as String
+                dataToUpdate["class_sync_key"] = "${cId}_$currentTime"
             } else {
-                // Fallback: If className wasn't passed (rare), we can't update the key correctly
+                // Fallback: If classId wasn't passed (rare), we can't update the key correctly
                 // without fetching the old data. But based on your RepoManager code, it IS passed.
                 Log.w("FirebaseHomeworkRepo", "className missing in update, sync key might be stale")
             }
@@ -86,10 +86,10 @@ class FirebaseHomeworkRepository @Inject constructor() {
      * ✅ STUDENT SYNC (Targeted Class Sync)
      * Fetches only homework for a specific class updated after the timestamp.
      */
-    suspend fun getHomeworkForClassUpdatedAfter(className: String, timestamp: Long): Result<List<Homework>> {
+    suspend fun getHomeworkForClassUpdatedAfter(classId: String, timestamp: Long): Result<List<Homework>> {
         return try {
-            val startKey = "${className}_${timestamp + 1}"
-            val endKey = "${className}_9999999999999"
+            val startKey = "${classId}_${timestamp + 1}"
+            val endKey = "${classId}_9999999999999"
 
             val snapshot = homeworkRef
                 .orderByChild("class_sync_key") // ✅ Index Required in Firebase Rules
