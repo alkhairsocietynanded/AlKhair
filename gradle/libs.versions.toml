@@ -20,6 +20,7 @@ material = "1.13.0"
 activity = "1.12.1"
 constraintlayout = "2.2.1"
 mpandroidchart = "v3.1.0"
+playServicesCodeScanner = "16.1.0"
 recyclerview = "1.4.0"
 swiperefreshlayout = "1.2.0"
 view = "2.9.0"
@@ -56,6 +57,7 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
+play-services-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "playServicesCodeScanner" }
 view = { module = "com.kizitonwose.calendar:view", version.ref = "view" }
 
 [plugins]

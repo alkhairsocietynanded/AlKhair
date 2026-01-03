@@ -185,7 +185,11 @@ class UserViewModel @Inject constructor(
             )
         }
     }
-
+    suspend fun getCurrentUser(): User? {
+        val uid = authRepoManager.getCurrentUserUid() ?: return null
+        // Repo Manager me already 'getUserById' hai jo suspend function hai
+        return userRepoManager.getUserById(uid)
+    }
     fun resetMutationState() {
         Log.d(TAG, "resetMutationState: Resetting mutation state to Idle.")
         _mutationState.value = UiState.Idle

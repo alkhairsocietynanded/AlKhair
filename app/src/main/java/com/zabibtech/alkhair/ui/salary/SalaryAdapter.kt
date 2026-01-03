@@ -13,9 +13,10 @@ import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.databinding.ItemSalaryBinding
 import java.text.NumberFormat
-import java.util.*
+import java.util.Locale
 
 class SalaryAdapter(
+    private val isReadOnly: Boolean, // ✅ Flag to check Role (Teacher vs Admin)
     private val onEdit: (SalaryModel) -> Unit,
     private val onDelete: (SalaryModel) -> Unit,
     private val onMarkPaid: (SalaryModel) -> Unit
@@ -26,25 +27,30 @@ class SalaryAdapter(
 
         fun bind(salary: SalaryModel) {
             val context = binding.root.context
+
+            // Format Currency (e.g., ₹ 50,000)
             val formatter = NumberFormat.getCurrencyInstance(
                 Locale.Builder().setLanguage("en").setRegion("IN").build()
             )
 
             binding.apply {
+                // 1. Basic Data Binding
                 tvStaffName.text = salary.staffName
                 tvMonthYear.text = salary.monthYear
                 tvNetSalary.text = formatter.format(salary.netSalary)
                 tvPaymentStatus.text = salary.paymentStatus
 
-                // Status color
-                val isPaid = salary.paymentStatus == "Paid"
+                // 2. Status Color Logic
+                // Check ignoreCase to handle "PAID" or "Paid"
+                val isPaid = salary.paymentStatus.equals("Paid", ignoreCase = true)
+
                 val statusColor = if (isPaid)
                     ContextCompat.getColor(context, R.color.success)
                 else ContextCompat.getColor(context, R.color.failure)
+
                 tvPaymentStatus.chipBackgroundColor = ColorStateList.valueOf(statusColor)
 
-
-                // Allowances and Deductions
+                // 3. Conditional Visibility for Details
                 if (salary.allowances > 0) {
                     tvAllowances.visibility = View.VISIBLE
                     tvAllowances.text = "+ ${formatter.format(salary.allowances)}"
@@ -75,30 +81,42 @@ class SalaryAdapter(
                     tvRemarks.visibility = View.GONE
                 }
 
-                // Button visibility
-                btnMarkPaid.visibility = if (isPaid) View.GONE else View.VISIBLE
-                btnMarkPaid.setOnClickListener { onMarkPaid(salary) }
+                /* ============================================================
+                   🔒 ROLE BASED UI VISIBILITY
+                   ============================================================ */
 
-                // Menu button
-                btnMenu.setOnClickListener { view ->
-                    val popup = PopupMenu(context, view)
-                    popup.inflate(R.menu.salary_item_menu)
-                    popup.setOnMenuItemClickListener { item ->
-                        when (item.itemId) {
-                            R.id.action_edit -> {
-                                onEdit(salary)
-                                true
+                if (isReadOnly) {
+                    // 👨‍🏫 TEACHER VIEW: Hide Actions
+                    btnMarkPaid.visibility = View.GONE
+                    btnMenu.visibility = View.GONE
+                } else {
+                    // 👑 ADMIN VIEW: Show Actions
+
+                    // Show "Mark Paid" only if Pending
+                    btnMarkPaid.visibility = if (isPaid) View.GONE else View.VISIBLE
+                    btnMarkPaid.setOnClickListener { onMarkPaid(salary) }
+
+                    // Show Menu (Edit/Delete)
+                    btnMenu.visibility = View.VISIBLE
+                    btnMenu.setOnClickListener { view ->
+                        val popup = PopupMenu(context, view)
+                        // Ensure you have this menu resource, or use R.menu.menu_item_actions
+                        popup.inflate(R.menu.salary_item_menu)
+                        popup.setOnMenuItemClickListener { item ->
+                            when (item.itemId) {
+                                R.id.action_edit -> {
+                                    onEdit(salary)
+                                    true
+                                }
+                                R.id.action_delete -> {
+                                    onDelete(salary)
+                                    true
+                                }
+                                else -> false
                             }
-
-                            R.id.action_delete -> {
-                                onDelete(salary)
-                                true
-                            }
-
-                            else -> false
                         }
+                        popup.show()
                     }
-                    popup.show()
                 }
             }
         }

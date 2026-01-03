@@ -3,9 +3,11 @@ package com.zabibtech.alkhair.ui.attendance
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zabibtech.alkhair.data.manager.AttendanceRepoManager
+import com.zabibtech.alkhair.data.manager.AuthRepoManager
 import com.zabibtech.alkhair.data.manager.UserRepoManager
 import com.zabibtech.alkhair.data.models.Attendance
 import com.zabibtech.alkhair.data.models.User
+import com.zabibtech.alkhair.utils.Constants
 import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
@@ -25,7 +27,8 @@ data class AttendanceUiModel(
 @HiltViewModel
 class AttendanceViewModel @Inject constructor(
     private val attendanceRepoManager: AttendanceRepoManager,
-    private val userRepoManager: UserRepoManager
+    private val userRepoManager: UserRepoManager,
+    private val authRepoManager: AuthRepoManager
 ) : ViewModel() {
 
     // --- State Holders ---
@@ -99,7 +102,8 @@ class AttendanceViewModel @Inject constructor(
                 val filteredUsers = users.filter { user ->
                     val matchClass = params.classId == null || user.classId == params.classId
                     // Note: Ensure 'Shift' spelling matches DB (e.g. "Subah" vs "subah")
-                    val matchShift = params.shift == "All" || user.shift.equals(params.shift, ignoreCase = true)
+                    val matchShift =
+                        params.shift == "All" || user.shift.equals(params.shift, ignoreCase = true)
                     matchClass && matchShift
                 }
 
@@ -167,6 +171,50 @@ class AttendanceViewModel @Inject constructor(
                 },
                 onFailure = {
                     _saveState.value = UiState.Error(it.message ?: "Failed to save")
+                }
+            )
+        }
+    }
+
+    /* ============================================================
+      ✅ TEACHER QR ATTENDANCE FUNCTION
+      ============================================================ */
+    fun markSelfPresent() {
+        _saveState.value = UiState.Loading
+
+        viewModelScope.launch {
+            val currentUid = authRepoManager.getCurrentUserUid()
+            if (currentUid == null) {
+                _saveState.value = UiState.Error("User not logged in")
+                return@launch
+            }
+            val todayDate = DateUtils.formatDate(Calendar.getInstance())
+
+            val currentUser = userRepoManager.getUserById(currentUid)
+            val targetClassId =
+                if (!currentUser?.classId.isNullOrBlank()) currentUser.classId else Constants.STAFF_CLASS_ID
+
+            // Teacher ki attendance ka object
+            // Note: studentId field me Teacher ka UID jayega
+            val attendanceRecord = Attendance(
+                studentId = currentUid,
+                classId = targetClassId,
+                date = todayDate,
+                status = "Present",
+                updatedAt = System.currentTimeMillis()
+            )
+
+            // Repo expects a List, wrap it
+            attendanceRepoManager.saveAttendance(
+                classId = targetClassId,
+                date = todayDate,
+                attendanceList = listOf(attendanceRecord)
+            ).fold(
+                onSuccess = {
+                    _saveState.value = UiState.Success(Unit)
+                },
+                onFailure = {
+                    _saveState.value = UiState.Error(it.message ?: "Failed to mark attendance")
                 }
             )
         }

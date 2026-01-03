@@ -1,6 +1,7 @@
 package com.zabibtech.alkhair.ui.salary
 
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -54,21 +55,67 @@ class SalaryActivity : AppCompatActivity() {
 
         setupWindowInsets()
         setupToolbar()
-        setupRecyclerView()
-        setupMonthDropdown()
-        setupFab()
 
-        // Observers
-        setupObservers()
+        // Default Hide
+        binding.main.visibility = View.INVISIBLE
 
-        // Initial setup
-        viewModel.setFilters(null, null)
-
-        // Trigger loading of teachers for dropdown
-        // Note: UserViewModel now uses 'setRole' instead of 'loadUsers'
-        userViewModel.setInitialFilters(Roles.TEACHER, null, Shift.ALL)
+        // 1. Determine Role & Setup UI
+        initializeScreen()
     }
 
+    private fun initializeScreen() {
+        // Show Loading
+        DialogUtils.showLoading(supportFragmentManager, "Loading...")
+
+        lifecycleScope.launch {
+            // Fetch Current User
+            val currentUser = userViewModel.getCurrentUser()
+            DialogUtils.hideLoading(supportFragmentManager)
+
+            if (currentUser != null) {
+                // Setup UI based on Role
+                setupUIBasedOnRole(currentUser)
+                binding.main.visibility = View.VISIBLE
+            } else {
+                Toast.makeText(this@SalaryActivity, "Session Expired", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
+    }
+    private fun setupUIBasedOnRole(user: User) {
+        val role = user.role.trim()
+
+        if (role.equals(Roles.TEACHER, ignoreCase = true)) {
+            // 🔒 TEACHER VIEW
+            binding.fabAddSalary.visibility = View.GONE
+            binding.staffSpinnerLayout.visibility = View.GONE
+            binding.toolbar.title = "My Salary"
+
+            // Auto Filter: Only My Data
+            viewModel.setFilters(user.uid, null)
+
+            setupRecyclerView(isReadOnly = true)
+            setupMonthDropdown()
+            setupObservers(isTeacher = true)
+
+        } else {
+            // 🔓 ADMIN VIEW
+            binding.fabAddSalary.visibility = View.VISIBLE
+            binding.staffSpinnerLayout.visibility = View.VISIBLE
+            binding.toolbar.title = "Salary Management"
+
+            // Auto Filter: All Data
+            viewModel.setFilters(null, null)
+
+            // Load Teachers for Dropdown
+            userViewModel.setInitialFilters(Roles.TEACHER, null, Shift.ALL)
+
+            setupRecyclerView(isReadOnly = false)
+            setupMonthDropdown()
+            setupFab()
+            setupObservers(isTeacher = false)
+        }
+    }
     /* ============================================================
        🔧 UI SETUP
        ============================================================ */
@@ -89,27 +136,29 @@ class SalaryActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupRecyclerView() {
+    private fun setupRecyclerView(isReadOnly: Boolean) {
         salaryAdapter = SalaryAdapter(
-            onEdit = { showAddEditDialog(it) },
+            isReadOnly = isReadOnly, // ✅ Pass flag
+            onEdit = { if (!isReadOnly) showAddEditDialog(it) },
             onDelete = { salary ->
-                DialogUtils.showConfirmation(
-                    this,
-                    title = "Delete Salary",
-                    message = "Are you sure you want to delete this salary record?",
-                    onConfirmed = {
-                        viewModel.deleteSalary(salary.id)
-                    }
-                )
+                if (!isReadOnly) {
+                    DialogUtils.showConfirmation(
+                        this,
+                        title = "Delete Salary",
+                        message = "Are you sure?",
+                        onConfirmed = { viewModel.deleteSalary(salary.id) }
+                    )
+                }
             },
             onMarkPaid = { salary ->
-                // Create a paid copy
-                val paidCopy = salary.copy(
-                    paymentStatus = "PAID",
-                    paymentDate = DateUtils.today(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                viewModel.saveSalary(paidCopy)
+                if (!isReadOnly) {
+                    val paidCopy = salary.copy(
+                        paymentStatus = "PAID",
+                        paymentDate = DateUtils.today(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    viewModel.saveSalary(paidCopy)
+                }
             }
         )
 
@@ -124,13 +173,15 @@ class SalaryActivity : AppCompatActivity() {
        ============================================================ */
 
     private fun setupMonthDropdown() {
-        val months = DateUtils.generateMonthListForPicker() // Ensure this util exists or create list manually
-        val displayList = mutableListOf("All Months").apply { addAll(months) }
+        val displayList = DateUtils.generateMonthListForPicker() // Ensure this util exists or create list manually
 
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, displayList)
 
         binding.spinnerMonth.setAdapter(adapter)
-        binding.spinnerMonth.setText(displayList.first(), false)
+        // Default select first item ("All Months")
+        if (displayList.isNotEmpty()) {
+            binding.spinnerMonth.setText(displayList.first(), false)
+        }
 
         binding.spinnerMonth.setOnItemClickListener { _, _, position, _ ->
             selectedMonth = if (position == 0) null else displayList[position]
@@ -167,67 +218,58 @@ class SalaryActivity : AppCompatActivity() {
        👀 OBSERVERS
        ============================================================ */
 
-    private fun setupObservers() {
+    private fun setupObservers(isTeacher: Boolean) {
 
-        // 1. Staff List (For Dropdown)
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                userViewModel.userListState.collectLatest { state ->
-                    if (state is UiState.Success) {
-                        populateStaffDropdown(state.data)
+        // 1. Staff List (Only needed for Admin)
+        if (!isTeacher) {
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    userViewModel.userListState.collectLatest { state ->
+                        if (state is UiState.Success) {
+                            populateStaffDropdown(state.data)
+                        }
                     }
                 }
             }
         }
 
-        // 2. Salary List (Main Data)
+        // 2. Salary List
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.salaryListState.collectLatest { state ->
                     when (state) {
-                        is UiState.Loading -> {
-                            // Optional: binding.progressBar.visibility = View.VISIBLE
-                        }
-
                         is UiState.Success -> {
-                            // binding.progressBar.visibility = View.GONE
-                            val list = state.data
-                            salaryAdapter.submitList(list)
-
-                            updateSummary(list)
-
-                           /* binding.emptyView.visibility =
-                                if(list.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE*/
+                            salaryAdapter.submitList(state.data)
+                            updateSummary(state.data)
                         }
-
                         is UiState.Error -> {
-                            // binding.progressBar.visibility = View.GONE
                             DialogUtils.showAlert(this@SalaryActivity, "Error", state.message)
                         }
-
                         else -> Unit
                     }
                 }
             }
         }
 
-        // 3. Mutation State (Save/Delete)
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.mutationState.collectLatest { state ->
-                    when (state) {
-                        is UiState.Loading -> DialogUtils.showLoading(supportFragmentManager, "Processing...")
-                        is UiState.Success -> {
-                            DialogUtils.hideLoading(supportFragmentManager)
-                            Toast.makeText(this@SalaryActivity, "Operation Successful", Toast.LENGTH_SHORT).show()
-                            viewModel.resetMutationState()
+        // 3. Mutation State (Only needed for Admin)
+        if (!isTeacher) {
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    viewModel.mutationState.collectLatest { state ->
+                        when (state) {
+                            is UiState.Loading -> DialogUtils.showLoading(supportFragmentManager, "Processing...")
+                            is UiState.Success -> {
+                                DialogUtils.hideLoading(supportFragmentManager)
+                                Toast.makeText(this@SalaryActivity, "Success", Toast.LENGTH_SHORT).show()
+                                viewModel.resetMutationState()
+                            }
+                            is UiState.Error -> {
+                                DialogUtils.hideLoading(supportFragmentManager)
+                                DialogUtils.showAlert(this@SalaryActivity, "Error", state.message)
+                                viewModel.resetMutationState()
+                            }
+                            else -> Unit
                         }
-                        is UiState.Error -> {
-                            DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(this@SalaryActivity, "Error", state.message)
-                            viewModel.resetMutationState()
-                        }
-                        else -> Unit
                     }
                 }
             }

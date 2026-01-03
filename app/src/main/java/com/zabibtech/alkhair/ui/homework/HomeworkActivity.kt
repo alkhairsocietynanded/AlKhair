@@ -12,13 +12,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.zabibtech.alkhair.databinding.ActivityHomeworkBinding
+import com.zabibtech.alkhair.utils.DialogUtils
+import com.zabibtech.alkhair.utils.LoadingDialogFragment
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class HomeworkActivity : AppCompatActivity() {
+class HomeworkActivity : AppCompatActivity(), LoadingDialogFragment.OnLoadingFinishedListener {
 
     private lateinit var binding: ActivityHomeworkBinding
     private val viewModel: HomeworkViewModel by viewModels()
@@ -139,6 +142,7 @@ class HomeworkActivity : AppCompatActivity() {
                 viewModel.mutationState.collect { state ->
                     when (state) {
                         is UiState.Success -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
                             Toast.makeText(
                                 this@HomeworkActivity,
                                 "Operation successful",
@@ -148,6 +152,7 @@ class HomeworkActivity : AppCompatActivity() {
                         }
 
                         is UiState.Error -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
                             Toast.makeText(
                                 this@HomeworkActivity,
                                 state.message,
@@ -156,11 +161,19 @@ class HomeworkActivity : AppCompatActivity() {
                             viewModel.resetMutationState()
                         }
 
-                        UiState.Loading -> Unit
+                        UiState.Loading -> DialogUtils.showLoading(
+                            supportFragmentManager, 
+                            "Please wait...", 
+                            10000
+                        )
                         UiState.Idle -> Unit
                     }
                 }
             }
         }
+    }
+
+    override fun onLoadingFinished() {
+        Snackbar.make(binding.root, "Request timed out. Please try again.", Snackbar.LENGTH_LONG).show()
     }
 }

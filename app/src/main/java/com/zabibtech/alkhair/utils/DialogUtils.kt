@@ -53,13 +53,17 @@ object DialogUtils {
     // -------------------------------
     private var isDialogShowing = false
 
-    fun showLoading(target: Any, message: String = "Please wait...") {
+    fun showLoading(
+        target: Any,
+        message: String = "Please wait...",
+        duration: Long = 0
+    ) {
         if (isDialogShowing) return // avoid multiple instances
 
         when (target) {
             is FragmentManager -> {
                 if (target.findFragmentByTag(LoadingDialogFragment.TAG) == null) {
-                    LoadingDialogFragment.newInstance(message)
+                    LoadingDialogFragment.newInstance(message, duration)
                         .showNow(target, LoadingDialogFragment.TAG)
                     isDialogShowing = true
                 }
@@ -69,7 +73,7 @@ object DialogUtils {
                 if (target.isAdded && target.isResumed &&
                     fm.findFragmentByTag(LoadingDialogFragment.TAG) == null
                 ) {
-                    LoadingDialogFragment.newInstance(message)
+                    LoadingDialogFragment.newInstance(message, duration)
                         .showNow(fm, LoadingDialogFragment.TAG)
                     isDialogShowing = true
                 }

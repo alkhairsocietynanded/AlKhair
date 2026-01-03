@@ -1,4 +1,5 @@
 package com.zabibtech.alkhair.utils
+
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.datepicker.MaterialDatePicker
 import java.text.SimpleDateFormat
@@ -73,7 +74,7 @@ object DateUtils {
         val currentYear = calendar.get(Calendar.YEAR)
 
         // Generate for previous, current, and next year
-        for (year in (currentYear)..(currentYear + 2)) {
+        for (year in (currentYear - 1)..(currentYear + 1)) {
             for (month in 0..11) {
                 calendar.set(year, month, 1)
                 val monthName = monthFormat.format(calendar.time)

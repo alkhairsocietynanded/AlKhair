@@ -67,7 +67,6 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     }
 
-
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())

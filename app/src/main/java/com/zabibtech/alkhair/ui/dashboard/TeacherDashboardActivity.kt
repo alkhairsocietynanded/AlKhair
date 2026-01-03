@@ -15,16 +15,22 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.databinding.ActivityTeacherDashboardBinding
 import com.zabibtech.alkhair.ui.announcement.AddAnnouncementSheet
 import com.zabibtech.alkhair.ui.announcement.AnnouncementPagerAdapter
 import com.zabibtech.alkhair.ui.announcement.AnnouncementViewModel
-import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
+import com.zabibtech.alkhair.ui.attendance.AttendanceActivity
+import com.zabibtech.alkhair.ui.attendance.AttendanceViewModel
 import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.homework.HomeworkActivity
 import com.zabibtech.alkhair.ui.salary.SalaryActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
+import com.zabibtech.alkhair.ui.user.UserViewModel
+import com.zabibtech.alkhair.utils.Constants
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.LogoutManager
 import com.zabibtech.alkhair.utils.Modes
@@ -44,6 +50,8 @@ class TeacherDashboardActivity : AppCompatActivity() {
     private lateinit var adapter: AnnouncementPagerAdapter
     private val adminDashboardViewModel: AdminDashboardViewModel by viewModels()
     private val announcementViewModel: AnnouncementViewModel by viewModels()
+    private val attendanceViewModel: AttendanceViewModel by viewModels()
+    private val userViewModel: UserViewModel by viewModels()
 
     @Inject
     lateinit var logoutManager: LogoutManager
@@ -63,6 +71,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
         observeLoadingState()
         observeDashboardStats()
         observeAnnouncements()
+        observeAttendanceState()
 
 //        adminDashboardViewModel.runMigrationScript()
     }
@@ -94,15 +103,35 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
 
         binding.cardStudentAttendance.setOnClickListener {
-            val intent = Intent(this, ClassManagerActivity::class.java).apply {
-                putExtra("mode", Modes.ATTENDANCE)
-                putExtra("role", Roles.STUDENT)
+            // ✅ Coroutine launch karein taaki hum User Data fetch kar sakein
+            lifecycleScope.launch {
+                DialogUtils.showLoading(supportFragmentManager)
+                val currentTeacher = userViewModel.getCurrentUser()
+                DialogUtils.hideLoading(supportFragmentManager)
+
+                if (currentTeacher != null && currentTeacher.classId.isNotBlank()) {
+                    val intent = Intent(this@TeacherDashboardActivity, AttendanceActivity::class.java).apply {
+                        putExtra("role", Roles.STUDENT) // Teacher Students ki attendance lega
+                        putExtra("classId", currentTeacher.classId) // Teacher ki assigned Class ID
+                    }
+                    startActivity(intent)
+                } else {
+                    // Agar Teacher ko Class assign nahi hai
+                    DialogUtils.showAlert(
+                        this@TeacherDashboardActivity,
+                        "Error",
+                        "No Class Assigned to you. Please contact Admin."
+                    )
+                }
             }
-            startActivity(intent)
         }
 
         binding.cardFees.setOnClickListener {
             startActivity(Intent(this, FeesActivity::class.java))
+        }
+        binding.cardAnnouncement.setOnClickListener {
+            val addAnnouncementSheet = AddAnnouncementSheet()
+            addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
         }
 
         binding.cardSalary.setOnClickListener {
@@ -114,9 +143,8 @@ class TeacherDashboardActivity : AppCompatActivity() {
             logoutManager.logout(this)
         }
 
-        binding.fabAnnounce.setOnClickListener {
-            val addAnnouncementSheet = AddAnnouncementSheet()
-            addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
+        binding.fabQRCode.setOnClickListener {
+            startQrScanner()
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
@@ -125,6 +153,31 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
     }
 
+    private fun startQrScanner() {
+        val options = GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+            .enableAutoZoom()
+            .build()
+
+        val scanner = GmsBarcodeScanning.getClient(this, options)
+
+        scanner.startScan()
+            .addOnSuccessListener { barcode ->
+                val rawValue = barcode.rawValue
+                if (rawValue == Constants.SCHOOL_QR_CODE_VALUE) {
+                    // QR Code Match! Mark Attendance
+                    attendanceViewModel.markSelfPresent()
+                } else {
+                    DialogUtils.showAlert(this, "Invalid QR", "This QR Code does not belong to Al-Khair School.")
+                }
+            }
+            .addOnCanceledListener {
+                // Task canceled
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Scanner Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
     private fun setupAnnouncementViewPager() {
         adapter = AnnouncementPagerAdapter(
             mutableListOf(),
@@ -242,6 +295,38 @@ class TeacherDashboardActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun observeAttendanceState(){
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                attendanceViewModel.saveState.collectLatest { state ->
+                    when (state) {
+                        is UiState.Loading -> {
+                            DialogUtils.showLoading(supportFragmentManager, "Marking Present...")
+                        }
+                        is UiState.Success -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
+                            // ✅ Success Dialog with Time
+                            val time = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+                            DialogUtils.showAlert(
+                                this@TeacherDashboardActivity,
+                                "Success",
+                                "Attendance Marked Successfully at $time"
+                            )
+                            attendanceViewModel.resetSaveState()
+                        }
+                        is UiState.Error -> {
+                            DialogUtils.hideLoading(supportFragmentManager)
+                            DialogUtils.showAlert(this@TeacherDashboardActivity, "Error", state.message)
+                            attendanceViewModel.resetSaveState()
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+        }
+    }
+
 
     private fun updateDashboardUI(stats: DashboardStats) {
         binding.tvTotalStudents.text = stats.studentsCount.toString()
