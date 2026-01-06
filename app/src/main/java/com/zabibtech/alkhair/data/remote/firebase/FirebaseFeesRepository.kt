@@ -20,6 +20,10 @@ class FirebaseFeesRepository @Inject constructor() {
             val feeId = feesModel.id.ifEmpty { feesRef.push().key!! }
             val currentTime = System.currentTimeMillis()
 
+            // Safety checks for keys
+            val safeShift = feesModel.shift.ifBlank { "General" }
+            val safeClassId = feesModel.classId.ifBlank { "NA" }
+
             // 1. Final Object for Local & Remote Return
             val newFeesModel = feesModel.copy(
                 id = feeId,
@@ -33,6 +37,7 @@ class FirebaseFeesRepository @Inject constructor() {
                 "studentId" to newFeesModel.studentId,
                 "studentName" to newFeesModel.studentName,
                 "classId" to newFeesModel.classId,
+                "shift" to newFeesModel.shift,
                 "monthYear" to newFeesModel.monthYear,
                 "baseAmount" to newFeesModel.baseAmount,
                 "paidAmount" to newFeesModel.paidAmount,
@@ -49,8 +54,8 @@ class FirebaseFeesRepository @Inject constructor() {
                 // 🔥 EXISTING KEY (Student ke liye)
                 "student_sync_key" to "${newFeesModel.studentId}_$currentTime",
 
-                // 🔥 NEW KEY (Teacher ke liye)
-                "class_sync_key" to "${newFeesModel.classId}_$currentTime"
+                // ✅ NEW KEY: ClassID + Shift + Timestamp
+                "class_shift_sync_key" to "${safeClassId}_${safeShift}_$currentTime"
             )
 
             feesRef.child(feeId).setValue(feeMap).await()
@@ -79,16 +84,47 @@ class FirebaseFeesRepository @Inject constructor() {
                 val sId = dataToUpdate["studentId"] as String
                 dataToUpdate["student_sync_key"] = "${sId}_$currentTime"
             }
-            // ✅ Class Key Update
-            if (dataToUpdate.containsKey("classId")) {
+            // ✅ Update Class+Shift Key
+            if (dataToUpdate.containsKey("classId") && dataToUpdate.containsKey("shift")) {
                 val cId = dataToUpdate["classId"] as String
-                dataToUpdate["class_sync_key"] = "${cId}_$currentTime"
+                val shift = dataToUpdate["shift"] as String
+                val safeShift = shift.ifBlank { "General" }
+                dataToUpdate["class_shift_sync_key"] = "${cId}_${safeShift}_$currentTime"
             }
 
             feesRef.child(feeId).updateChildren(dataToUpdate).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e("FirebaseFeesRepo", "Error updating fee", e)
+            Result.failure(e)
+        }
+    }
+
+    // ✅ TEACHER SYNC (Class + Shift Optimized)
+    suspend fun getFeesForClassAndShiftUpdatedAfter(
+        classId: String,
+        shift: String,
+        timestamp: Long
+    ): Result<List<FeesModel>> {
+        return try {
+            val safeShift = shift.ifBlank { "General" }
+
+            val startKey = "${classId}_${safeShift}_${timestamp + 1}"
+            val endKey = "${classId}_${safeShift}_9999999999999"
+
+            val snapshot = feesRef
+                .orderByChild("class_shift_sync_key") // ✅ Use New Index
+                .startAt(startKey)
+                .endAt(endKey)
+                .get()
+                .await()
+
+            // ✅ Force Key as ID fix included
+            val list = snapshot.children.mapNotNull { child ->
+                child.getValue(FeesModel::class.java)?.copy(id = child.key!!)
+            }
+            Result.success(list)
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }
@@ -116,7 +152,9 @@ class FirebaseFeesRepository @Inject constructor() {
                 .get()
                 .await()
 
-            val fees = snapshot.children.mapNotNull { it.getValue(FeesModel::class.java) }
+            val fees = snapshot.children.mapNotNull {
+                it.getValue(FeesModel::class.java)?.copy(id = it.key!!)
+            }
             Result.success(fees)
         } catch (e: Exception) {
             Log.e("FirebaseFeesRepo", "Error fetching student fees sync", e)
@@ -125,7 +163,10 @@ class FirebaseFeesRepository @Inject constructor() {
     }
 
     // ✅ TEACHER SYNC FUNCTION
-    suspend fun getFeesForClassUpdatedAfter(classId: String, timestamp: Long): Result<List<FeesModel>> {
+    suspend fun getFeesForClassUpdatedAfter(
+        classId: String,
+        timestamp: Long
+    ): Result<List<FeesModel>> {
         return try {
             val startKey = "${classId}_${timestamp + 1}"
             val endKey = "${classId}_9999999999999"
@@ -137,12 +178,15 @@ class FirebaseFeesRepository @Inject constructor() {
                 .get()
                 .await()
 
-            val list = snapshot.children.mapNotNull { it.getValue(FeesModel::class.java) }
+            val list = snapshot.children.mapNotNull {
+                it.getValue(FeesModel::class.java)?.copy(id = it.key!!)
+            }
             Result.success(list)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+
     /**
      * ✅ ADMIN SYNC (Global)
      * यह पूरे स्कूल का डेटा लाता है जो बदला है।
@@ -155,7 +199,9 @@ class FirebaseFeesRepository @Inject constructor() {
                 .get()
                 .await()
 
-            val fees = snapshot.children.mapNotNull { it.getValue(FeesModel::class.java) }
+            val fees = snapshot.children.mapNotNull {
+                it.getValue(FeesModel::class.java)?.copy(id = it.key!!)
+            }
             Result.success(fees)
         } catch (e: Exception) {
             Log.e("FirebaseFeesRepo", "Error getting updated fees global", e)

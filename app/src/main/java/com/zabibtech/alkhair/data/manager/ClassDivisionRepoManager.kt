@@ -77,6 +77,7 @@ class ClassDivisionRepoManager @Inject constructor(
         }
     }
 
+
     // --- CLASSES ---
     suspend fun addClass(classModel: ClassModel): Result<ClassModel> {
         // Ensure division exists remotely

@@ -18,12 +18,12 @@ interface FeesDao {
     @Query("SELECT * FROM fees WHERE id = :id")
     fun getFeeById(id: String): Flow<FeesModel?>
 
-    // ✅ UPDATE: Sorted by Month/Year (Latest first)
-    // String comparison works for "YYYY-MM" format
-    @Query("SELECT * FROM fees WHERE studentId = :studentId ORDER BY monthYear DESC")
+    // ✅ UPDATE: Sorted by updatedAt DESC (Latest fee transaction first)
+    // 'monthYear' string sorting is not reliable (Apr < Jan), so we use timestamp.
+    @Query("SELECT * FROM fees WHERE studentId = :studentId ORDER BY updatedAt DESC")
     fun getFeesByStudentId(studentId: String): Flow<List<FeesModel>>
 
-    // ✅ UPDATE: Sorted by UpdatedAt (Latest changes first)
+    // ✅ UPDATE: Sorted by updatedAt DESC (Latest entries on top)
     @Query("SELECT * FROM fees ORDER BY updatedAt DESC")
     fun getAllFees(): Flow<List<FeesModel>>
 

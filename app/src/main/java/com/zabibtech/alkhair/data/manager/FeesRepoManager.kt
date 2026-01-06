@@ -54,8 +54,8 @@ class FeesRepoManager @Inject constructor(
     }
 
     // 3. Class Sync (For Teacher)
-    suspend fun syncClassFees(classId: String, lastSync: Long): Result<Unit> {
-        return remoteRepo.getFeesForClassUpdatedAfter(classId, lastSync)
+    suspend fun syncClassFees(classId: String, shift: String, lastSync: Long): Result<Unit> {
+        return remoteRepo.getFeesForClassAndShiftUpdatedAfter(classId, shift, lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) insertLocal(list)
             }
@@ -83,6 +83,7 @@ class FeesRepoManager @Inject constructor(
             "studentId" to feesModel.studentId,
             "studentName" to feesModel.studentName,
             "classId" to feesModel.classId,
+            "shift" to feesModel.shift,
             "monthYear" to feesModel.monthYear,
             "baseAmount" to feesModel.baseAmount,
             "paidAmount" to feesModel.paidAmount,
@@ -133,4 +134,5 @@ class FeesRepoManager @Inject constructor(
 
     override suspend fun deleteLocally(id: String) =
         localRepo.deleteFee(id)
+    override suspend fun clearLocal() = localRepo.clearAll()
 }

@@ -111,4 +111,4 @@ class SalaryRepoManager @Inject constructor(
     override suspend fun insertLocal(items: List<SalaryModel>) = localRepo.insertSalaries(items)
     override suspend fun insertLocal(item: SalaryModel) = localRepo.insertSalary(item)
     override suspend fun deleteLocally(id: String) = localRepo.deleteSalary(id)
-}
+    override suspend fun clearLocal() = localRepo.clearAll()}

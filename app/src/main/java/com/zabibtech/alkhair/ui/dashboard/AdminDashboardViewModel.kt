@@ -7,6 +7,7 @@ import com.zabibtech.alkhair.data.manager.AppDataSyncManager
 import com.zabibtech.alkhair.data.manager.AttendanceRepoManager
 import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager
 import com.zabibtech.alkhair.data.manager.UserRepoManager
+import com.zabibtech.alkhair.data.models.DashboardStats
 import com.zabibtech.alkhair.di.ApplicationScope
 import com.zabibtech.alkhair.ui.main.Temp
 import com.zabibtech.alkhair.utils.DateUtils
@@ -27,14 +28,6 @@ import java.util.Calendar
 import javax.inject.Inject
 
 
-data class DashboardStats(
-    val studentsCount: Int = 0,
-    val teachersCount: Int = 0,
-    val classesCount: Int = 0,
-    val attendancePercentage: Int = 0,
-    val presentCount: Int = 0,
-    val absentCount: Int = 0
-)
 
 @HiltViewModel
 class AdminDashboardViewModel @Inject constructor(
@@ -59,13 +52,7 @@ class AdminDashboardViewModel @Inject constructor(
             }
         }
     }
-    // In your Activity or ViewModel
-    fun runMigrationScript() {
-        viewModelScope.launch {
-            Log.d("Migration", "Starting User Migration...")
-            Temp.fixFeesDataAndAddKeys()
-        }
-    }
+
 
     /* ============================================================
        📊 DASHBOARD STATS (Reactive Pipeline)

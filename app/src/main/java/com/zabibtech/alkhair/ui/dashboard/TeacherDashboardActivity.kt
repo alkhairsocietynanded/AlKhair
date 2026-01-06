@@ -2,6 +2,9 @@ package com.zabibtech.alkhair.ui.dashboard
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +22,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.zabibtech.alkhair.R
+import com.zabibtech.alkhair.data.models.DashboardStats
 import com.zabibtech.alkhair.databinding.ActivityTeacherDashboardBinding
 import com.zabibtech.alkhair.ui.announcement.AddAnnouncementSheet
 import com.zabibtech.alkhair.ui.announcement.AnnouncementPagerAdapter
@@ -40,6 +44,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -48,7 +54,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTeacherDashboardBinding
     private lateinit var adapter: AnnouncementPagerAdapter
-    private val adminDashboardViewModel: AdminDashboardViewModel by viewModels()
+    private val dashboardViewModel: TeacherDashboardViewModel by viewModels()
     private val announcementViewModel: AnnouncementViewModel by viewModels()
     private val attendanceViewModel: AttendanceViewModel by viewModels()
     private val userViewModel: UserViewModel by viewModels()
@@ -73,7 +79,8 @@ class TeacherDashboardActivity : AppCompatActivity() {
         observeAnnouncements()
         observeAttendanceState()
 
-//        adminDashboardViewModel.runMigrationScript()
+//        Temp Script, run only once
+//        dashboardViewModel.runMigrationScript()
     }
 
     private fun setupWindowInsets() {
@@ -110,7 +117,10 @@ class TeacherDashboardActivity : AppCompatActivity() {
                 DialogUtils.hideLoading(supportFragmentManager)
 
                 if (currentTeacher != null && currentTeacher.classId.isNotBlank()) {
-                    val intent = Intent(this@TeacherDashboardActivity, AttendanceActivity::class.java).apply {
+                    val intent = Intent(
+                        this@TeacherDashboardActivity,
+                        AttendanceActivity::class.java
+                    ).apply {
                         putExtra("role", Roles.STUDENT) // Teacher Students ki attendance lega
                         putExtra("classId", currentTeacher.classId) // Teacher ki assigned Class ID
                     }
@@ -127,7 +137,9 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
 
         binding.cardFees.setOnClickListener {
-            startActivity(Intent(this, FeesActivity::class.java))
+            startActivity(Intent(this, FeesActivity::class.java).apply {
+                putExtra("role", Roles.TEACHER) // ✅ Pass Role
+            })
         }
         binding.cardAnnouncement.setOnClickListener {
             val addAnnouncementSheet = AddAnnouncementSheet()
@@ -136,11 +148,6 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
         binding.cardSalary.setOnClickListener {
             startActivity(Intent(this, SalaryActivity::class.java))
-        }
-
-        // --- Actions ---
-        binding.cardLogout.setOnClickListener {
-            logoutManager.logout(this)
         }
 
         binding.fabQRCode.setOnClickListener {
@@ -168,16 +175,32 @@ class TeacherDashboardActivity : AppCompatActivity() {
                     // QR Code Match! Mark Attendance
                     attendanceViewModel.markSelfPresent()
                 } else {
-                    DialogUtils.showAlert(this, "Invalid QR", "This QR Code does not belong to Al-Khair School.")
+                    DialogUtils.showAlert(
+                        this,
+                        "Invalid QR",
+                        "This QR Code does not belong to Al-Khair School."
+                    )
                 }
             }
             .addOnCanceledListener {
-                // Task canceled
+                // User ne back button dabaya ya cancel kiya
+                Log.d("QR_SCAN", "Scan cancelled by user")
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Scanner Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                // ✅ Detailed Error Logging
+                Log.e("QR_SCAN", "Scanner Failed", e)
+
+                val errorMessage = when {
+                    e.message?.contains("Module not found", true) == true ->
+                        "Scanner module is downloading. Please try again in a minute."
+
+                    else -> "Scanner Error: ${e.localizedMessage}"
+                }
+
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
             }
     }
+
     private fun setupAnnouncementViewPager() {
         adapter = AnnouncementPagerAdapter(
             mutableListOf(),
@@ -217,7 +240,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
-                    adminDashboardViewModel.dashboardState,
+                    dashboardViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
                     announcementViewModel.mutationState // Updated here
                 ) { dashboardState, announcementListState, mutationState ->
@@ -234,12 +257,13 @@ class TeacherDashboardActivity : AppCompatActivity() {
     private fun observeDashboardStats() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                adminDashboardViewModel.dashboardState.collectLatest { state ->
+                dashboardViewModel.dashboardState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> updateDashboardUI(state.data)
                         is UiState.Error -> DialogUtils.showAlert(
                             this@TeacherDashboardActivity, "Error", state.message
                         )
+
                         else -> Unit
                     }
                 }
@@ -266,9 +290,11 @@ class TeacherDashboardActivity : AppCompatActivity() {
                                 adapter.updateData(list)
                             }
                         }
+
                         is UiState.Error -> DialogUtils.showAlert(
                             this@TeacherDashboardActivity, "Error", state.message
                         )
+
                         else -> Unit
                     }
                 }
@@ -282,13 +308,23 @@ class TeacherDashboardActivity : AppCompatActivity() {
                 announcementViewModel.mutationState.collectLatest { state ->
                     when (state) {
                         is UiState.Success -> {
-                            Toast.makeText(this@TeacherDashboardActivity, "Operation Successful", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this@TeacherDashboardActivity,
+                                "Operation Successful",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             announcementViewModel.resetMutationState()
                         }
+
                         is UiState.Error -> {
-                            DialogUtils.showAlert(this@TeacherDashboardActivity, "Error", state.message)
+                            DialogUtils.showAlert(
+                                this@TeacherDashboardActivity,
+                                "Error",
+                                state.message
+                            )
                             announcementViewModel.resetMutationState()
                         }
+
                         else -> Unit
                     }
                 }
@@ -296,7 +332,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun observeAttendanceState(){
+    private fun observeAttendanceState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 attendanceViewModel.saveState.collectLatest { state ->
@@ -304,10 +340,13 @@ class TeacherDashboardActivity : AppCompatActivity() {
                         is UiState.Loading -> {
                             DialogUtils.showLoading(supportFragmentManager, "Marking Present...")
                         }
+
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             // ✅ Success Dialog with Time
-                            val time = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+                            val time =
+                                java.text.SimpleDateFormat("hh:mm a", Locale.getDefault())
+                                    .format(java.util.Date())
                             DialogUtils.showAlert(
                                 this@TeacherDashboardActivity,
                                 "Success",
@@ -315,11 +354,17 @@ class TeacherDashboardActivity : AppCompatActivity() {
                             )
                             attendanceViewModel.resetSaveState()
                         }
+
                         is UiState.Error -> {
                             DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(this@TeacherDashboardActivity, "Error", state.message)
+                            DialogUtils.showAlert(
+                                this@TeacherDashboardActivity,
+                                "Error",
+                                state.message
+                            )
                             attendanceViewModel.resetSaveState()
                         }
+
                         else -> Unit
                     }
                 }
@@ -329,12 +374,53 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
 
     private fun updateDashboardUI(stats: DashboardStats) {
-        binding.tvTotalStudents.text = stats.studentsCount.toString()
-        binding.tvTotalTeachers.text = stats.teachersCount.toString()
-        binding.tvTotalClasses.text = stats.classesCount.toString()
-        binding.tvAttendancePercentage.text = "${stats.attendancePercentage}%"
-        binding.progressAttendance.progress = stats.attendancePercentage
-        binding.tvPresentCount.text = "Present: ${stats.presentCount}"
-        binding.tvAbsentCount.text = "Absent: ${stats.absentCount}"
+        // --- Top Card (Attendance & Strength) ---
+        binding.tvTodayDate.text = com.zabibtech.alkhair.utils.DateUtils.today()
+        binding.tvMyStudents.text = stats.studentsCount.toString()
+        binding.tvPresentToday.text = stats.presentCount.toString()
+        binding.tvAbsentToday.text = stats.absentCount.toString()
+        binding.tvLeaveToday.text = stats.leaveCount.toString()
+
+        // --- Bottom Card (REPURPOSED: Fee Collection) ---
+
+        // 1. Title Change (XML me ya yahan)
+        // Behtar hai XML me ID change karein, par abhi code se text badal rahe hain:
+        // binding.tvCardTitle.text = "Fee Collection" (Agar ID hoti)
+
+        // 2. Percentage
+        binding.tvAttendancePercentage.text = "${stats.feePercentage}%" // Reusing ID
+        binding.progressAttendance.progress = stats.feePercentage // Reusing ID
+
+        // 3. Values (Currency Format)
+        val formatter = NumberFormat.getCurrencyInstance(
+            Locale.Builder().setLanguage("en").setRegion("IN").build()
+        )
+        binding.tvPresentCount.text =
+            "Collected: ${formatter.format(stats.totalFeeCollected)}" // Reusing ID
+        binding.tvPresentCount.setTextColor(getColor(R.color.success)) // Green color
+
+        binding.tvAbsentCount.text =
+            "Pending: ${formatter.format(stats.totalFeePending)}" // Reusing ID
+        binding.tvAbsentCount.setTextColor(getColor(R.color.failure)) // Red color
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.teacher_dashboard_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_logout -> {
+                DialogUtils.showConfirmation(
+                    this,
+                    "Logout",
+                    "Are you sure you want to logout?",
+                    onConfirmed = { logoutManager.logout(this) }
+                )
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }

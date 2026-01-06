@@ -20,6 +20,9 @@ class FirebaseUserRepository @Inject constructor() {
 
             val currentTime = System.currentTimeMillis()
             val finalUser = user.copy(updatedAt = currentTime)
+            // Validate Shift (Default to "General" if empty)
+            val safeShift = user.shift.ifBlank { "General" }
+            val safeClassId = user.classId.ifBlank { "NA" }
 
             // Convert to Map to inject "class_sync_key"
             // This key allows efficient querying for Teachers (Class + Time)
@@ -44,9 +47,9 @@ class FirebaseUserRepository @Inject constructor() {
                 "totalFees" to finalUser.totalFees,
                 "updatedAt" to finalUser.updatedAt,
 
-                // 🔥 OPTIMIZATION KEY: ClassName + Timestamp
-                // If className is empty (e.g. Admin/Teacher), key becomes "NA_timestamp"
-                "class_sync_key" to "${finalUser.classId.ifBlank { "NA" }}_$currentTime"
+                // ✅ NEW KEY: ClassID + Shift + Timestamp
+                // Example: "-N8s..._Subah_1766500000"
+                "class_shift_sync_key" to "${safeClassId}_${safeShift}_$currentTime"
             )
 
             usersDb.child(finalUser.uid).setValue(userMap).await()
@@ -62,6 +65,9 @@ class FirebaseUserRepository @Inject constructor() {
         return try {
             val currentTime = System.currentTimeMillis()
             val userToUpdate = user.copy(updatedAt = currentTime)
+            // Validate Shift (Default to "General" if empty)
+            val safeShift = user.shift.ifBlank { "General" }
+            val safeClassId = user.classId.ifBlank { "NA" }
 
             // We must use a Map to update the extra key 'class_sync_key'
             val updateMap = mapOf(
@@ -87,8 +93,9 @@ class FirebaseUserRepository @Inject constructor() {
                 "divisionId" to userToUpdate.divisionId,
                 "updatedAt" to userToUpdate.updatedAt,
 
-                // 🔥 Update Key so it appears in new sync queries
-                "class_sync_key" to "${userToUpdate.classId.ifBlank { "NA" }}_$currentTime"
+                // ✅ NEW KEY: ClassID + Shift + Timestamp
+                // Example: "-N8s..._Subah_1766500000"
+                "class_shift_sync_key" to "${safeClassId}_${safeShift}_$currentTime"
             )
 
             usersDb.child(user.uid).updateChildren(updateMap).await()
@@ -100,13 +107,18 @@ class FirebaseUserRepository @Inject constructor() {
     }
 
     // ✅ TEACHER SYNC (Only My Class Students)
-    suspend fun getStudentsForClassUpdatedAfter(classId: String, timestamp: Long): Result<List<User>> {
+    suspend fun getStudentsForClassUpdatedAfter(
+        classId: String,
+        shift: String,
+        timestamp: Long
+    ): Result<List<User>> {
         return try {
-            val startKey = "${classId}_${timestamp + 1}"
-            val endKey = "${classId}_9999999999999"
+            // Key format: ClassID_Shift_Timestamp
+            val startKey = "${classId}_${shift}_${timestamp + 1}"
+            val endKey = "${classId}_${shift}_9999999999999"
 
             val snapshot = usersDb
-                .orderByChild("class_sync_key") // ✅ Index Required
+                .orderByChild("class_shift_sync_key")  // ✅ Index Required
                 .startAt(startKey)
                 .endAt(endKey)
                 .get()
@@ -155,7 +167,9 @@ class FirebaseUserRepository @Inject constructor() {
         return try {
             usersDb.child(uid).removeValue().await()
             Result.success(Unit)
-        } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun getUsersByRole(role: String): Result<List<User>> {
@@ -163,7 +177,9 @@ class FirebaseUserRepository @Inject constructor() {
             val snapshot = usersDb.orderByChild("role").equalTo(role).get().await()
             val users = snapshot.children.mapNotNull { it.getValue(User::class.java) }
             Result.success(users)
-        } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun getAllUsers(): Result<List<User>> {
@@ -171,6 +187,8 @@ class FirebaseUserRepository @Inject constructor() {
             val snapshot = usersDb.get().await()
             val users = snapshot.children.mapNotNull { it.getValue(User::class.java) }
             Result.success(users)
-        } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

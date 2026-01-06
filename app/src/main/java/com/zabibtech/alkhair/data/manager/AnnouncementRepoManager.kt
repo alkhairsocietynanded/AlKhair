@@ -107,4 +107,5 @@ class AnnouncementRepoManager @Inject constructor(
 
     override suspend fun deleteLocally(id: String) =
         localAnnouncementRepo.deleteAnnouncement(id)
+    override suspend fun clearLocal() = localAnnouncementRepo.clearAll()
 }

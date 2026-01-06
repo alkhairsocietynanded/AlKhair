@@ -14,6 +14,7 @@ data class FeesModel(
     val studentId: String = "",
     val studentName: String = "",
     val classId: String = "",
+    val shift: String = "",
     val monthYear: String = "", // Format: YYYY-MM
     val baseAmount: Double = 0.0,
     val paidAmount: Double = 0.0,

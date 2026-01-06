@@ -19,6 +19,7 @@ class FirebaseAttendanceRepository @Inject constructor() {
     suspend fun saveAttendanceForClass(
         classId: String,
         date: String,
+        shift: String,
         attendanceMap: Map<String, String>
     ): Result<Unit> {
         return try {
@@ -28,6 +29,7 @@ class FirebaseAttendanceRepository @Inject constructor() {
 
             val updates = mutableMapOf<String, Any>()
             val currentTime = System.currentTimeMillis()
+            val safeShift = shift.ifBlank { "General" }
 
             attendanceMap.forEach { (uid, status) ->
                 // 1. Root Key (Flat Structure ke liye)
@@ -39,29 +41,30 @@ class FirebaseAttendanceRepository @Inject constructor() {
                     classId = classId,
                     date = date,
                     status = status,
+                    shift = shift,
                     updatedAt = currentTime
                 )
 
                 // 3. Convert to Map for Firebase
                 // Hum Object ko Map me badal rahe hain taaki "student_sync_key" field jod sakein
                 // bina Local Room Model (Attendance.kt) ko ganda kiye.
-                val firebaseData = mapOf(
+                val attMap = mapOf(
                     "studentId" to attendance.studentId,
                     "classId" to attendance.classId,
                     "date" to attendance.date,
                     "status" to attendance.status,
+                    "shift" to shift,
                     "updatedAt" to attendance.updatedAt,
 
                     // 🔥 JADU YAHAN HAI (Composite Key)
                     // Format: studentId + "_" + timestamp
                     "student_sync_key" to "${uid}_${currentTime}",
 
-                    // ✅ NEW KEY FOR TEACHER/CLASS
-                    // Format: classId + "_" + timestamp
-                    "class_sync_key" to "${classId}_${currentTime}"
+                    // ✅ NEW KEY: Class + Shift + Time
+                    "class_shift_sync_key" to "${classId}_${safeShift}_${currentTime}"
                 )
 
-                updates[key] = firebaseData
+                updates[key] = attMap
             }
 
             if (updates.isEmpty()) {
@@ -130,6 +133,28 @@ class FirebaseAttendanceRepository @Inject constructor() {
             Log.e("FirebaseAttendanceRepo", "Error fetching updated attendance (Global)", e)
             Result.failure(e)
         }
+    }
+
+    suspend fun getAttendanceForClassAndShiftUpdatedAfter(
+        classId: String,
+        shift: String,
+        timestamp: Long
+    ): Result<List<Attendance>> {
+        return try {
+            val safeShift = shift.ifBlank { "General" }
+            val startKey = "${classId}_${safeShift}_${timestamp + 1}"
+            val endKey = "${classId}_${safeShift}_9999999999999"
+
+            val snapshot = attendanceRef
+                .orderByChild("class_shift_sync_key") // ✅ Use New Index
+                .startAt(startKey)
+                .endAt(endKey)
+                .get()
+                .await()
+
+            val list = snapshot.children.mapNotNull { it.getValue(Attendance::class.java) }
+            Result.success(list)
+        } catch (e: Exception) { Result.failure(e) }
     }
     /**
      * ✅ TEACHER SYNC (Class-Wise Optimization)

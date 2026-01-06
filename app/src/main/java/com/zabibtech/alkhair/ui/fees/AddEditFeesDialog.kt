@@ -8,7 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.fragment.app.viewModels // Import viewModels (instead of activityViewModels)
+import androidx.fragment.app.viewModels
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.User
@@ -17,7 +17,6 @@ import com.zabibtech.alkhair.utils.FeeUtils
 import com.zabibtech.alkhair.utils.getParcelableCompat
 import java.text.NumberFormat
 import java.util.Locale
-import java.util.UUID
 
 class AddEditFeesDialog : BottomSheetDialogFragment() {
 
@@ -134,7 +133,10 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 return@setOnClickListener
             }
 
-            val month = binding.spinnerMonth.text.toString()
+
+            // ✅ FIX: Month Name ko Short karein (January -> Jan)
+            // Taaki ye Dashboard ke logic (YYYY-MMM) se match kare
+            val month = binding.spinnerMonth.text.toString().take(3)
             val year = binding.spinnerYear.text.toString()
             val base = binding.etBaseAmount.text.toString().toDoubleOrNull() ?: 0.0
             val paid = binding.etPaidAmount.text.toString().toDoubleOrNull() ?: 0.0
@@ -151,7 +153,6 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 return@setOnClickListener
             }
 
-
             val paymentStatus = FeeUtils.calculatePaymentStatus(base, disc, paid)
             val dueAmount = FeeUtils.calculateDueAmount(base, disc, paid)
 
@@ -159,6 +160,7 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 studentId = student.uid,
                 studentName = student.name,
                 classId = student.classId,
+                shift = student.shift,
                 monthYear = "$year-$month",
                 baseAmount = base,
                 paidAmount = paid,
@@ -168,10 +170,10 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 paymentStatus = paymentStatus,
                 remarks = remarks
             ) ?: FeesModel(
-                id = UUID.randomUUID().toString(),
                 studentId = student.uid,
                 studentName = student.name,
                 classId = student.classId,
+                shift = student.shift,
                 monthYear = "$year-$month",
                 baseAmount = base,
                 paidAmount = paid,

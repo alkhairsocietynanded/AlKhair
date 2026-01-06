@@ -75,7 +75,10 @@ class UserViewModel @Inject constructor(
             _classIdFilter,
             _searchQuery
         ) { users, shift, classId, query ->
-            Log.d(TAG, "combine: Applying filters - shift=$shift, classId=$classId, query='$query' to ${users.size} users")
+            Log.d(
+                TAG,
+                "combine: Applying filters - shift=$shift, classId=$classId, query='$query' to ${users.size} users"
+            )
             // 3. Apply Filtering Logic
             filterUsers(users, shift, classId, query)
         }
@@ -176,7 +179,8 @@ class UserViewModel @Inject constructor(
                         Log.d(TAG, "deleteUser: Deleted user was current user, logging out.")
                         authRepoManager.logout()
                     }
-                    _mutationState.value = UiState.Success(User()) // Using empty user as success signal
+                    _mutationState.value =
+                        UiState.Success(User()) // Using empty user as success signal
                 },
                 onFailure = { e ->
                     Log.e(TAG, "deleteUser: Failure for user: $uid", e)
@@ -185,11 +189,13 @@ class UserViewModel @Inject constructor(
             )
         }
     }
+
     suspend fun getCurrentUser(): User? {
         val uid = authRepoManager.getCurrentUserUid() ?: return null
         // Repo Manager me already 'getUserById' hai jo suspend function hai
         return userRepoManager.getUserById(uid)
     }
+
     fun resetMutationState() {
         Log.d(TAG, "resetMutationState: Resetting mutation state to Idle.")
         _mutationState.value = UiState.Idle

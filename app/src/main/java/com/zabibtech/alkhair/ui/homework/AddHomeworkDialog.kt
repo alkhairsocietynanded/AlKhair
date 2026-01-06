@@ -8,18 +8,19 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.Homework
+import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.DialogAddHomeworkBinding
-import com.zabibtech.alkhair.utils.DateUtils
-import com.zabibtech.alkhair.utils.Shift
-import com.zabibtech.alkhair.utils.UiState
-import com.zabibtech.alkhair.utils.getParcelableCompat
+import com.zabibtech.alkhair.ui.user.UserViewModel
+import com.zabibtech.alkhair.utils.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -28,16 +29,22 @@ import java.util.Calendar
 class AddHomeworkDialog : BottomSheetDialogFragment() {
 
     private val viewModel: HomeworkViewModel by activityViewModels()
+
+    // We need UserViewModel to check if the current user is a Teacher
+    private val userViewModel: UserViewModel by viewModels()
+
     private var attachmentUri: Uri? = null
     private var _binding: DialogAddHomeworkBinding? = null
     private val binding get() = _binding!!
 
     private var isEditMode = false
     private var existingHomework: Homework? = null
-    private var selectedClassId: String? = null // ✅ Store selected ID
-    private var classList: List<ClassModel> = emptyList() // Store full list
+    private var selectedClassId: String? = null
+    private var classList: List<ClassModel> = emptyList()
 
-    // Date selection ke liye calendar object
+    // Current User (Teacher/Admin)
+    private var currentUser: User? = null
+
     private var selectedDate = Calendar.getInstance()
 
     private val filePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -64,10 +71,11 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupClassDivisionDropdowns()
-        setupDatePicker() // ✅ Date Picker Setup
+        // 1. Fetch Current User first to decide UI logic
+        fetchCurrentUser()
+
+        setupDatePicker()
         observeMutationState()
-        prefillDataForEdit()
 
         binding.btnUploadAttachment.setOnClickListener { filePickerLauncher.launch("*/*") }
         binding.btnCancel.setOnClickListener { dismiss() }
@@ -79,8 +87,50 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
         }
     }
 
+    private fun fetchCurrentUser() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val user = userViewModel.getCurrentUser()
+            currentUser = user
+
+            if (user != null) {
+                setupUIBasedOnRole(user)
+            }
+        }
+    }
+
+    private fun setupUIBasedOnRole(user: User) {
+        val role = user.role.trim()
+
+        if (role.equals(Roles.TEACHER, ignoreCase = true)) {
+            // 🔒 TEACHER: Hide Class/Division/Shift fields
+            // Because they are fixed to the teacher's profile
+            binding.tilClass.isVisible = false
+            binding.tilDivision.isVisible = false
+            binding.tilShift.isVisible = false
+
+            // Auto-fill values for validation logic (invisible but filled)
+            binding.etClass.setText(user.className)
+            binding.etDivision.setText(user.divisionName)
+            binding.etShift.setText(user.shift)
+
+            // Set ID directly
+            selectedClassId = user.classId
+
+        } else {
+            // 🔓 ADMIN: Show everything
+            binding.tilClass.isVisible = true
+            binding.tilDivision.isVisible = true
+            binding.tilShift.isVisible = true
+
+            // Load dropdowns only if Admin
+            setupClassDivisionDropdowns()
+        }
+
+        // Apply Edit Mode Prefills (Overrides defaults if editing)
+        prefillDataForEdit()
+    }
+
     private fun setupDatePicker() {
-        // Default: Aaj ki date set karein (create mode me)
         if (!isEditMode) {
             binding.etDate.setText(DateUtils.formatDate(selectedDate))
         }
@@ -96,19 +146,21 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     private fun prefillDataForEdit() {
         if (isEditMode) {
             selectedClassId = existingHomework?.classId
+
             binding.etSubject.setText(existingHomework?.subject)
             binding.etTitle.setText(existingHomework?.title)
             binding.etDescription.setText(existingHomework?.description)
-            binding.etClass.setText(existingHomework?.className, false)
-            binding.etDivision.setText(existingHomework?.division, false)
-            binding.etShift.setText(existingHomework?.shift, false)
-
-            // ✅ Date prefill
             binding.etDate.setText(existingHomework?.date)
 
-            // Attachment text update
-            if(!existingHomework?.attachmentUrl.isNullOrBlank()) {
+            if (!existingHomework?.attachmentUrl.isNullOrBlank()) {
                 binding.btnUploadAttachment.text = "Change Attachment"
+            }
+
+            // Only prefill these if visible (Admin)
+            if (binding.tilClass.isVisible) {
+                binding.etClass.setText(existingHomework?.className, false)
+                binding.etDivision.setText(existingHomework?.division, false)
+                binding.etShift.setText(existingHomework?.shift, false)
             }
 
             binding.btnSubmitHomework.text = "Update Homework"
@@ -116,22 +168,24 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     }
 
     private fun submitDataToViewModel() {
-        // Validation check
-        if (selectedClassId.isNullOrBlank()) {
+        // If Admin, ensure class ID is selected from list
+        if (binding.tilClass.isVisible && selectedClassId.isNullOrBlank()) {
             val name = binding.etClass.text.toString()
             selectedClassId = classList.find { it.className == name }?.id
         }
+
         viewModel.createOrUpdateHomework(
             isEditMode = isEditMode,
             existingHomework = existingHomework,
-            classId = selectedClassId ?: "", // ✅ Pass ID
+            classId = selectedClassId ?: "", // Uses Teacher's ID or Admin's selection
             className = binding.etClass.text.toString().trim(),
             division = binding.etDivision.text.toString().trim(),
             shift = binding.etShift.text.toString().trim(),
             subject = binding.etSubject.text.toString().trim(),
             title = binding.etTitle.text.toString().trim(),
             description = binding.etDescription.text.toString().trim(),
-            date = binding.etDate.text.toString().trim(), // ✅ Date pass kar rahe hain
+            date = binding.etDate.text.toString().trim(),
+            teacherId = if(isEditMode) existingHomework?.teacherId ?: "" else currentUser?.uid ?: "", // Preserve creator ID
             newAttachmentUri = attachmentUri
         )
     }
@@ -141,13 +195,10 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.mutationState.collect { state ->
                     when (state) {
-                        is UiState.Loading -> {
-                            // Optional: Show loader on button or disable it
-                            binding.btnSubmitHomework.isEnabled = false
-                        }
+                        is UiState.Loading -> binding.btnSubmitHomework.isEnabled = false
                         is UiState.Success -> {
                             binding.btnSubmitHomework.isEnabled = true
-                            Toast.makeText(requireContext(), if(isEditMode) "Homework Updated" else "Homework Added", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), if (isEditMode) "Updated" else "Added", Toast.LENGTH_SHORT).show()
                             viewModel.resetMutationState()
                             dismiss()
                         }
@@ -156,9 +207,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
                             Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
                             viewModel.resetMutationState()
                         }
-                        else -> {
-                            binding.btnSubmitHomework.isEnabled = true
-                        }
+                        else -> binding.btnSubmitHomework.isEnabled = true
                     }
                 }
             }
@@ -166,7 +215,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     }
 
     private fun setupClassDivisionDropdowns() {
-        // Classes Observer
+        // Only called for Admin
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.classesState.collect { state ->
@@ -175,7 +224,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
                         val classNames = state.data.map { it.className }.distinct()
                         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, classNames)
                         binding.etClass.setAdapter(adapter)
-                        // ✅ Capture ID on selection
+
                         binding.etClass.setOnItemClickListener { _, _, position, _ ->
                             val selectedName = adapter.getItem(position)
                             val selectedObj = classList.find { it.className == selectedName }
@@ -186,7 +235,6 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             }
         }
 
-        // Divisions Observer
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.divisionsState.collect { state ->
@@ -199,8 +247,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             }
         }
 
-        // Shift Adapter
-        val shifts = listOf(Shift.SUBAH, Shift.DOPAHAR, Shift.SHAAM) // Updated to match Utils
+        val shifts = listOf(Shift.SUBAH, Shift.DOPAHAR, Shift.SHAAM)
         val shiftAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, shifts)
         binding.etShift.setAdapter(shiftAdapter)
     }

@@ -27,6 +27,7 @@ import com.github.mikephil.charting.utils.ColorTemplate
 import com.zabibtech.alkhair.data.models.FeesOverviewData
 import com.zabibtech.alkhair.databinding.ActivityFeeBinding
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
+import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Modes
@@ -42,6 +43,7 @@ class FeesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFeeBinding
     private val viewModel: FeesViewModel by viewModels()
     private var currentMonth: Calendar = Calendar.getInstance()
+    private var userRole: String = Roles.ADMIN
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +53,14 @@ class FeesActivity : AppCompatActivity() {
 
         setupWindowInsets()
         setupToolbar()
+
+        // ✅ 1. Get Role from Intent (Defaults to Admin if not passed)
+        if (intent.hasExtra("role")) {
+            userRole = intent.getStringExtra("role") ?: Roles.ADMIN
+        }
+        // OR fetch from AuthRepo if intent is unreliable (like we did in SalaryActivity)
+        // But intent is usually fine here as it comes from Dashboard.
+
         setupMonthSelector()
         setupListeners()
         observeViewModel()
@@ -99,18 +109,30 @@ class FeesActivity : AppCompatActivity() {
 
     private fun updateMonthView() {
         binding.tvSelectedMonth.text = DateUtils.formatDate(currentMonth, "MMMM yyyy")
-        val monthYearForApi = DateUtils.formatDate(currentMonth, "yyyy-MMMM")
+        val monthYearForApi = DateUtils.formatDate(currentMonth, "yyyy-MMM")
         // Just update the filter in ViewModel, don't trigger a load manually
         viewModel.setMonthFilter(monthYearForApi)
     }
 
     private fun setupListeners() {
         binding.btnViewDetails.setOnClickListener {
-            val intent = Intent(this, ClassManagerActivity::class.java).apply {
-                putExtra("mode", Modes.FEES)
-                putExtra("role", Roles.STUDENT)
+            // ✅ ROLE BASED NAVIGATION
+            if (userRole == Roles.TEACHER) {
+                // Teacher -> Go directly to User List (My Class)
+                val intent = Intent(this, UserListActivity::class.java).apply {
+                    putExtra("mode", Modes.FEES)
+                    putExtra("role", Roles.STUDENT)
+                    // Note: Teacher ka class filter UserViewModel/Repo automatic handle karega
+                }
+                startActivity(intent)
+            } else {
+                // Admin -> Go to Class Manager first
+                val intent = Intent(this, ClassManagerActivity::class.java).apply {
+                    putExtra("mode", Modes.FEES)
+                    putExtra("role", Roles.STUDENT)
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
         }
 
        /* binding.fabAddFee.setOnClickListener {

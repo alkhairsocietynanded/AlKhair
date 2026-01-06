@@ -15,16 +15,16 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUsers(users: List<User>)
 
-    @Query("SELECT * FROM users WHERE uid = :uid")
+    @Query("SELECT * FROM users WHERE uid = :uid" )
     fun getUserById(uid: String): Flow<User?>
 
     @Query("SELECT * FROM users WHERE uid = :uid")
     suspend fun getUserByIdOneShot(uid: String): User?
 
-    @Query("SELECT * FROM users")
+    @Query("SELECT * FROM users ORDER BY name ASC")
     fun getAllUsers(): Flow<List<User>>
 
-    @Query("SELECT * FROM users WHERE role = :role")
+    @Query("SELECT * FROM users WHERE role = :role ORDER BY name ASC")
     fun getUsersByRole(role: String): Flow<List<User>>
 
     @Query("DELETE FROM users WHERE uid = :uid")

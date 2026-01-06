@@ -12,12 +12,13 @@ object DateUtils {
     // --- Current Date / Month / Year Strings ---
     fun today(): String = formatDate(Calendar.getInstance(), "yyyy-MM-dd")
 
-    // 🔹 Updated: Returns "October 2025" (used in fee spinner)
-    fun currentMonth(): String {
-        val calendar = Calendar.getInstance()
-        val monthName = SimpleDateFormat("MMMM", Locale.getDefault()).format(calendar.time)
-        val year = calendar.get(Calendar.YEAR)
-        return "$monthName $year"
+    // Teacher Dashboard me use hone wala function
+    fun getCurrentMonthForFee(): String {
+        val cal = Calendar.getInstance()
+        val year = cal.get(Calendar.YEAR)
+        // MMM gives "Jan", "Feb", etc.
+        val monthName = SimpleDateFormat("MMM", Locale.US).format(cal.time)
+        return "$year-$monthName" // Returns: "2025-Jan"
     }
 
     fun currentYear(): String = formatDate(Calendar.getInstance(), "yyyy")

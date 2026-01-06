@@ -117,12 +117,13 @@ class HomeworkViewModel @Inject constructor(
         title: String,
         description: String,
         date: String,
+        teacherId: String, // ✅ Added Teacher ID
         newAttachmentUri: Uri?
     ) {
         val now = System.currentTimeMillis()
 
         val homework = Homework(
-            id = existingHomework?.id ?: "", // Empty ID for new creates
+            id = existingHomework?.id ?: "",
             classId = classId,
             className = className,
             division = division,
@@ -130,7 +131,8 @@ class HomeworkViewModel @Inject constructor(
             subject = subject,
             title = title,
             description = description,
-            date = date, // ✅ Using passed date
+            date = date,
+            teacherId = teacherId, // ✅ Saved
             attachmentUrl = existingHomework?.attachmentUrl,
             updatedAt = now
         )

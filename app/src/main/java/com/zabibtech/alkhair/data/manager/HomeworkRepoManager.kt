@@ -42,8 +42,8 @@ class HomeworkRepoManager @Inject constructor(
         remoteRepo.getHomeworkUpdatedAfter(after).getOrElse { emptyList() }
 
     // 2. Class Targeted Sync (Student) - ✅ New Optimization
-    suspend fun syncClassHomework(classId: String, lastSync: Long): Result<Unit> {
-        return remoteRepo.getHomeworkForClassUpdatedAfter(classId, lastSync)
+    suspend fun syncClassHomework(classId: String, shift: String, lastSync: Long): Result<Unit> {
+        return remoteRepo.getHomeworkForClassAndShiftUpdatedAfter(classId, shift, lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) insertLocal(list)
             }
@@ -152,4 +152,5 @@ class HomeworkRepoManager @Inject constructor(
     override suspend fun insertLocal(items: List<Homework>) = localRepo.insertHomeworkList(items)
     override suspend fun insertLocal(item: Homework) = localRepo.insertHomework(item)
     override suspend fun deleteLocally(id: String) = localRepo.deleteHomeworkById(id)
+    override suspend fun clearLocal() = localRepo.clearAll()
 }

@@ -121,12 +121,13 @@ class AppDataSyncManager @Inject constructor(
 
                         // 3. Class Data (Students, Homework, Attendance)
                         val teacherClassId = currentUser?.classId
-                        if (!teacherClassId.isNullOrBlank()) {
+                        val teacherShift = currentUser?.shift
+                        if (!teacherClassId.isNullOrBlank() && !teacherShift.isNullOrBlank()) {
                             Log.d(TAG, "Teacher class: $teacherClassId")
-                            syncJobs.add(async { userRepoManager.syncClassStudents(teacherClassId, queryTime).map { it as Any } })
-                            syncJobs.add(async { homeworkRepoManager.syncClassHomework(teacherClassId, queryTime).map { it as Any } })
-                            syncJobs.add(async { attendanceRepoManager.syncClassAttendance(teacherClassId, queryTime).map { it as Any } })
-                            syncJobs.add(async { feesRepoManager.syncClassFees(teacherClassId, queryTime).map { it as Any }  })
+                            syncJobs.add(async { userRepoManager.syncClassStudents(teacherClassId, teacherShift,queryTime).map { it as Any } })
+                            syncJobs.add(async { homeworkRepoManager.syncClassHomework(teacherClassId, teacherShift, queryTime).map { it as Any } })
+                            syncJobs.add(async { attendanceRepoManager.syncClassAttendance(teacherClassId, teacherShift, queryTime).map { it as Any } })
+                            syncJobs.add(async { feesRepoManager.syncClassFees(teacherClassId, teacherShift,queryTime).map { it as Any }  })
                         } else {
                             Log.d(TAG, "Teacher has no class, syncing profile only.")
                             // Fallback: Sync self profile only
@@ -139,15 +140,23 @@ class AppDataSyncManager @Inject constructor(
                     // ====================================================
                     else {
                         Log.d(TAG, "Syncing for STUDENT")
-                        // 1. Targeted Announcements (Global + Class)
+
+                        // 1. Targeted Announcements (Global)
                         syncJobs.add(async { announcementRepoManager.syncTargetAnnouncements("ALL", queryTime).map { it as Any } })
 
                         val userClassId = currentUser?.classId
+                        val userShift = currentUser?.shift ?: "" // ✅ Get Student Shift
+
                         if (!userClassId.isNullOrBlank()) {
-                            Log.d(TAG, "Student class: $userClassId")
+                            Log.d(TAG, "Student class: $userClassId, Shift: $userShift")
+
+                            // Class Specific Announcements
                             syncJobs.add(async { announcementRepoManager.syncTargetAnnouncements(userClassId, queryTime).map { it as Any } })
-                            // 2. My Class Homework
-                            syncJobs.add(async { homeworkRepoManager.syncClassHomework(userClassId, queryTime).map { it as Any } })
+
+                            // 2. My Class Homework (✅ Pass Shift here)
+                            syncJobs.add(async {
+                                homeworkRepoManager.syncClassHomework(userClassId, userShift, queryTime).map { it as Any }
+                            })
                         }
 
                         // 3. My Fees
@@ -246,5 +255,25 @@ class AppDataSyncManager @Inject constructor(
             Log.e(TAG, "Deletion sync failed", e)
             Result.failure(e)
         }
+    }
+
+    suspend fun clearAllLocalData() {
+        Log.d("AppDataSyncManager", "Clearing all local data...")
+
+        // 1. Clear Database Tables
+        // (Ensure clearLocal() is implemented in BaseRepoManager/All Repos)
+        userRepoManager.clearLocal()
+        feesRepoManager.clearLocal()
+        attendanceRepoManager.clearLocal()
+        homeworkRepoManager.clearLocal()
+        salaryRepoManager.clearLocal()
+//        classDivisionRepoManager.clearLocal()
+        announcementRepoManager.clearLocal()
+
+        // 2. Clear Sync Timestamp (Important!)
+        // Taaki naya user login kare to full sync ho
+        appDataStore.clearAll()
+
+        Log.d("AppDataSyncManager", "All local data cleared.")
     }
 }

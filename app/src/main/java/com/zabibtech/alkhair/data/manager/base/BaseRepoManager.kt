@@ -24,4 +24,5 @@ abstract class BaseRepoManager<T> {
     }
 
     abstract suspend fun deleteLocally(id: String)
+    abstract suspend fun clearLocal()
 }

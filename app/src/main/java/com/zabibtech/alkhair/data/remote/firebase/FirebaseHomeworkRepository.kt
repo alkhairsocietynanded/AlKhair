@@ -19,6 +19,10 @@ class FirebaseHomeworkRepository @Inject constructor() {
             val homeworkId = homework.id.ifEmpty { homeworkRef.push().key!! }
             val currentTime = System.currentTimeMillis()
 
+            // Safety checks
+            val safeClassId = homework.classId.ifBlank { "NA" }
+            val safeShift = homework.shift.ifBlank { "General" }
+
             // 1. Final Object
             val newHomework = homework.copy(
                 id = homeworkId,
@@ -39,8 +43,8 @@ class FirebaseHomeworkRepository @Inject constructor() {
                 "attachmentUrl" to (newHomework.attachmentUrl ?: ""),
                 "updatedAt" to newHomework.updatedAt,
 
-                // 🔥 KEY CHANGED: ClassID + Timestamp
-                "class_sync_key" to "${newHomework.classId}_$currentTime"
+                // ✅ NEW KEY: ClassID + Shift + Timestamp
+                "class_shift_sync_key" to "${safeClassId}_${safeShift}_$currentTime"
             )
 
             homeworkRef.child(homeworkId).setValue(homeworkMap).await()
@@ -67,11 +71,15 @@ class FirebaseHomeworkRepository @Inject constructor() {
             // Update Sync Key if classId exists
             if (dataToUpdate.containsKey("classId")) {
                 val cId = dataToUpdate["classId"] as String
-                dataToUpdate["class_sync_key"] = "${cId}_$currentTime"
+                val sId = dataToUpdate["shift"] as String
+                dataToUpdate["class_shift_sync_key"] = "${cId}_${sId}_$currentTime"
             } else {
                 // Fallback: If classId wasn't passed (rare), we can't update the key correctly
                 // without fetching the old data. But based on your RepoManager code, it IS passed.
-                Log.w("FirebaseHomeworkRepo", "className missing in update, sync key might be stale")
+                Log.w(
+                    "FirebaseHomeworkRepo",
+                    "className missing in update, sync key might be stale"
+                )
             }
 
             homeworkRef.child(homeworkId).updateChildren(dataToUpdate).await()
@@ -82,11 +90,39 @@ class FirebaseHomeworkRepository @Inject constructor() {
         }
     }
 
+    // ✅ NEW SYNC FUNCTION (Class + Shift)
+    suspend fun getHomeworkForClassAndShiftUpdatedAfter(
+        classId: String,
+        shift: String,
+        timestamp: Long
+    ): Result<List<Homework>> {
+        return try {
+            val safeShift = shift.ifBlank { "General" }
+            val startKey = "${classId}_${safeShift}_${timestamp + 1}"
+            val endKey = "${classId}_${safeShift}_9999999999999"
+
+            val snapshot = homeworkRef
+                .orderByChild("class_shift_sync_key") // ✅ Use New Index
+                .startAt(startKey)
+                .endAt(endKey)
+                .get()
+                .await()
+
+            val list = snapshot.children.mapNotNull { it.getValue(Homework::class.java) }
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /**
      * ✅ STUDENT SYNC (Targeted Class Sync)
      * Fetches only homework for a specific class updated after the timestamp.
      */
-    suspend fun getHomeworkForClassUpdatedAfter(classId: String, timestamp: Long): Result<List<Homework>> {
+    suspend fun getHomeworkForClassUpdatedAfter(
+        classId: String,
+        timestamp: Long
+    ): Result<List<Homework>> {
         return try {
             val startKey = "${classId}_${timestamp + 1}"
             val endKey = "${classId}_9999999999999"
@@ -156,6 +192,8 @@ class FirebaseHomeworkRepository @Inject constructor() {
             val snapshot = homeworkRef.get().await()
             val list = snapshot.children.mapNotNull { it.getValue(Homework::class.java) }
             Result.success(list)
-        } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

@@ -50,8 +50,8 @@ class AttendanceRepoManager @Inject constructor(
      * 👨‍🏫 TEACHER SYNC (TARGETED)
      * टीचर के लिए सिर्फ उनकी क्लास का डेटा लाएं।
      */
-    suspend fun syncClassAttendance(classId: String, lastSync: Long): Result<Unit> {
-        return firebaseAttendanceRepo.getAttendanceForClassUpdatedAfter(classId, lastSync)
+    suspend fun syncClassAttendance(classId: String, shift: String, lastSync: Long): Result<Unit> {
+        return firebaseAttendanceRepo.getAttendanceForClassAndShiftUpdatedAfter(classId, shift, lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) {
                     insertLocal(list)
@@ -88,6 +88,7 @@ class AttendanceRepoManager @Inject constructor(
     override suspend fun deleteLocally(id: String) {
         // Composite keys deletion logic if needed in future
     }
+    override suspend fun clearLocal() = localAttendanceRepo.clearAll()
 
     /* ============================================================
        ✍️ WRITE — (Remote First -> Then Local)
@@ -96,13 +97,14 @@ class AttendanceRepoManager @Inject constructor(
     suspend fun saveAttendance(
         classId: String,
         date: String,
+        shift: String,
         attendanceList: List<Attendance>
     ): Result<Unit> {
         // UI List bhejta hai, lekin Firebase Repo (legacy reasons se) Map le raha tha.
         // Hamne Firebase Repo update kar diya hai lekin method signature wahi hai.
         val map = attendanceList.associate { it.studentId to it.status }
 
-        return firebaseAttendanceRepo.saveAttendanceForClass(classId, date, map)
+        return firebaseAttendanceRepo.saveAttendanceForClass(classId, date, shift,map)
             .onSuccess {
                 // Save to Local immediately with fresh timestamps
                 // Note: Firebase Repo save karte waqt timestamp generate karta hai,

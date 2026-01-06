@@ -16,7 +16,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.zabibtech.alkhair.R
-import com.zabibtech.alkhair.data.datastore.ShiftDataStore
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityUserListBinding
 import com.zabibtech.alkhair.utils.DialogUtils
@@ -27,34 +26,27 @@ import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class UserListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityUserListBinding
     private val userViewModel: UserViewModel by viewModels()
-
-    @Inject
-    lateinit var shiftDataStore: ShiftDataStore
-
     private lateinit var adapter: UserAdapter
 
-    // Intent Data
+    // Intent Data (Target Data)
     private lateinit var mode: String
-    private var role: String = Roles.STUDENT
+    private var listRole: String = Roles.STUDENT // Kiska data dikhana hai
     private var classId: String? = null
     private var division: String? = null
     private var className: String? = null
 
-    // State for FAB
+    // Default State
     private var currentShift: String = Shift.ALL
 
     private val userFormLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // No action needed; DB updates -> Flow updates -> UI updates
-    }
+    ) { _ -> }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,13 +57,37 @@ class UserListActivity : AppCompatActivity() {
         setupWindowInsets()
         setupToolbar()
         extractIntentData()
+
+        // 1. Check WHO is logged in (Admin vs Teacher)
+        checkLoggedInUserAndSetupUI()
+
         setupRecyclerView()
         setupListeners()
         setupObservers()
 
-        // Initialize Filter State
-        userViewModel.setInitialFilters(role, classId, Shift.ALL)
-        restoreShiftState()
+        // 2. Initialize Data
+        binding.chipGroupShift.check(R.id.chipAll)
+        userViewModel.setInitialFilters(listRole, classId, Shift.ALL)
+    }
+
+    private fun checkLoggedInUserAndSetupUI() {
+        lifecycleScope.launch {
+            // ✅ Fetch Current User from Local DB
+            val currentUser = userViewModel.getCurrentUser()
+            val loggedInRole = currentUser?.role?.trim() ?: ""
+
+            // ✅ Logic: Agar Teacher hai, to Shift Filter Chupao
+            if (loggedInRole.equals(Roles.TEACHER, ignoreCase = true)) {
+                binding.shiftSelectionCard.visibility = View.GONE
+
+                // Teacher ke paas FAB ka access hona chahiye ya nahi, wo aap decide karein
+                // Usually Teacher students add nahi karte, Admin karta hai.
+                // binding.fabAddUser.visibility = View.GONE
+            } else {
+                // Admin: Show Filters
+                binding.shiftSelectionCard.visibility = View.VISIBLE
+            }
+        }
     }
 
     /* ============================================================
@@ -96,16 +112,16 @@ class UserListActivity : AppCompatActivity() {
 
     private fun extractIntentData() {
         mode = intent.getStringExtra("mode") ?: Modes.CREATE
-        role = intent.getStringExtra("role") ?: Roles.STUDENT
+        listRole = intent.getStringExtra("role") ?: Roles.STUDENT // Yeh list ke liye hai
         classId = intent.getStringExtra("classId")
         className = intent.getStringExtra("className")
         division = intent.getStringExtra("division")
 
         supportActionBar?.apply {
             title = buildString {
-                if (!className.isNullOrEmpty() && role == Roles.STUDENT) {
+                if (!className.isNullOrEmpty() && listRole == Roles.STUDENT) {
                     append(className)
-                } else if (role == Roles.TEACHER) {
+                } else if (listRole == Roles.TEACHER) {
                     append("Teachers")
                 } else {
                     append("Students")
@@ -146,7 +162,7 @@ class UserListActivity : AppCompatActivity() {
         // FAB Click
         binding.fabAddUser.setOnClickListener {
             val intent = Intent(this, UserFormActivity::class.java).apply {
-                putExtra("role", role)
+                putExtra("role", listRole)
                 putExtra("mode", Modes.CREATE)
                 putExtra("classId", classId)
                 putExtra("division", division)
@@ -157,8 +173,6 @@ class UserListActivity : AppCompatActivity() {
 
         // Swipe Refresh
         binding.swipeRefreshLayout.setOnRefreshListener {
-            // Flow is live, no need to manually reload.
-            // If you had a sync mechanism, you would trigger it here.
             binding.swipeRefreshLayout.isRefreshing = false
         }
 
@@ -173,33 +187,8 @@ class UserListActivity : AppCompatActivity() {
                 else -> Shift.ALL
             }
 
-            // Update local state for FAB
             currentShift = selectedShift
-
-            // Save preference
-            lifecycleScope.launch {
-                shiftDataStore.saveShift(selectedShift)
-            }
-
-            // Update VM Filter
             userViewModel.setShiftFilter(selectedShift)
-        }
-    }
-
-    private fun restoreShiftState() {
-        lifecycleScope.launch {
-            val savedShift = shiftDataStore.getShift()
-            val chipId = when (savedShift) {
-                Shift.SUBAH -> R.id.chipSubah
-                Shift.DOPAHAR -> R.id.chipDopahar
-                Shift.SHAAM -> R.id.chipShaam
-                else -> R.id.chipAll
-            }
-            binding.chipGroupShift.check(chipId)
-
-            // Sync state
-            currentShift = savedShift
-            userViewModel.setShiftFilter(savedShift)
         }
     }
 
@@ -208,21 +197,23 @@ class UserListActivity : AppCompatActivity() {
        ============================================================ */
 
     private fun setupObservers() {
-        // 1. List Data
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userViewModel.userListState.collectLatest { state ->
                     when (state) {
-                        is UiState.Loading -> {
-                            // Optional: binding.swipeRefreshLayout.isRefreshing = true
-                        }
+                        is UiState.Loading -> binding.swipeRefreshLayout.isRefreshing = true
                         is UiState.Success -> {
                             binding.swipeRefreshLayout.isRefreshing = false
                             val list = state.data
-                            adapter.submitList(list) // Adapter handles diff/updates
+                            adapter.submitList(list)
 
-                            binding.recyclerView.visibility = if (list.isEmpty()) View.GONE else View.VISIBLE
-                            binding.emptyView.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                            if (list.isEmpty()) {
+                                binding.recyclerView.visibility = View.GONE
+                                binding.emptyView.visibility = View.VISIBLE
+                            } else {
+                                binding.recyclerView.visibility = View.VISIBLE
+                                binding.emptyView.visibility = View.GONE
+                            }
                         }
                         is UiState.Error -> {
                             binding.swipeRefreshLayout.isRefreshing = false
@@ -234,7 +225,7 @@ class UserListActivity : AppCompatActivity() {
             }
         }
 
-        // 2. Mutation (Save/Delete) Results
+        // Mutation Results
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 userViewModel.mutationState.collectLatest { state ->
@@ -242,7 +233,6 @@ class UserListActivity : AppCompatActivity() {
                         is UiState.Loading -> binding.swipeRefreshLayout.isRefreshing = true
                         is UiState.Success -> {
                             binding.swipeRefreshLayout.isRefreshing = false
-                            // DialogUtils.showAlert(this@UserListActivity, "Success", "Operation successful") // Optional toast
                             userViewModel.resetMutationState()
                         }
                         is UiState.Error -> {
@@ -256,10 +246,6 @@ class UserListActivity : AppCompatActivity() {
             }
         }
     }
-
-    /* ============================================================
-       🛠 ACTIONS
-       ============================================================ */
 
     private fun confirmDelete(user: User) {
         DialogUtils.showConfirmation(
@@ -281,7 +267,6 @@ class UserListActivity : AppCompatActivity() {
                 userViewModel.setSearchQuery(query ?: "")
                 return false
             }
-
             override fun onQueryTextChange(newText: String?): Boolean {
                 userViewModel.setSearchQuery(newText ?: "")
                 return true

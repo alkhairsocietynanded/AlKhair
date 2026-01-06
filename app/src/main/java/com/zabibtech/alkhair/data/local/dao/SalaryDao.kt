@@ -18,13 +18,16 @@ interface SalaryDao {
     @Query("SELECT * FROM salary WHERE id = :id")
     fun getSalaryById(id: String): Flow<SalaryModel?>
 
-    @Query("SELECT * FROM salary WHERE staffId = :staffId")
+    // ✅ UPDATE: Staff ki history dekhte waqt latest salary upar dikhegi
+    @Query("SELECT * FROM salary WHERE staffId = :staffId ORDER BY updatedAt DESC")
     fun getSalariesByStaffId(staffId: String): Flow<List<SalaryModel>>
 
-    @Query("SELECT * FROM salary")
+    // ✅ UPDATE: Admin ko sabse nayi entries sabse upar dikhengi
+    @Query("SELECT * FROM salary ORDER BY updatedAt DESC")
     fun getAllSalaries(): Flow<List<SalaryModel>>
 
-    @Query("SELECT * FROM salary WHERE (:staffId IS NULL OR staffId = :staffId) AND (:monthYear IS NULL OR monthYear = :monthYear)")
+    // ✅ UPDATE: Filter karte waqt bhi latest data upar rahega
+    @Query("SELECT * FROM salary WHERE (:staffId IS NULL OR staffId = :staffId) AND (:monthYear IS NULL OR monthYear = :monthYear) ORDER BY updatedAt DESC")
     fun getFilteredSalaries(staffId: String?, monthYear: String?): Flow<List<SalaryModel>>
 
     @Query("DELETE FROM salary WHERE id = :id")

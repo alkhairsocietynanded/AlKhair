@@ -9,5 +9,6 @@ data class Attendance(
     val classId: String = "",
     val date: String = "",       // yyyy-MM-dd
     val status: String = "",      // Present | Absent | Leave
+    val shift: String = "",
     override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
 ) : Syncable // ✅ Interface implement karein

@@ -54,8 +54,10 @@ class UserRepoManager @Inject constructor(
         firebaseUserRepository.getUsersUpdatedAfter(after).getOrElse { emptyList() }
 
     // 2. Class Sync (Teacher) - ✅ NEW
-    suspend fun syncClassStudents(classId: String, lastSync: Long): Result<Unit> {
-        return firebaseUserRepository.getStudentsForClassUpdatedAfter(classId, lastSync)
+    suspend fun syncClassStudents(classId: String, shift: String,  lastSync: Long): Result<Unit> {
+        // Shift validation (taaki empty shift par crash na ho)
+        val targetShift = shift.ifBlank { "General" }
+        return firebaseUserRepository.getStudentsForClassUpdatedAfter(classId, targetShift,lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) insertLocal(list)
             }
@@ -106,4 +108,5 @@ class UserRepoManager @Inject constructor(
     override suspend fun insertLocal(items: List<User>) = localUserRepository.insertUsers(items)
     override suspend fun insertLocal(item: User) = localUserRepository.insertUser(item)
     override suspend fun deleteLocally(id: String) = localUserRepository.deleteUser(id)
+    override suspend fun clearLocal() = localUserRepository.clearAll()
 }
