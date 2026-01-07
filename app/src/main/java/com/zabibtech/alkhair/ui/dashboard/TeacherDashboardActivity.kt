@@ -2,12 +2,12 @@ package com.zabibtech.alkhair.ui.dashboard
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -18,11 +18,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.DashboardStats
+import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityTeacherDashboardBinding
 import com.zabibtech.alkhair.ui.announcement.AddAnnouncementSheet
 import com.zabibtech.alkhair.ui.announcement.AnnouncementPagerAdapter
@@ -32,6 +30,7 @@ import com.zabibtech.alkhair.ui.attendance.AttendanceViewModel
 import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.homework.HomeworkActivity
 import com.zabibtech.alkhair.ui.salary.SalaryActivity
+import com.zabibtech.alkhair.ui.scanner.QRScannerActivity
 import com.zabibtech.alkhair.ui.user.UserListActivity
 import com.zabibtech.alkhair.ui.user.UserViewModel
 import com.zabibtech.alkhair.utils.Constants
@@ -53,14 +52,36 @@ import kotlin.math.abs
 class TeacherDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTeacherDashboardBinding
-    private lateinit var adapter: AnnouncementPagerAdapter
     private val dashboardViewModel: TeacherDashboardViewModel by viewModels()
     private val announcementViewModel: AnnouncementViewModel by viewModels()
     private val attendanceViewModel: AttendanceViewModel by viewModels()
     private val userViewModel: UserViewModel by viewModels()
 
+    private lateinit var adapter: AnnouncementPagerAdapter
+    private var loggedInUser: User? = null
+
     @Inject
     lateinit var logoutManager: LogoutManager
+
+    // ✅ 1. Define Launcher to receive result from QRScannerActivity
+    private val qrScannerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val qrValue = result.data?.getStringExtra("scanned_qr_value")
+
+            if (qrValue == Constants.SCHOOL_QR_CODE_VALUE) {
+                // ✅ Valid QR - Mark Attendance
+                attendanceViewModel.markSelfPresent()
+            } else {
+                DialogUtils.showAlert(
+                    this,
+                    "Invalid QR",
+                    "This QR Code does not belong to Al-Khair School."
+                )
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +99,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
         observeDashboardStats()
         observeAnnouncements()
         observeAttendanceState()
+        observeLoggedInUser()
 
 //        Temp Script, run only once
 //        dashboardViewModel.runMigrationScript()
@@ -110,29 +132,15 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
 
         binding.cardStudentAttendance.setOnClickListener {
-            // ✅ Coroutine launch karein taaki hum User Data fetch kar sakein
-            lifecycleScope.launch {
-                DialogUtils.showLoading(supportFragmentManager)
-                val currentTeacher = userViewModel.getCurrentUser()
-                DialogUtils.hideLoading(supportFragmentManager)
-
-                if (currentTeacher != null && currentTeacher.classId.isNotBlank()) {
-                    val intent = Intent(
-                        this@TeacherDashboardActivity,
-                        AttendanceActivity::class.java
-                    ).apply {
-                        putExtra("role", Roles.STUDENT) // Teacher Students ki attendance lega
-                        putExtra("classId", currentTeacher.classId) // Teacher ki assigned Class ID
-                    }
-                    startActivity(intent)
-                } else {
-                    // Agar Teacher ko Class assign nahi hai
-                    DialogUtils.showAlert(
-                        this@TeacherDashboardActivity,
-                        "Error",
-                        "No Class Assigned to you. Please contact Admin."
-                    )
+            if (loggedInUser != null) {
+                val intent = Intent(this, AttendanceActivity::class.java).apply {
+                    putExtra("role", Roles.STUDENT)
+                    putExtra("loggedInUser", loggedInUser)
                 }
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "Fetching teacher info... try again", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
 
@@ -160,45 +168,10 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
     }
 
+    // ✅ 2. Update startQrScanner to launch Activity
     private fun startQrScanner() {
-        val options = GmsBarcodeScannerOptions.Builder()
-            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-            .enableAutoZoom()
-            .build()
-
-        val scanner = GmsBarcodeScanning.getClient(this, options)
-
-        scanner.startScan()
-            .addOnSuccessListener { barcode ->
-                val rawValue = barcode.rawValue
-                if (rawValue == Constants.SCHOOL_QR_CODE_VALUE) {
-                    // QR Code Match! Mark Attendance
-                    attendanceViewModel.markSelfPresent()
-                } else {
-                    DialogUtils.showAlert(
-                        this,
-                        "Invalid QR",
-                        "This QR Code does not belong to Al-Khair School."
-                    )
-                }
-            }
-            .addOnCanceledListener {
-                // User ne back button dabaya ya cancel kiya
-                Log.d("QR_SCAN", "Scan cancelled by user")
-            }
-            .addOnFailureListener { e ->
-                // ✅ Detailed Error Logging
-                Log.e("QR_SCAN", "Scanner Failed", e)
-
-                val errorMessage = when {
-                    e.message?.contains("Module not found", true) == true ->
-                        "Scanner module is downloading. Please try again in a minute."
-
-                    else -> "Scanner Error: ${e.localizedMessage}"
-                }
-
-                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
-            }
+        val intent = Intent(this, QRScannerActivity::class.java)
+        qrScannerLauncher.launch(intent)
     }
 
     private fun setupAnnouncementViewPager() {
@@ -372,6 +345,17 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
     }
 
+    private fun observeLoggedInUser() {
+        lifecycleScope.launch {
+            // Background mein teacher ki details le aayein
+            loggedInUser = userViewModel.getCurrentUser()
+            if (loggedInUser != null) {
+                binding.tvWelcomeName.text = "Welcome, ${loggedInUser!!.name}"
+                binding.tvTeacherClassInfo.text = loggedInUser!!.className
+                binding.tvTeacherDivisionInfo.text = loggedInUser!!.divisionName
+            }
+        }
+    }
 
     private fun updateDashboardUI(stats: DashboardStats) {
         // --- Top Card (Attendance & Strength) ---
@@ -420,6 +404,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
                 )
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

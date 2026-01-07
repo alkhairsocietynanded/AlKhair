@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <application
         android:name=".MyApp"
         android:allowBackup="false"
@@ -11,6 +16,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SchoolManagement">
+        <activity
+            android:name=".ui.scanner.QRScannerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity
             android:name=".ui.salary.SalaryActivity"
             android:exported="false" />
@@ -64,11 +74,8 @@
 
         <meta-data
             android:name="preloaded_fonts"
-            android:resource="@array/preloaded_fonts" />
-        <!-- ✅ Google Play Services ko batayein ki Barcode Module download kare -->
-        <meta-data
-            android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="barcode_ui"/>
+            android:resource="@array/preloaded_fonts" /> <!-- ✅ Google Play Services ko batayein ki Barcode Module download kare -->
+
     </application>
 
 </manifest>

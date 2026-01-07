@@ -38,9 +38,7 @@ class MainActivity : AppCompatActivity() {
         setupWindowInsets()
         observeUserSession()
 
-        lifecycleScope.launch {
-            viewModel.checkUserSession()
-        }
+        viewModel.checkUserSession()
     }
 
     private fun setupWindowInsets() {
@@ -53,7 +51,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeUserSession() {
         lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+            repeatOnLifecycle(Lifecycle.State.CREATED) {
                 viewModel.userSessionState.collect { state ->
                     when (state) {
                         is UiState.Loading -> {

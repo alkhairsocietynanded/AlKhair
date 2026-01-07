@@ -244,109 +244,116 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Attendance Summary Bar -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/attendanceSummaryCard"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginHorizontal="32dp"
-        android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="?attr/colorSurface"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="6dp"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:strokeColor="?attr/colorOutlineVariant"
-        app:strokeWidth="1dp">
+        android:clipToPadding="false"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Attendance Summary Card (Left Side - Expands) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/attendanceSummaryCard"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp">
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_weight="1"
+            app:cardBackgroundColor="?attr/colorErrorContainer"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="6dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp">
 
-            <!-- Present -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Card ke andar ka content thoda compact kiya taaki fit ho -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Present: "
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="?attr/colorOnSurface" />
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="10dp">
 
-            <TextView
-                android:id="@+id/tvSummaryPresent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="@color/present"
-                android:textStyle="bold" />
+                <!-- Present -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pr: "
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurface" />
 
-            <View
-                android:layout_width="16dp"
-                android:layout_height="0dp" />
+                <TextView
+                    android:id="@+id/tvSummaryPresent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="@color/present"
+                    android:textStyle="bold" />
 
-            <!-- Absent -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Absent: "
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="?attr/colorOnSurface" />
+                <View
+                    android:layout_width="16dp"
+                    android:layout_height="0dp" />
 
-            <TextView
-                android:id="@+id/tvSummaryAbsent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="@color/absent"
-                android:textStyle="bold" />
+                <!-- Absent -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ab: "
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurface" />
 
-            <View
-                android:layout_width="16dp"
-                android:layout_height="0dp" />
+                <TextView
+                    android:id="@+id/tvSummaryAbsent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="@color/absent"
+                    android:textStyle="bold" />
 
-            <!-- Leave -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Leave: "
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="?attr/colorOnSurface" />
+                <View
+                    android:layout_width="16dp"
+                    android:layout_height="0dp" />
 
-            <TextView
-                android:id="@+id/tvSummaryOnLeave"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textAppearance="?attr/textAppearanceLabelLarge"
-                android:textColor="@color/leave"
-                android:textStyle="bold" />
+                <!-- Leave -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lv: "
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurface" />
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/tvSummaryOnLeave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="@color/leave"
+                    android:textStyle="bold" />
 
-    </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
-    <!-- Extended FAB for saving attendance -->
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fabSaveAttendance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:elevation="12dp"
-        android:text="Save"
-        android:textAppearance="?attr/textAppearanceLabelLarge"
-        android:textColor="?attr/colorOnPrimary"
-        android:translationZ="12dp"
-        app:backgroundTint="?attr/colorPrimary"
-        app:icon="@drawable/ic_done_24"
-        app:iconTint="?attr/colorOnPrimary"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:pressedTranslationZ="12dp"
-        app:rippleColor="?attr/colorOnPrimary"
-        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Save FAB (Right Side - Fixed) -->
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fabSaveAttendance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elevation="6dp"
+            android:text="Save"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnPrimary"
+            app:backgroundTint="?attr/colorPrimary"
+            app:icon="@drawable/ic_done_24"
+            app:iconTint="?attr/colorOnPrimary"
+            app:rippleColor="?attr/colorOnPrimary" />
+
+    </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

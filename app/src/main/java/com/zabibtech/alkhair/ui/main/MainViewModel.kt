@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
 import com.zabibtech.alkhair.di.ApplicationScope
+import kotlinx.coroutines.Dispatchers
 
 
 @HiltViewModel
@@ -42,14 +43,18 @@ class MainViewModel @Inject constructor(
            checkUserSession()
        }*/
 
-    suspend fun checkUserSession() {
-        _userSessionState.value = UiState.Loading
-        viewModelScope.launch {
-            val user = authRepoManager.getCurrentUserUid()?.let { uid ->
-                userRepoManager.getUserById(uid)
+    fun checkUserSession() {
+        viewModelScope.launch(Dispatchers.IO) { // ✅ Run on Background Thread
+            _userSessionState.value = UiState.Loading
+            try {
+                val uid = authRepoManager.getCurrentUserUid()
+                val user = if (uid != null) userRepoManager.getUserById(uid) else null
+
+                // Switch back to Main to update UI State
+                _userSessionState.value = UiState.Success(user)
+            } catch (e: Exception) {
+                _userSessionState.value = UiState.Error(e.message ?: "Session Error")
             }
-            // If user is null, it means not logged in or local DB is empty (which requires login)
-            _userSessionState.value = UiState.Success(user)
         }
     }
 }

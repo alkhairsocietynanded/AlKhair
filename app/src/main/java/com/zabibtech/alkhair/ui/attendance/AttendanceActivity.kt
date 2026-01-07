@@ -13,13 +13,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.zabibtech.alkhair.R
+import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityAttendanceBinding
-import com.zabibtech.alkhair.ui.user.UserViewModel // ✅ Needed for checking role
 import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.Shift
 import com.zabibtech.alkhair.utils.UiState
+import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -30,13 +31,9 @@ class AttendanceActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAttendanceBinding
     private val viewModel: AttendanceViewModel by viewModels()
-
-    // ✅ Add UserViewModel to check logged-in user role
-    private val userViewModel: UserViewModel by viewModels()
-
     private lateinit var adapter: AttendanceAdapter
-
     private var selectedDate: Calendar = Calendar.getInstance()
+    private var loggedInUser: User? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,10 +45,10 @@ class AttendanceActivity : AppCompatActivity() {
         setupToolbar()
 
         // 1. Initialize ViewModel Filters
-        val classId = intent.getStringExtra("classId")
+        loggedInUser = intent.extras?.getParcelableCompat("loggedInUser", User::class.java)
         val intentRole = intent.getStringExtra("role") ?: Roles.STUDENT // List type
 
-        viewModel.setFilters(classId, intentRole)
+        viewModel.setFilters(loggedInUser?.classId, intentRole)
         viewModel.setShift(Shift.ALL)
         viewModel.setDate(selectedDate)
 
@@ -67,20 +64,14 @@ class AttendanceActivity : AppCompatActivity() {
     }
 
     private fun checkLoggedInUserAndSetupUI() {
-        lifecycleScope.launch {
-            // ✅ Fetch Current Logged In User
-            val currentUser = userViewModel.getCurrentUser()
-            val loggedInRole = currentUser?.role?.trim() ?: ""
+        val loggedInRole = loggedInUser?.role
 
-            if (loggedInRole.equals(Roles.TEACHER, ignoreCase = true)) {
-                // Teacher: Hide Filter
-                binding.shiftSelectionCard.visibility = View.GONE
-                binding.attendanceSummaryCard.visibility = View.GONE
-            } else {
-                // Admin: Show Filter
-                binding.shiftSelectionCard.visibility = View.VISIBLE
-                binding.attendanceSummaryCard.visibility = View.VISIBLE
-            }
+        if (loggedInRole.equals(Roles.TEACHER, ignoreCase = true)) {
+            // Teacher: Hide Filter
+            binding.shiftSelectionCard.visibility = View.GONE
+        } else {
+            // Admin: Show Filter
+            binding.shiftSelectionCard.visibility = View.VISIBLE
         }
     }
 
