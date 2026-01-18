@@ -132,16 +132,11 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
 
         binding.cardStudentAttendance.setOnClickListener {
-            if (loggedInUser != null) {
                 val intent = Intent(this, AttendanceActivity::class.java).apply {
                     putExtra("role", Roles.STUDENT)
-                    putExtra("loggedInUser", loggedInUser)
+                    putExtra("loggedInUser", Roles.TEACHER)
                 }
                 startActivity(intent)
-            } else {
-                Toast.makeText(this, "Fetching teacher info... try again", Toast.LENGTH_SHORT)
-                    .show()
-            }
         }
 
         binding.cardFees.setOnClickListener {

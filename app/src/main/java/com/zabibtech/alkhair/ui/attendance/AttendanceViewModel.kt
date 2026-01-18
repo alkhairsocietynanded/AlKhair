@@ -38,8 +38,6 @@ class AttendanceViewModel @Inject constructor(
     private val _saveState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val saveState: StateFlow<UiState<Unit>> = _saveState
 
-    // ... (setFilters, setDate, setShift, markAttendance, uiState logic same as before) ...
-
     fun setFilters(classId: String?, role: String) {
         _classIdFilter.value = classId
         _roleFilter.value = role

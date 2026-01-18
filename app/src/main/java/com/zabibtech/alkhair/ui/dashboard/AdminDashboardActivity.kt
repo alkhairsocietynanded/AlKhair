@@ -20,6 +20,7 @@ import com.zabibtech.alkhair.databinding.ActivityAdminDashboardBinding
 import com.zabibtech.alkhair.ui.announcement.AddAnnouncementSheet
 import com.zabibtech.alkhair.ui.announcement.AnnouncementPagerAdapter
 import com.zabibtech.alkhair.ui.announcement.AnnouncementViewModel
+import com.zabibtech.alkhair.ui.attendance.AttendanceActivity
 import com.zabibtech.alkhair.ui.classmanager.ClassManagerActivity
 import com.zabibtech.alkhair.ui.fees.FeesActivity
 import com.zabibtech.alkhair.ui.homework.HomeworkActivity
@@ -112,9 +113,9 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
         binding.cardTeacherAttendance.setOnClickListener {
-            val intent = Intent(this, ClassManagerActivity::class.java).apply {
-                putExtra("mode", Modes.ATTENDANCE)
+            val intent = Intent(this, AttendanceActivity::class.java).apply {
                 putExtra("role", Roles.TEACHER)
+                putExtra("loggedInUser", Roles.ADMIN)
             }
             startActivity(intent)
         }

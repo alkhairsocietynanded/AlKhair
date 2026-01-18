@@ -11,16 +11,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.snackbar.Snackbar
 import com.zabibtech.alkhair.R
-import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.ActivityAttendanceBinding
 import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.DialogUtils
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.Shift
 import com.zabibtech.alkhair.utils.UiState
-import com.zabibtech.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -33,7 +30,7 @@ class AttendanceActivity : AppCompatActivity() {
     private val viewModel: AttendanceViewModel by viewModels()
     private lateinit var adapter: AttendanceAdapter
     private var selectedDate: Calendar = Calendar.getInstance()
-    private var loggedInUser: User? = null
+    private var loggedInUser: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,11 +41,12 @@ class AttendanceActivity : AppCompatActivity() {
         setupWindowInsets()
         setupToolbar()
 
-        // 1. Initialize ViewModel Filters
-        loggedInUser = intent.extras?.getParcelableCompat("loggedInUser", User::class.java)
-        val intentRole = intent.getStringExtra("role") ?: Roles.STUDENT // List type
+        loggedInUser = intent.getStringExtra("loggedInUser") ?: Roles.STUDENT
+        val intentRole = intent.getStringExtra("role") ?: Roles.STUDENT
+        val classId = intent.getStringExtra("classId")
 
-        viewModel.setFilters(loggedInUser?.classId, intentRole)
+        // 1. Initialize ViewModel Filters
+        viewModel.setFilters(classId, intentRole)
         viewModel.setShift(Shift.ALL)
         viewModel.setDate(selectedDate)
 
@@ -64,9 +62,8 @@ class AttendanceActivity : AppCompatActivity() {
     }
 
     private fun checkLoggedInUserAndSetupUI() {
-        val loggedInRole = loggedInUser?.role
 
-        if (loggedInRole.equals(Roles.TEACHER, ignoreCase = true)) {
+        if (loggedInUser.equals(Roles.TEACHER, ignoreCase = true)) {
             // Teacher: Hide Filter
             binding.shiftSelectionCard.visibility = View.GONE
         } else {
@@ -184,8 +181,7 @@ class AttendanceActivity : AppCompatActivity() {
 
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
-                            Snackbar.make(binding.root, "Attendance saved!", Snackbar.LENGTH_SHORT)
-                                .show()
+                            DialogUtils.showAlert(applicationContext, "Success", "Attendance saved successfully.")
                             viewModel.resetSaveState()
                         }
 
