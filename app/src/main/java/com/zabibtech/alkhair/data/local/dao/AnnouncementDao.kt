@@ -35,4 +35,10 @@ interface AnnouncementDao {
 
     @Query("DELETE FROM announcements WHERE id = :announcementId")
     suspend fun deleteAnnouncementById(announcementId: String)
+
+    @Query("SELECT * FROM announcements WHERE isSynced = 0")
+    suspend fun getUnsyncedAnnouncements(): List<Announcement>
+
+    @Query("UPDATE announcements SET isSynced = 1 WHERE id IN (:ids)")
+    suspend fun markAnnouncementsAsSynced(ids: List<String>)
 }

@@ -216,4 +216,53 @@ class FirebaseAttendanceRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun saveAttendanceBatch(attendanceList: List<Attendance>): Result<Unit> {
+        return try {
+            if (attendanceList.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any>()
+            val currentTime = System.currentTimeMillis()
+
+            attendanceList.forEach { attendance ->
+                // Ensure we have necessary keys
+                val classId = attendance.classId
+                val date = attendance.date
+                val uid = attendance.studentId
+                val shift = attendance.shift
+                val safeShift = shift.ifBlank { "General" }
+
+                // 1. Root Key (Flat Structure)
+                val key = "${classId}_${date}_${uid}"
+
+                // 2. Final Object with Timestamp
+                val finalAttendance = attendance.copy(updatedAt = currentTime)
+
+                // 3. Convert to Map with Sync Keys
+                val attMap = mapOf(
+                    "studentId" to finalAttendance.studentId,
+                    "classId" to finalAttendance.classId,
+                    "date" to finalAttendance.date,
+                    "status" to finalAttendance.status,
+                    "shift" to finalAttendance.shift,
+                    "updatedAt" to finalAttendance.updatedAt,
+                    "student_sync_key" to "${uid}_${currentTime}",
+                    "class_shift_sync_key" to "${classId}_${safeShift}_${currentTime}"
+                )
+
+                updates[key] = attMap
+            }
+
+            attendanceRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseAttendanceRepo", "Error saving batch attendance", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteAttendanceBatch(ids: List<String>): Result<Unit> {
+        // Needs proper logic for composite keys if we support deleting attendance
+        return Result.success(Unit)
+    }
 }

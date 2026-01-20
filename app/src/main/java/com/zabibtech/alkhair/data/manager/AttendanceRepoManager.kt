@@ -8,11 +8,21 @@ import com.zabibtech.alkhair.data.remote.firebase.FirebaseAttendanceRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.zabibtech.alkhair.data.worker.AttendanceUploadWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit  
+import androidx.work.OneTimeWorkRequest
 
 @Singleton
 class AttendanceRepoManager @Inject constructor(
     private val localAttendanceRepo: LocalAttendanceRepository,
-    private val firebaseAttendanceRepo: FirebaseAttendanceRepository
+    private val firebaseAttendanceRepo: FirebaseAttendanceRepository,
+    private val workManager: WorkManager
 ) : BaseRepoManager<Attendance>() {
 
     /* ============================================================
@@ -91,7 +101,7 @@ class AttendanceRepoManager @Inject constructor(
     override suspend fun clearLocal() = localAttendanceRepo.clearAll()
 
     /* ============================================================
-       ✍️ WRITE — (Remote First -> Then Local)
+       ✍️ WRITE — (Local First -> Background Sync)
        ============================================================ */
 
     suspend fun saveAttendance(
@@ -100,17 +110,42 @@ class AttendanceRepoManager @Inject constructor(
         shift: String,
         attendanceList: List<Attendance>
     ): Result<Unit> {
-        // UI List bhejta hai, lekin Firebase Repo (legacy reasons se) Map le raha tha.
-        // Hamne Firebase Repo update kar diya hai lekin method signature wahi hai.
-        val map = attendanceList.associate { it.studentId to it.status }
+        // 1. Prepare Local Data (Mark as Unsynced)
+        val currentTime = System.currentTimeMillis()
+        val localList = attendanceList.map {
+            it.copy(
+                updatedAt = currentTime,
+                isSynced = false
+            )
+        }
 
-        return firebaseAttendanceRepo.saveAttendanceForClass(classId, date, shift,map)
-            .onSuccess {
-                // Save to Local immediately with fresh timestamps
-                // Note: Firebase Repo save karte waqt timestamp generate karta hai,
-                // lekin local consistency ke liye hum yahan bhi update kar dete hain.
-                val updatedList = attendanceList.map { it.copy(updatedAt = System.currentTimeMillis()) }
-                insertLocal(updatedList)
-            }
+        // 2. Insert Local Immediately
+        insertLocal(localList)
+
+        // 3. Schedule Background Sync
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
+    }
+
+    private fun scheduleUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val uploadWorkRequest = OneTimeWorkRequestBuilder<AttendanceUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                androidx.work.WorkRequest.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "AttendanceUploadWork",
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            uploadWorkRequest
+        )
     }
 }

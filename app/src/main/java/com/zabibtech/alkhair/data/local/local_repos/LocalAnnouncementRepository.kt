@@ -33,4 +33,8 @@ class LocalAnnouncementRepository @Inject constructor(
         announcementDao.deleteAnnouncementById(announcementId)
 
     suspend fun clearAll() = announcementDao.clearAllAnnouncements()
+
+    suspend fun getUnsyncedAnnouncements(): List<Announcement> = announcementDao.getUnsyncedAnnouncements()
+
+    suspend fun markAnnouncementsAsSynced(ids: List<String>) = announcementDao.markAnnouncementsAsSynced(ids)
 }

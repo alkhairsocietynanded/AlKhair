@@ -79,4 +79,49 @@ class FirebaseDivisionRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+    suspend fun saveDivisionBatch(divisionList: List<DivisionModel>): Result<Unit> {
+        return try {
+            if (divisionList.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any>()
+            val currentTime = System.currentTimeMillis()
+
+            divisionList.forEach { division ->
+                val newDivision = division.copy(updatedAt = currentTime)
+                updates[newDivision.id] = newDivision
+            }
+
+            divisionsRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseDivisionRepo", "Error saving batch division", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteDivisionBatch(ids: List<String>): Result<Unit> {
+        return try {
+            if (ids.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+            val rootRef = divisionsRef.root
+
+            ids.forEach { id ->
+                updates["divisions/$id"] = null
+                val tombstone = mapOf(
+                    "id" to id,
+                    "type" to "division",
+                    "deletedAt" to currentTime
+                )
+                updates["deleted_records/$id"] = tombstone
+            }
+
+            rootRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseDivisionRepo", "Error deleting batch division", e)
+            Result.failure(e)
+        }
+    }
 }

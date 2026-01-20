@@ -77,4 +77,49 @@ class FirebaseClassRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+    suspend fun saveClassBatch(classList: List<ClassModel>): Result<Unit> {
+        return try {
+            if (classList.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any>()
+            val currentTime = System.currentTimeMillis()
+
+            classList.forEach { classModel ->
+                val newClass = classModel.copy(updatedAt = currentTime)
+                updates[newClass.id] = newClass
+            }
+
+            classesRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseClassRepo", "Error saving batch class", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteClassBatch(ids: List<String>): Result<Unit> {
+        return try {
+            if (ids.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+            val rootRef = classesRef.root
+
+            ids.forEach { id ->
+                updates["classes/$id"] = null
+                val tombstone = mapOf(
+                    "id" to id,
+                    "type" to "class",
+                    "deletedAt" to currentTime
+                )
+                updates["deleted_records/$id"] = tombstone
+            }
+
+            rootRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseClassRepo", "Error deleting batch class", e)
+            Result.failure(e)
+        }
+    }
 }

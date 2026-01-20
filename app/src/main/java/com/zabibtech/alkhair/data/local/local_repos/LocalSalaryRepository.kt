@@ -25,4 +25,8 @@ class LocalSalaryRepository @Inject constructor(
     suspend fun deleteSalary(id: String) = salaryDao.deleteSalary(id)
 
     suspend fun clearAll() = salaryDao.clearAllSalaries()
+
+    suspend fun getUnsyncedSalaries(): List<SalaryModel> = salaryDao.getUnsyncedSalaries()
+
+    suspend fun markSalariesAsSynced(ids: List<String>) = salaryDao.markSalariesAsSynced(ids)
 }

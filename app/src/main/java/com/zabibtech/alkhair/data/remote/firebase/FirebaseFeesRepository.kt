@@ -246,6 +246,76 @@ class FirebaseFeesRepository @Inject constructor() {
         }
     }
 
+    suspend fun saveFeesBatch(feesList: List<FeesModel>): Result<Unit> {
+        return try {
+            if (feesList.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+
+            feesList.forEach { fee ->
+                val feeId = fee.id.ifEmpty { feesRef.push().key!! }
+                val safeShift = fee.shift.ifBlank { "General" }
+                val safeClassId = fee.classId.ifBlank { "NA" }
+                val newFeesModel = fee.copy(id = feeId, updatedAt = currentTime)
+
+                val feeMap = mapOf(
+                    "id" to newFeesModel.id,
+                    "studentId" to newFeesModel.studentId,
+                    "studentName" to newFeesModel.studentName,
+                    "classId" to newFeesModel.classId,
+                    "shift" to newFeesModel.shift,
+                    "monthYear" to newFeesModel.monthYear,
+                    "baseAmount" to newFeesModel.baseAmount,
+                    "paidAmount" to newFeesModel.paidAmount,
+                    "dueAmount" to newFeesModel.dueAmount,
+                    "discounts" to newFeesModel.discounts,
+                    "netFees" to newFeesModel.netFees,
+                    "paymentDate" to newFeesModel.paymentDate,
+                    "remarks" to newFeesModel.remarks,
+                    "paymentStatus" to newFeesModel.paymentStatus,
+                    "updatedAt" to newFeesModel.updatedAt,
+                    "student_sync_key" to "${newFeesModel.studentId}_$currentTime",
+                    "class_shift_sync_key" to "${safeClassId}_${safeShift}_$currentTime"
+                )
+                updates[feeId] = feeMap
+            }
+            feesRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseFeesRepo", "Error saving batch fees", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteFeesBatch(ids: List<String>): Result<Unit> {
+        return try {
+            if (ids.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+            val rootRef = feesRef.root
+
+            ids.forEach { id ->
+                // Delete from fees
+                updates["fees/$id"] = null
+                // Add to deleted_records
+                val tombstone = mapOf(
+                    "id" to id,
+                    "type" to "FEES",
+                    "deletedAt" to currentTime
+                )
+                updates["deleted_records/$id"] = tombstone
+            }
+
+            rootRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseFeesRepo", "Error deleting batch fees", e)
+            Result.failure(e)
+        }
+    }
+
     // Legacy/Backup method
     suspend fun getFeesForStudent(studentId: String): Result<List<FeesModel>> {
         return try {

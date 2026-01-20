@@ -21,5 +21,7 @@ data class Homework(
     val date: String = "",
     val teacherId: String = "",
     val attachmentUrl: String? = null,
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
-) :Parcelable, Syncable // ✅ Interface implement karein
+    override val updatedAt: Long = System.currentTimeMillis(),
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
+) :Parcelable, Syncable //

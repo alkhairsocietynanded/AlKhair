@@ -191,4 +191,76 @@ class FirebaseUserRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun saveUsersBatch(users: List<User>): Result<Unit> {
+        return try {
+            if (users.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+
+            users.forEach { user ->
+                val finalUser = user.copy(updatedAt = currentTime)
+                val safeShift = user.shift.ifBlank { "General" }
+                val safeClassId = user.classId.ifBlank { "NA" }
+
+                val userMap = mapOf(
+                    "uid" to finalUser.uid,
+                    "name" to finalUser.name,
+                    "email" to finalUser.email,
+                    "role" to finalUser.role,
+                    "classId" to finalUser.classId,
+                    "className" to finalUser.className,
+                    "divisionId" to finalUser.divisionId,
+                    "divisionName" to finalUser.divisionName,
+                    "phone" to finalUser.phone,
+                    "address" to finalUser.address,
+                    "dateOfBirth" to finalUser.dateOfBirth,
+                    "dateOfJoining" to finalUser.dateOfJoining,
+                    "salary" to finalUser.salary,
+                    "subject" to finalUser.subject,
+                    "parentName" to finalUser.parentName,
+                    "password" to finalUser.password,
+                    "shift" to finalUser.shift,
+                    "totalFees" to finalUser.totalFees,
+                    "updatedAt" to finalUser.updatedAt,
+                    "class_shift_sync_key" to "${safeClassId}_${safeShift}_$currentTime"
+                )
+                updates[finalUser.uid] = userMap
+            }
+            usersDb.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseUserRepository", "Error saving batch users", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteUsersBatch(ids: List<String>): Result<Unit> {
+        return try {
+            if (ids.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+            val rootRef = usersDb.root
+
+            ids.forEach { id ->
+                // Delete from users
+                updates["users/$id"] = null
+                // Add to deleted_records
+                val tombstone = mapOf(
+                    "id" to id,
+                    "type" to "user",
+                    "deletedAt" to currentTime
+                )
+                updates["deleted_records/$id"] = tombstone
+            }
+
+            rootRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseUserRepository", "Error deleting batch users", e)
+            Result.failure(e)
+        }
+    }
 }

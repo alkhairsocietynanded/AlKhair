@@ -161,6 +161,68 @@ class FirebaseHomeworkRepository @Inject constructor() {
     }
 
     // --- Standard Methods ---
+    
+    suspend fun saveHomeworkBatch(homeworkList: List<Homework>): Result<Unit> {
+        return try {
+            if (homeworkList.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+
+            homeworkList.forEach { homework ->
+                val finalHomework = homework.copy(updatedAt = currentTime)
+                val safeClassId = homework.classId.ifBlank { "NA" }
+                val safeShift = homework.shift.ifBlank { "General" }
+
+                val homeworkMap = mapOf(
+                    "id" to finalHomework.id,
+                    "classId" to finalHomework.classId,
+                    "className" to finalHomework.className,
+                    "division" to finalHomework.division,
+                    "shift" to finalHomework.shift,
+                    "subject" to finalHomework.subject,
+                    "title" to finalHomework.title,
+                    "description" to finalHomework.description,
+                    "teacherId" to finalHomework.teacherId,
+                    "attachmentUrl" to (finalHomework.attachmentUrl ?: ""),
+                    "updatedAt" to finalHomework.updatedAt,
+                    "class_shift_sync_key" to "${safeClassId}_${safeShift}_$currentTime"
+                )
+                updates[finalHomework.id] = homeworkMap
+            }
+            homeworkRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseHomeworkRepo", "Error saving batch homework", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteHomeworkBatch(ids: List<String>): Result<Unit> {
+        return try {
+            if (ids.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+            val rootRef = homeworkRef.root
+
+            ids.forEach { id ->
+                updates["homework/$id"] = null
+                val tombstone = mapOf(
+                    "id" to id,
+                    "type" to "homework",
+                    "deletedAt" to currentTime
+                )
+                updates["deleted_records/$id"] = tombstone
+            }
+
+            rootRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseHomeworkRepo", "Error deleting batch homework", e)
+            Result.failure(e)
+        }
+    }
 
     suspend fun getHomeworkById(homeworkId: String): Result<Homework> {
         return try {

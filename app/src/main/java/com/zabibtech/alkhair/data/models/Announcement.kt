@@ -12,5 +12,7 @@ data class Announcement(
     val content: String = "",
     val timeStamp: Long = 0,
     val target: String = "ALL", // Values: "ALL" or Class Name (e.g., "Class 10")
-    override val updatedAt: Long = System.currentTimeMillis()
+    override val updatedAt: Long = System.currentTimeMillis(),
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
 ) : Syncable

@@ -23,4 +23,8 @@ class LocalUserRepository @Inject constructor(
     suspend fun deleteUser(uid: String) = userDao.deleteUser(uid)
 
     suspend fun clearAll() = userDao.clearAllUsers()
+
+    suspend fun getUnsyncedUsers(): List<User> = userDao.getUnsyncedUsers()
+
+    suspend fun markUsersAsSynced(ids: List<String>) = userDao.markUsersAsSynced(ids)
 }

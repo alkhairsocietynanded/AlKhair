@@ -51,4 +51,8 @@ class LocalHomeworkRepository @Inject constructor(
 
     suspend fun clearAll() =
         homeworkDao.clearAllHomework()
+
+    suspend fun getUnsyncedHomework(): List<Homework> = homeworkDao.getUnsyncedHomework()
+
+    suspend fun markHomeworkAsSynced(ids: List<String>) = homeworkDao.markHomeworkAsSynced(ids)
 }

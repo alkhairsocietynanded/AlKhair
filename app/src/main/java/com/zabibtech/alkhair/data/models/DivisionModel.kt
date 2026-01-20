@@ -9,5 +9,7 @@ data class DivisionModel(
     @PrimaryKey
     val id: String = "",
     val name: String = "",
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+    override val updatedAt: Long = System.currentTimeMillis(),
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
 ) : Syncable // ✅ Interface implement karein

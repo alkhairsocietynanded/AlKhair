@@ -1,21 +1,31 @@
 package com.zabibtech.alkhair.data.manager
 
 import android.util.Log
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
 import com.zabibtech.alkhair.data.local.local_repos.LocalFeesRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
-import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.FeesModel
+import com.zabibtech.alkhair.data.models.PendingDeletion
 import com.zabibtech.alkhair.data.remote.firebase.FirebaseFeesRepository
-import com.zabibtech.alkhair.utils.FirebaseRefs
+import com.zabibtech.alkhair.data.worker.FeesUploadWorker
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.tasks.await
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class FeesRepoManager @Inject constructor(
     private val localRepo: LocalFeesRepository,
-    private val remoteRepo: FirebaseFeesRepository
+    private val remoteRepo: FirebaseFeesRepository,
+    private val pendingDeletionDao: PendingDeletionDao,
+    private val workManager: WorkManager
 ) : BaseRepoManager<FeesModel>() {
 
     /* ============================================================
@@ -62,65 +72,63 @@ class FeesRepoManager @Inject constructor(
             .map { }
     }
     /* ============================================================
-       ✍️ WRITE — (Remote First -> Then Local)
+       ✍️ WRITE — (Local First -> Background Sync)
        ============================================================ */
 
     suspend fun createFee(feesModel: FeesModel): Result<Unit> {
-        return remoteRepo.saveFee(feesModel)
-            .onSuccess { savedFee ->
-                // Save to Local immediately with fresh timestamp from Remote
-                insertLocal(savedFee)
-            }
-            .map { }
+        val newId = feesModel.id.ifEmpty { UUID.randomUUID().toString() }
+        val feeWithId = feesModel.copy(
+            id = newId,
+            isSynced = false,
+            updatedAt = System.currentTimeMillis()
+        )
+        insertLocal(feeWithId)
+        scheduleUploadWorker()
+        return Result.success(Unit)
     }
 
     suspend fun updateFee(feesModel: FeesModel): Result<Unit> {
-        val currentTime = System.currentTimeMillis()
-
-        // ✅ CRITICAL: Map mein 'studentId' bhejna zaroori hai
-        // taaki FirebaseRepo 'student_sync_key' ko update/maintain kar sake.
-        val updateMap = mapOf(
-            "studentId" to feesModel.studentId,
-            "studentName" to feesModel.studentName,
-            "classId" to feesModel.classId,
-            "shift" to feesModel.shift,
-            "monthYear" to feesModel.monthYear,
-            "baseAmount" to feesModel.baseAmount,
-            "paidAmount" to feesModel.paidAmount,
-            "discounts" to feesModel.discounts,
-            "dueAmount" to feesModel.dueAmount,
-            "netFees" to feesModel.netFees,
-            "paymentStatus" to feesModel.paymentStatus,
-            "paymentDate" to feesModel.paymentDate,
-            "remarks" to (feesModel.remarks ?: ""),
-            "updatedAt" to currentTime
+        val updatedFee = feesModel.copy(
+            isSynced = false,
+            updatedAt = System.currentTimeMillis()
         )
-
-        return remoteRepo.updateFee(feesModel.id, updateMap)
-            .onSuccess {
-                // Update Local immediately to reflect changes in UI
-                val updatedLocalFee = feesModel.copy(updatedAt = currentTime)
-                insertLocal(updatedLocalFee)
-            }
+        insertLocal(updatedFee)
+        scheduleUploadWorker()
+        return Result.success(Unit)
     }
 
-    suspend fun deleteFee(id: String): Result<Unit> =
-        remoteRepo.deleteFee(id).onSuccess {
-            // 1. Delete Locally
-            deleteLocally(id)
+    suspend fun deleteFee(id: String): Result<Unit> {
+        deleteLocally(id)
+        val pendingDeletion = PendingDeletion(
+            id = id,
+            type = "FEES",
+            timestamp = System.currentTimeMillis()
+        )
+        pendingDeletionDao.insertPendingDeletion(pendingDeletion)
+        scheduleUploadWorker()
+        return Result.success(Unit)
+    }
 
-            // 2. Create Tombstone for Sync
-            try {
-                val record = DeletedRecord(
-                    id = id,
-                    type = "fees",
-                    timestamp = System.currentTimeMillis()
-                )
-                FirebaseRefs.deletedRecordsRef.child(id).setValue(record).await()
-            } catch (e: Exception) {
-                Log.e("FeesRepoManager", "Failed to create delete record", e)
-            }
-        }
+    private fun scheduleUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val uploadWorkRequest = OneTimeWorkRequestBuilder<FeesUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                androidx.work.WorkRequest.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "FeesUploadWork",
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            uploadWorkRequest
+        )
+    }
 
     /* ============================================================
        🔧 LOCAL HELPER OVERRIDES

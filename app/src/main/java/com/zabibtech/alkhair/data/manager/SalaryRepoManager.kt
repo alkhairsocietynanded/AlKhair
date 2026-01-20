@@ -11,11 +11,24 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
+import com.zabibtech.alkhair.data.models.PendingDeletion
+import com.zabibtech.alkhair.data.worker.SalaryUploadWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit  
+import androidx.work.OneTimeWorkRequest
 
 @Singleton
 class SalaryRepoManager @Inject constructor(
     private val localRepo: LocalSalaryRepository,
-    private val remoteRepo: FirebaseSalaryRepository
+    private val remoteRepo: FirebaseSalaryRepository,
+    private val workManager: WorkManager,
+    private val pendingDeletionDao: PendingDeletionDao
 ) : BaseRepoManager<SalaryModel>() {
 
     /* ============================================================
@@ -49,66 +62,93 @@ class SalaryRepoManager @Inject constructor(
     }
 
     /* ============================================================
-       ✍️ WRITE — UI ACTIONS
+       ✍️ WRITE — (Local First -> Background Sync)
        ============================================================ */
 
     suspend fun createSalary(salary: SalaryModel): Result<Unit> {
-        return remoteRepo.createSalary(salary)
-            .onSuccess { createdSalary ->
-                insertLocal(createdSalary)
-            }
-            .map { }
+        // 1. Prepare Local Data
+        val newId = salary.id.ifEmpty { java.util.UUID.randomUUID().toString() }
+        val currentTime = System.currentTimeMillis()
+        
+        val newSalary = salary.copy(
+            id = newId,
+            netSalary = salary.calculateNet(),
+            staffMonth = "${salary.staffId}_${salary.monthYear}",
+            createdAt = currentTime,
+            updatedAt = currentTime,
+            isSynced = false
+        )
+
+        // 2. Insert Local Immediately
+        insertLocal(newSalary)
+        
+        // 3. Schedule Background Sync
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
     }
 
     suspend fun updateSalary(salary: SalaryModel): Result<Unit> {
         val currentTime = System.currentTimeMillis()
 
-        // ✅ CRITICAL: Map mein 'staffId' bhejna zaroori hai
-        // taaki FirebaseRepo 'staff_sync_key' ko update/maintain kar sake.
-        val updateMap = mapOf(
-            "staffId" to salary.staffId, // Required for Composite Key logic
-            "basicSalary" to salary.basicSalary,
-            "allowances" to salary.allowances,
-            "deductions" to salary.deductions,
-            "netSalary" to salary.calculateNet(), // Ensure updated net amount is sent
-            "paymentStatus" to salary.paymentStatus,
-            "paymentDate" to (salary.paymentDate ?: ""),
-            "remarks" to (salary.remarks ?: ""),
-            "updatedAt" to currentTime
+        // 1. Prepare Local Update
+        val updatedLocalSalary = salary.copy(
+            updatedAt = currentTime,
+            netSalary = salary.calculateNet(),
+            isSynced = false
         )
-
-        return remoteRepo.updateSalary(salary.id, updateMap)
-            .onSuccess {
-                // Update Local immediately to reflect changes in UI
-                val updatedLocalSalary = salary.copy(updatedAt = currentTime)
-                insertLocal(updatedLocalSalary)
-            }
+        
+        // 2. Insert Local Immediately
+        insertLocal(updatedLocalSalary)
+        
+        // 3. Schedule Background Sync
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
     }
 
     suspend fun deleteSalary(id: String): Result<Unit> {
-        return remoteRepo.deleteSalary(id).onSuccess {
-            // 1. Local delete
-            deleteLocally(id)
+        // 1. Delete Local
+        deleteLocally(id)
+        
+        // 2. Mark for deletion
+        val pendingDeletion = PendingDeletion(
+            id = id,
+            type = "SALARY",
+            timestamp = System.currentTimeMillis()
+        )
+        pendingDeletionDao.insertPendingDeletion(pendingDeletion)
+        
+        // 3. Schedule Upload Worker
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
+    }
+    
+    private fun scheduleUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
 
-            // 2. Tombstone for Sync
-            try {
-                FirebaseRefs.deletedRecordsRef
-                    .child(id)
-                    .setValue(
-                        DeletedRecord(
-                            id = id,
-                            type = "salary",
-                            timestamp = System.currentTimeMillis()
-                        )
-                    ).await()
-            } catch (e: Exception) {
-                Log.e("SalaryRepoManager", "Failed to set tombstone", e)
-            }
-        }
+        val uploadWorkRequest = OneTimeWorkRequestBuilder<SalaryUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                androidx.work.WorkRequest.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "SalaryUploadWork",
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            uploadWorkRequest
+        )
     }
 
     // Base Implementations (Ensure these methods exist in LocalRepo)
     override suspend fun insertLocal(items: List<SalaryModel>) = localRepo.insertSalaries(items)
     override suspend fun insertLocal(item: SalaryModel) = localRepo.insertSalary(item)
     override suspend fun deleteLocally(id: String) = localRepo.deleteSalary(id)
-    override suspend fun clearLocal() = localRepo.clearAll()}
+    override suspend fun clearLocal() = localRepo.clearAll()
+}

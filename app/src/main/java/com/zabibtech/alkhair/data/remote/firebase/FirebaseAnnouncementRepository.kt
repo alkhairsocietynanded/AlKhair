@@ -144,4 +144,61 @@ class FirebaseAnnouncementRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+
+    suspend fun saveAnnouncementBatch(announcementList: List<Announcement>): Result<Unit> {
+        return try {
+            if (announcementList.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any>()
+            val currentTime = System.currentTimeMillis()
+
+            announcementList.forEach { announcement ->
+                val newAnnouncement = announcement.copy(updatedAt = currentTime)
+                
+                val firebaseMap = mapOf(
+                    "id" to newAnnouncement.id,
+                    "title" to newAnnouncement.title,
+                    "content" to newAnnouncement.content,
+                    "timeStamp" to newAnnouncement.timeStamp,
+                    "target" to newAnnouncement.target,
+                    "updatedAt" to newAnnouncement.updatedAt,
+                    "target_sync_key" to "${newAnnouncement.target}_$currentTime"
+                )
+
+                updates[newAnnouncement.id] = firebaseMap
+            }
+
+            announcementsRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseAnnouncementRepo", "Error saving batch announcement", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteAnnouncementBatch(ids: List<String>): Result<Unit> {
+        return try {
+            if (ids.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+            val rootRef = announcementsRef.root
+
+            ids.forEach { id ->
+                updates["announcements/$id"] = null
+                val tombstone = mapOf(
+                    "id" to id,
+                    "type" to "announcement",
+                    "deletedAt" to currentTime
+                )
+                updates["deleted_records/$id"] = tombstone
+            }
+
+            rootRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseAnnouncementRepo", "Error deleting batch announcement", e)
+            Result.failure(e)
+        }
+    }
 }

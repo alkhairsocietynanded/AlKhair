@@ -23,4 +23,10 @@ interface ClassDao {
 
     @Query("DELETE FROM classes")
     suspend fun clearAllClasses()
+
+    @Query("SELECT * FROM classes WHERE isSynced = 0")
+    suspend fun getUnsyncedClasses(): List<ClassModel>
+
+    @Query("UPDATE classes SET isSynced = 1 WHERE id IN (:ids)")
+    suspend fun markClassesAsSynced(ids: List<String>)
 }

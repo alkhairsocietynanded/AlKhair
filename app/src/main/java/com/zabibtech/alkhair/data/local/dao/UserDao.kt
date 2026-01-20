@@ -32,4 +32,10 @@ interface UserDao {
 
     @Query("DELETE FROM users")
     suspend fun clearAllUsers()
+
+    @Query("SELECT * FROM users WHERE isSynced = 0")
+    suspend fun getUnsyncedUsers(): List<User>
+
+    @Query("UPDATE users SET isSynced = 1 WHERE uid IN (:ids)")
+    suspend fun markUsersAsSynced(ids: List<String>)
 }

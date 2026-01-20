@@ -1,6 +1,7 @@
 package com.zabibtech.alkhair.data.local.database
 
 import androidx.room.Database
+import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.zabibtech.alkhair.data.local.dao.AnnouncementDao
 import com.zabibtech.alkhair.data.local.dao.AttendanceDao
@@ -10,6 +11,7 @@ import com.zabibtech.alkhair.data.local.dao.FeesDao
 import com.zabibtech.alkhair.data.local.dao.HomeworkDao
 import com.zabibtech.alkhair.data.local.dao.SalaryDao
 import com.zabibtech.alkhair.data.local.dao.UserDao
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
 import com.zabibtech.alkhair.data.models.Announcement
 import com.zabibtech.alkhair.data.models.Attendance
 import com.zabibtech.alkhair.data.models.ClassModel
@@ -18,6 +20,7 @@ import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.Homework
 import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.data.models.User
+import com.zabibtech.alkhair.data.models.PendingDeletion
 
 @Database(
     entities = [
@@ -28,9 +31,10 @@ import com.zabibtech.alkhair.data.models.User
         Announcement::class,
         Homework::class,
         ClassModel::class,
-        DivisionModel::class
+        DivisionModel::class,
+        PendingDeletion::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -42,4 +46,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun homeworkDao(): HomeworkDao
     abstract fun classDao(): ClassDao
     abstract fun divisionDao(): DivisionDao
+    abstract fun pendingDeletionDao(): PendingDeletionDao
+
 }

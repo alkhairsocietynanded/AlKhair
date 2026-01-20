@@ -12,12 +12,25 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
+import com.zabibtech.alkhair.data.models.PendingDeletion
+import com.zabibtech.alkhair.data.worker.HomeworkUploadWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit  
+import androidx.work.OneTimeWorkRequest
 
 @Singleton
 class HomeworkRepoManager @Inject constructor(
     private val localRepo: LocalHomeworkRepository,
     private val remoteRepo: FirebaseHomeworkRepository,
-    private val storageManager: StorageManager
+    private val storageManager: StorageManager,
+    private val pendingDeletionDao: PendingDeletionDao,
+    private val workManager: WorkManager
 ) : BaseRepoManager<Homework>() {
 
     /* ============================================================
@@ -51,7 +64,7 @@ class HomeworkRepoManager @Inject constructor(
     }
 
     /* ============================================================
-       ✍️ WRITE — UI + File Upload Support
+       ✍️ WRITE — (Local First -> Background Sync)
        ============================================================ */
 
     suspend fun createHomework(
@@ -59,8 +72,13 @@ class HomeworkRepoManager @Inject constructor(
         newAttachmentUri: Uri? = null
     ): Result<Unit> {
 
-        // 1️⃣ Upload attachment if exists
-        val finalHomework = if (newAttachmentUri != null) {
+        // 1️⃣ Upload attachment if exists (Ideally this should also be generic/background, but keeping it here for now)
+        // Note: For true offline-first with attachments, we'd need to cache the URI and upload in Worker.
+        // For now, keeping the attachment upload synchronous as per current scope, but saving DB record locally first.
+        
+        var finalHomework = homework
+        
+        if (newAttachmentUri != null) {
             val uploadResult = storageManager.uploadFile(
                 fileUri = newAttachmentUri,
                 folder = "homework_attachments"
@@ -69,18 +87,25 @@ class HomeworkRepoManager @Inject constructor(
             if (uploadResult.isFailure) {
                 return Result.failure(uploadResult.exceptionOrNull()!!)
             }
-            homework.copy(attachmentUrl = uploadResult.getOrThrow())
-        } else {
-            homework
+            finalHomework = homework.copy(
+                attachmentUrl = uploadResult.getOrThrow()
+            )
         }
+        
+        // 2️⃣ Prepare Local Record
+        val homeworkWithSyncStatus = finalHomework.copy(
+            id = finalHomework.id.ifEmpty { java.util.UUID.randomUUID().toString() }, // Ensure ID
+            isSynced = false,
+            updatedAt = System.currentTimeMillis()
+        )
 
-        // 2️⃣ Create homework in Firebase
-        return remoteRepo.createHomework(finalHomework)
-            .onSuccess { createdHomework ->
-                // 3️⃣ Save to Local immediately
-                insertLocal(createdHomework)
-            }
-            .map { }
+        // 3️⃣ Save to Local immediately
+        insertLocal(homeworkWithSyncStatus)
+        
+        // 4️⃣ Schedule Background Upload
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
     }
 
     suspend fun updateHomework(
@@ -88,8 +113,10 @@ class HomeworkRepoManager @Inject constructor(
         newAttachmentUri: Uri? = null
     ): Result<Unit> {
 
-        // 1️⃣ Handle attachment replacement if needed
-        val finalHomework = if (newAttachmentUri != null) {
+        // 1️⃣ Handle attachment replacement
+        var finalHomework = homework
+        
+        if (newAttachmentUri != null) {
             val replaceResult = storageManager.replaceFile(
                 newFileUri = newAttachmentUri,
                 oldFileUrl = homework.attachmentUrl,
@@ -99,54 +126,64 @@ class HomeworkRepoManager @Inject constructor(
             if (replaceResult.isFailure) {
                 return Result.failure(replaceResult.exceptionOrNull()!!)
             }
-            homework.copy(attachmentUrl = replaceResult.getOrThrow())
-        } else {
-            homework
+            finalHomework = homework.copy(
+                attachmentUrl = replaceResult.getOrThrow()
+            )
         }
 
-        val currentTime = System.currentTimeMillis()
-
-        // 2️⃣ Update Firebase
-        // ✅ We explicitly include 'className' for the Composite Key logic in Repo
-        val updateMap = mapOf(
-            "classId" to finalHomework.classId, // Required for Sync Key
-            "className" to finalHomework.className,
-            "division" to finalHomework.division,
-            "shift" to finalHomework.shift,
-            "subject" to finalHomework.subject,
-            "title" to finalHomework.title,
-            "description" to finalHomework.description,
-            "date" to finalHomework.date,
-            "teacherId" to finalHomework.teacherId,
-            "attachmentUrl" to (finalHomework.attachmentUrl ?: ""),
-            "updatedAt" to currentTime
+        // 2️⃣ Prepare Local Record
+        val updatedLocal = finalHomework.copy(
+            isSynced = false,
+            updatedAt = System.currentTimeMillis()
         )
-
-        return remoteRepo.updateHomework(finalHomework.id, updateMap)
-            .onSuccess {
-                // 3️⃣ Update Local immediately (Optimization: No fetch needed)
-                val updatedLocal = finalHomework.copy(updatedAt = currentTime)
-                insertLocal(updatedLocal)
-            }
+        
+        // 3️⃣ Save Local
+        insertLocal(updatedLocal)
+        
+        // 4️⃣ Schedule Background Sync
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
     }
 
-    suspend fun deleteHomework(id: String): Result<Unit> =
-        remoteRepo.deleteHomework(id).onSuccess {
-            deleteLocally(id)
+    suspend fun deleteHomework(id: String): Result<Unit> {
+        // 1. Delete Local
+        deleteLocally(id)
+        
+        // 2. Mark for deletion
+        val pendingDeletion = PendingDeletion(
+            id = id,
+            type = "HOMEWORK",
+            timestamp = System.currentTimeMillis()
+        )
+        pendingDeletionDao.insertPendingDeletion(pendingDeletion)
+        
+        // 3. Schedule Worker
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
+    }
+    
+    private fun scheduleUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
 
-            try {
-                FirebaseRefs.deletedRecordsRef.child(id)
-                    .setValue(
-                        DeletedRecord(
-                            id = id,
-                            type = "homework",
-                            timestamp = System.currentTimeMillis()
-                        )
-                    ).await()
-            } catch (e: Exception) {
-                Log.e("HomeworkRepo", "Tombstone failed", e)
-            }
-        }
+        val uploadWorkRequest = OneTimeWorkRequestBuilder<HomeworkUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                androidx.work.WorkRequest.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "HomeworkUploadWork",
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            uploadWorkRequest
+        )
+    }
 
     // --- Base Implementations ---
     override suspend fun insertLocal(items: List<Homework>) = localRepo.insertHomeworkList(items)

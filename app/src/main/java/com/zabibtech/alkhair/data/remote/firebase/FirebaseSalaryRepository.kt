@@ -171,4 +171,73 @@ class FirebaseSalaryRepository @Inject constructor() {
             Result.failure(e)
         }
     }
+    
+    suspend fun saveSalaryBatch(salaryList: List<SalaryModel>): Result<Unit> {
+        return try {
+            if (salaryList.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any>()
+            val currentTime = System.currentTimeMillis()
+
+            salaryList.forEach { salary ->
+                val newSalary = salary.copy(
+                    updatedAt = currentTime,
+                    netSalary = salary.calculateNet()
+                )
+                
+                // Convert to Map to inject "staff_sync_key" and composite keys
+                val salaryMap = mapOf(
+                    "id" to newSalary.id,
+                    "staffId" to newSalary.staffId,
+                    "staffName" to newSalary.staffName,
+                    "monthYear" to newSalary.monthYear,
+                    "basicSalary" to newSalary.basicSalary,
+                    "allowances" to newSalary.allowances,
+                    "deductions" to newSalary.deductions,
+                    "netSalary" to newSalary.netSalary,
+                    "paymentStatus" to newSalary.paymentStatus,
+                    "paymentDate" to (newSalary.paymentDate ?: ""),
+                    "remarks" to (newSalary.remarks ?: ""),
+                    "staffMonth" to newSalary.staffMonth,
+                    "createdAt" to newSalary.createdAt,
+                    "updatedAt" to newSalary.updatedAt,
+                    "staff_sync_key" to "${newSalary.staffId}_$currentTime"
+                )
+
+                updates[newSalary.id] = salaryMap
+            }
+
+            salariesRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseSalaryRepo", "Error saving batch salary", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteSalaryBatch(ids: List<String>): Result<Unit> {
+        return try {
+            if (ids.isEmpty()) return Result.success(Unit)
+
+            val updates = mutableMapOf<String, Any?>()
+            val currentTime = System.currentTimeMillis()
+            val rootRef = salariesRef.root
+
+            ids.forEach { id ->
+                updates["salaries/$id"] = null
+                val tombstone = mapOf(
+                    "id" to id,
+                    "type" to "salary",
+                    "deletedAt" to currentTime
+                )
+                updates["deleted_records/$id"] = tombstone
+            }
+
+            rootRef.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("FirebaseSalaryRepo", "Error deleting batch salary", e)
+            Result.failure(e)
+        }
+    }
 }

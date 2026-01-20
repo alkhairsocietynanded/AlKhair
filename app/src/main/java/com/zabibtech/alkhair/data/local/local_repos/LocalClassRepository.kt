@@ -19,4 +19,8 @@ class LocalClassRepository @Inject constructor(
     suspend fun deleteClass(classId: String) = classDao.deleteClass(classId)
 
     suspend fun clearAll() = classDao.clearAllClasses()
+
+    suspend fun getUnsyncedClasses(): List<ClassModel> = classDao.getUnsyncedClasses()
+
+    suspend fun markClassesAsSynced(ids: List<String>) = classDao.markClassesAsSynced(ids)
 }

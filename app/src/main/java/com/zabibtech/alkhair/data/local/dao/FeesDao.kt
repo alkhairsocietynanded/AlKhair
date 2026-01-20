@@ -32,4 +32,10 @@ interface FeesDao {
 
     @Query("DELETE FROM fees")
     suspend fun clearAllFees()
+
+    @Query("SELECT * FROM fees WHERE isSynced = 0")
+    suspend fun getUnsyncedFees(): List<FeesModel>
+
+    @Query("UPDATE fees SET isSynced = 1 WHERE id IN (:ids)")
+    suspend fun markFeesAsSynced(ids: List<String>)
 }

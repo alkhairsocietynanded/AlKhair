@@ -66,8 +66,18 @@ class AuthRepoManager @Inject constructor(
     suspend fun signup(email: String, password: String, user: User): Result<User> {
         return firebaseAuthRepository.signup(email, password).fold(
             onSuccess = { uid ->
-                val finalUser = user.copy(uid = uid)
-                // UserRepoManager handles (Remote Save -> Local Save)
+                // 1. Encrypt Password before saving locally
+                val encryptedPassword = com.zabibtech.alkhair.utils.EncryptionUtils.encrypt(password)
+                
+                val finalUser = user.copy(
+                    uid = uid,
+                    password = encryptedPassword,
+                    isSynced = false,
+                    updatedAt = System.currentTimeMillis()
+                )
+                
+                // 2. Save Local & Schedule Sync (Hybrid Flow)
+                // We use createUser from UserRepoManager which handles Local Insert + Worker Schedule
                 userRepoManager.createUser(finalUser)
             },
             onFailure = { e ->

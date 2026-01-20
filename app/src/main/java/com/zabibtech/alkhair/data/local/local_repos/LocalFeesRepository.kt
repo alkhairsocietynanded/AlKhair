@@ -24,4 +24,8 @@ class LocalFeesRepository @Inject constructor(
     suspend fun deleteFee(id: String) = feesDao.deleteFee(id)
 
     suspend fun clearAll() = feesDao.clearAllFees()
+
+    suspend fun getUnsyncedFees(): List<FeesModel> = feesDao.getUnsyncedFees()
+
+    suspend fun markFeesAsSynced(ids: List<String>) = feesDao.markFeesAsSynced(ids)
 }

@@ -40,5 +40,7 @@ data class User(
     val salary: String = "",
     val paidSalary: String = "",
     val dueSalary: String = "",
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+    override val updatedAt: Long = System.currentTimeMillis(), // ✅ Override zaroori hai
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
 ) : Parcelable, Syncable // ✅ Interface implement karein

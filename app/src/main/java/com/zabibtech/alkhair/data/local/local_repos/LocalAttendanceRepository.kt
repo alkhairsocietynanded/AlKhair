@@ -34,4 +34,9 @@ class LocalAttendanceRepository @Inject constructor(
         // DAO me delete query honi chahiye agar individual delete support karna hai
     }
     suspend fun clearAll() = attendanceDao.clearAllAttendance()
+
+    suspend fun getUnsyncedAttendance(): List<Attendance> = attendanceDao.getUnsyncedAttendance()
+
+    suspend fun markAttendanceAsSynced(studentId: String, classId: String, date: String) =
+        attendanceDao.markAttendanceAsSynced(studentId, classId, date)
 }

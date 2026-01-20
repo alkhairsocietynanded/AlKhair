@@ -13,12 +13,25 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
+import com.zabibtech.alkhair.data.models.PendingDeletion
+import com.zabibtech.alkhair.data.worker.UserUploadWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit  
+import androidx.work.OneTimeWorkRequest
 
 @Singleton
 class UserRepoManager @Inject constructor(
     private val localUserRepository: LocalUserRepository,
     private val firebaseUserRepository: FirebaseUserRepository,
-    private val firebaseAuthRepository: FirebaseAuthRepository
+    private val firebaseAuthRepository: FirebaseAuthRepository,
+    private val pendingDeletionDao: PendingDeletionDao,
+    private val workManager: WorkManager
 ) : BaseRepoManager<User>() {
 
     /* ============================================================
@@ -74,34 +87,62 @@ class UserRepoManager @Inject constructor(
     }
 
     /* ============================================================
-       ✍️ WRITE OPERATIONS
+       ✍️ WRITE — (Local First -> Background Sync)
        ============================================================ */
 
     suspend fun createUser(user: User): Result<User> {
-        // UID handled by AuthRepo or passed in object
-        return firebaseUserRepository.createUser(user)
-            .onSuccess { newUser -> insertLocal(newUser) }
+        val newUser = user.copy(
+            isSynced = false,
+            updatedAt = System.currentTimeMillis()
+        )
+        insertLocal(newUser)
+        scheduleUploadWorker()
+        return Result.success(newUser)
     }
 
     suspend fun updateUser(user: User): Result<User> {
-        return firebaseUserRepository.updateUser(user)
-            .onSuccess { updatedUser -> insertLocal(updatedUser) }
+        val updatedUser = user.copy(
+            isSynced = false,
+            updatedAt = System.currentTimeMillis()
+        )
+        insertLocal(updatedUser)
+        scheduleUploadWorker()
+        return Result.success(updatedUser)
     }
 
     suspend fun saveUserLocally(user: User) { insertLocal(user) }
 
     suspend fun deleteUser(uid: String): Result<Unit> {
-        return firebaseUserRepository.deleteUser(uid).onSuccess {
-            deleteLocally(uid)
-            try {
-                val deletedRecord = DeletedRecord(
-                    id = uid, type = "user", timestamp = System.currentTimeMillis()
-                )
-                FirebaseRefs.deletedRecordsRef.child(uid).setValue(deletedRecord).await()
-            } catch (e: Exception) {
-                Log.e("UserRepoManager", "Failed to set tombstone", e)
-            }
-        }
+        deleteLocally(uid)
+        val pendingDeletion = PendingDeletion(
+            id = uid,
+            type = "USER", // generic type should be consistent
+            timestamp = System.currentTimeMillis()
+        )
+        pendingDeletionDao.insertPendingDeletion(pendingDeletion)
+        scheduleUploadWorker()
+        return Result.success(Unit)
+    }
+
+     private fun scheduleUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val uploadWorkRequest = OneTimeWorkRequestBuilder<UserUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                androidx.work.WorkRequest.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "UserUploadWork",
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            uploadWorkRequest
+        )
     }
 
     // Base Impl

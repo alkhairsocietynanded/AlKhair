@@ -51,7 +51,8 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "alkhair_database.db"
-        ).build()
+        ).fallbackToDestructiveMigration(true)
+            .build()
     }
 
     // =============================
@@ -88,5 +89,15 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHomeworkDao(db: AppDatabase) = db.homeworkDao()
+
+    @Provides
+    @Singleton
+    fun providePendingDeletionDao(db: AppDatabase) = db.pendingDeletionDao()
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): androidx.work.WorkManager {
+        return androidx.work.WorkManager.getInstance(context)
+    }
 
 }

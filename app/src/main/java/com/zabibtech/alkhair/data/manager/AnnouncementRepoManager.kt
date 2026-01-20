@@ -11,11 +11,24 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
+import com.zabibtech.alkhair.data.models.PendingDeletion
+import com.zabibtech.alkhair.data.worker.AnnouncementUploadWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit  
+import androidx.work.OneTimeWorkRequest
 
 @Singleton
 class AnnouncementRepoManager @Inject constructor(
     private val localAnnouncementRepo: LocalAnnouncementRepository,
-    private val firebaseAnnouncementRepo: FirebaseAnnouncementRepository
+    private val firebaseAnnouncementRepo: FirebaseAnnouncementRepository,
+    private val workManager: WorkManager,
+    private val pendingDeletionDao: PendingDeletionDao
 ) : BaseRepoManager<Announcement>() {
 
     /* ============================================================
@@ -55,44 +68,85 @@ class AnnouncementRepoManager @Inject constructor(
     }
 
     /* ============================================================
-       ✍️ WRITE OPERATIONS (Remote -> Local)
+       ✍️ WRITE OPERATIONS (Local First -> Background Sync)
        ============================================================ */
 
     suspend fun createAnnouncement(announcement: Announcement): Result<Unit> {
-        return firebaseAnnouncementRepo.createAnnouncement(announcement)
-            .onSuccess { newAnnouncement ->
-                // Save to Local immediately
-                insertLocal(newAnnouncement.copy(updatedAt = System.currentTimeMillis()))
-            }
-            .map { }
+        // 1. Prepare Local Data
+        val newId = announcement.id.ifEmpty { java.util.UUID.randomUUID().toString() }
+        val currentTime = System.currentTimeMillis()
+        
+        val newAnnouncement = announcement.copy(
+            id = newId,
+            timeStamp = if (announcement.timeStamp == 0L) currentTime else announcement.timeStamp,
+            updatedAt = currentTime,
+            isSynced = false
+        )
+
+        // 2. Insert Local Immediately
+        insertLocal(newAnnouncement)
+        
+        // 3. Schedule Background Sync
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
     }
 
     suspend fun updateAnnouncement(announcement: Announcement): Result<Unit> {
-        return firebaseAnnouncementRepo.updateAnnouncement(announcement)
-            .onSuccess {
-                // Update Local immediately
-                val updatedLocal = announcement.copy(updatedAt = System.currentTimeMillis())
-                localAnnouncementRepo.updateAnnouncement(updatedLocal)
-            }
+        val currentTime = System.currentTimeMillis()
+
+        // 1. Prepare Local Update
+        val updatedLocal = announcement.copy(
+            updatedAt = currentTime,
+            isSynced = false
+        )
+        
+        // 2. Update Local Immediately
+        localAnnouncementRepo.updateAnnouncement(updatedLocal)
+        
+        // 3. Schedule Background Sync
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
     }
 
     suspend fun deleteAnnouncement(announcementId: String): Result<Unit> {
-        return firebaseAnnouncementRepo.deleteAnnouncement(announcementId).onSuccess {
-            // 1. Delete Locally
-            deleteLocally(announcementId)
+        // 1. Delete Locally
+        deleteLocally(announcementId)
+        
+        // 2. Mark for deletion
+        val pendingDeletion = PendingDeletion(
+            id = announcementId,
+            type = "ANNOUNCEMENT",
+            timestamp = System.currentTimeMillis()
+        )
+        pendingDeletionDao.insertPendingDeletion(pendingDeletion)
+        
+        // 3. Schedule Upload Worker
+        scheduleUploadWorker()
+        
+        return Result.success(Unit)
+    }
 
-            // 2. Create Tombstone for Sync
-            try {
-                val record = DeletedRecord(
-                    id = announcementId,
-                    type = "announcement",
-                    timestamp = System.currentTimeMillis()
-                )
-                FirebaseRefs.deletedRecordsRef.child(announcementId).setValue(record).await()
-            } catch (e: Exception) {
-                Log.e("AnnouncementRepo", "Tombstone failed", e)
-            }
-        }
+    private fun scheduleUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val uploadWorkRequest = OneTimeWorkRequestBuilder<AnnouncementUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                androidx.work.WorkRequest.MIN_BACKOFF_MILLIS,
+                TimeUnit.MILLISECONDS
+            )
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "AnnouncementUploadWork",
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
+            uploadWorkRequest
+        )
     }
 
     /* ============================================================

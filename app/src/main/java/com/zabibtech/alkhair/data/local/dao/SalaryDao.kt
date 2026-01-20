@@ -35,4 +35,10 @@ interface SalaryDao {
 
     @Query("DELETE FROM salary")
     suspend fun clearAllSalaries()
+
+    @Query("SELECT * FROM salary WHERE isSynced = 0")
+    suspend fun getUnsyncedSalaries(): List<SalaryModel>
+
+    @Query("UPDATE salary SET isSynced = 1 WHERE id IN (:ids)")
+    suspend fun markSalariesAsSynced(ids: List<String>)
 }

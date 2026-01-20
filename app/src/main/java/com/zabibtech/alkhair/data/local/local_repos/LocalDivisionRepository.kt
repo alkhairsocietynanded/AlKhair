@@ -20,4 +20,8 @@ class LocalDivisionRepository @Inject constructor(
     suspend fun deleteDivision(divisionId: String) = divisionDao.deleteDivision(divisionId)
 
     suspend fun clearAll() = divisionDao.clearAllDivisions()
+
+    suspend fun getUnsyncedDivisions(): List<DivisionModel> = divisionDao.getUnsyncedDivisions()
+
+    suspend fun markDivisionsAsSynced(ids: List<String>) = divisionDao.markDivisionsAsSynced(ids)
 }

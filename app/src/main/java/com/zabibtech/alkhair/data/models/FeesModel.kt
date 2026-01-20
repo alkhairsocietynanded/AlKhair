@@ -24,5 +24,7 @@ data class FeesModel(
     val paymentDate: String = "",
     val remarks: String? = null,
     val paymentStatus: String = "Pending", // Pending, Paid
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+    override val updatedAt: Long = System.currentTimeMillis(), // ✅ Override zaroori hai
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
 ) :Parcelable, Syncable // ✅ Interface implement karein :

@@ -9,7 +9,16 @@ import com.google.firebase.database.FirebaseDatabase
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class MyApp : Application() {
+class MyApp : Application(), androidx.work.Configuration.Provider {
+
+    @javax.inject.Inject
+    lateinit var workerFactory: androidx.hilt.work.HiltWorkerFactory
+
+    override val workManagerConfiguration: androidx.work.Configuration
+        get() = androidx.work.Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)

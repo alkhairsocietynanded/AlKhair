@@ -10,5 +10,7 @@ data class Attendance(
     val date: String = "",       // yyyy-MM-dd
     val status: String = "",      // Present | Absent | Leave
     val shift: String = "",
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+    override val updatedAt: Long = System.currentTimeMillis(), // ✅ Override zaroori hai
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
 ) : Syncable // ✅ Interface implement karein

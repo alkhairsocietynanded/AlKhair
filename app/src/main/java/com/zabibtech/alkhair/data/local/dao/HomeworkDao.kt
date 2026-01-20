@@ -38,4 +38,10 @@ interface HomeworkDao {
     // Example: Class 10 (All Sections)
     @Query("SELECT * FROM homework WHERE className = :className ORDER BY date DESC")
     fun getHomeworkByClassName(className: String): Flow<List<Homework>>
+
+    @Query("SELECT * FROM homework WHERE isSynced = 0")
+    suspend fun getUnsyncedHomework(): List<Homework>
+
+    @Query("UPDATE homework SET isSynced = 1 WHERE id IN (:ids)")
+    suspend fun markHomeworkAsSynced(ids: List<String>)
 }

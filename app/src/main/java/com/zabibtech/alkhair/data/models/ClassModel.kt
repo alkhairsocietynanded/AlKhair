@@ -10,5 +10,7 @@ data class ClassModel(
     val id: String = "",
     val division: String = "",
     val className: String = "",
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+    override val updatedAt: Long = System.currentTimeMillis(), // ✅ Override zaroori hai
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
 ) : Syncable // ✅ Interface implement karein

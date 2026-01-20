@@ -30,4 +30,10 @@ interface AttendanceDao {
 
     @Query("DELETE FROM attendance")
     suspend fun clearAllAttendance()
+
+    @Query("SELECT * FROM attendance WHERE isSynced = 0")
+    suspend fun getUnsyncedAttendance(): List<Attendance>
+
+    @Query("UPDATE attendance SET isSynced = 1 WHERE studentId = :studentId AND classId = :classId AND date = :date")
+    suspend fun markAttendanceAsSynced(studentId: String, classId: String, date: String)
 }

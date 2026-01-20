@@ -26,8 +26,11 @@ data class SalaryModel(
     val createdAt: Long = System.currentTimeMillis(),
 
     // New field for combined indexing
+    // New field for combined indexing
     val staffMonth: String = "${staffId}_${monthYear}",
-    override val updatedAt: Long = System.currentTimeMillis() // ✅ Override zaroori hai
+    override val updatedAt: Long = System.currentTimeMillis(), // ✅ Override zaroori hai
+    @get:com.google.firebase.database.Exclude
+    override val isSynced: Boolean = true
 ) : Syncable, // ✅ Interface implement karein,
     Parcelable {
     fun calculateNet(): Double {

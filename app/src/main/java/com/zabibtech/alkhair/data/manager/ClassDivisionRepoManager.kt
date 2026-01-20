@@ -14,13 +14,28 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
+import com.zabibtech.alkhair.data.models.PendingDeletion
+import com.zabibtech.alkhair.data.worker.ClassUploadWorker
+import com.zabibtech.alkhair.data.worker.DivisionUploadWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
+import androidx.work.OneTimeWorkRequest
 
 @Singleton
+
 class ClassDivisionRepoManager @Inject constructor(
     private val localClassRepo: LocalClassRepository,
     private val firebaseClassRepo: FirebaseClassRepository,
     private val localDivisionRepo: LocalDivisionRepository,
-    private val firebaseDivisionRepo: FirebaseDivisionRepository
+    private val firebaseDivisionRepo: FirebaseDivisionRepository,
+    private val workManager: WorkManager,
+    private val pendingDeletionDao: PendingDeletionDao
 ) {
 
     /* ============================================================
@@ -28,10 +43,10 @@ class ClassDivisionRepoManager @Inject constructor(
        ============================================================ */
 
     fun observeClasses(): Flow<List<ClassModel>> =
-        localClassRepo.getAllClasses() // Ensure DAO returns Flow
+        localClassRepo.getAllClasses()
 
     fun observeDivisions(): Flow<List<DivisionModel>> =
-        localDivisionRepo.getAllDivisions() // Ensure DAO returns Flow
+        localDivisionRepo.getAllDivisions()
 
     // ✅ One-Shot Getters (for ViewModel initialization / checks)
     suspend fun getAllClassesSnapshot(): Result<List<ClassModel>> {
@@ -53,56 +68,101 @@ class ClassDivisionRepoManager @Inject constructor(
     }
 
     /* ============================================================
-       ✍️ WRITE — (Remote First -> Then Local)
+       ✍️ WRITE — (Local First -> Background Sync)
        ============================================================ */
 
     // --- DIVISIONS ---
     suspend fun addDivision(division: DivisionModel): Result<DivisionModel> {
-        return firebaseDivisionRepo.addDivision(division).onSuccess { newDivision ->
-            localDivisionRepo.insertDivision(newDivision)
-        }
+        val newId = division.id.ifEmpty { java.util.UUID.randomUUID().toString() }
+        val currentTime = System.currentTimeMillis()
+        
+        val newDivision = division.copy(
+            id = newId,
+            updatedAt = currentTime,
+            isSynced = false
+        )
+        
+        localDivisionRepo.insertDivision(newDivision)
+        scheduleDivisionUploadWorker()
+        
+        return Result.success(newDivision)
     }
 
     suspend fun updateDivision(division: DivisionModel): Result<Unit> {
-        val divisionToUpdate = division.copy(updatedAt = System.currentTimeMillis())
-        return firebaseDivisionRepo.updateDivision(divisionToUpdate).onSuccess {
-            localDivisionRepo.insertDivision(divisionToUpdate)
-        }
+        val updatedDivision = division.copy(
+            updatedAt = System.currentTimeMillis(),
+            isSynced = false
+        )
+        localDivisionRepo.insertDivision(updatedDivision)
+        scheduleDivisionUploadWorker()
+        return Result.success(Unit)
     }
 
     suspend fun deleteDivision(divisionId: String): Result<Unit> {
-        return firebaseDivisionRepo.deleteDivision(divisionId).onSuccess {
-            localDivisionRepo.deleteDivision(divisionId)
-            createTombstone(divisionId, "division")
-        }
+        localDivisionRepo.deleteDivision(divisionId)
+        
+        val pendingDeletion = PendingDeletion(
+            id = divisionId,
+            type = "DIVISION",
+            timestamp = System.currentTimeMillis()
+        )
+        pendingDeletionDao.insertPendingDeletion(pendingDeletion)
+        
+        scheduleDivisionUploadWorker()
+        return Result.success(Unit)
     }
 
 
     // --- CLASSES ---
     suspend fun addClass(classModel: ClassModel): Result<ClassModel> {
-        // Ensure division exists remotely
-        val divExists = firebaseDivisionRepo.doesDivisionExist(classModel.division).getOrElse { false }
+        // Validation: Ensure division exists (locally check is enough effectively, or auto-create local/synced later)
+        // For local-first, we assume valid input or handle constraints.
+        // If division doesn't exist locally, we might want to auto-create it locally too?
+        // Original logic: ensure division exists remotely. 
+        // New logic: Check local division, if missing, create local division.
+        
+        val divExists = localDivisionRepo.getAllDivisions().first().any { it.name == classModel.division }
         if (!divExists) {
-            addDivision(DivisionModel(name = classModel.division))
+             addDivision(DivisionModel(name = classModel.division))
         }
 
-        return firebaseClassRepo.addClass(classModel).onSuccess { newClass ->
-            localClassRepo.insertClass(newClass)
-        }
+        val newId = classModel.id.ifEmpty { java.util.UUID.randomUUID().toString() }
+        val currentTime = System.currentTimeMillis()
+        
+        val newClass = classModel.copy(
+            id = newId,
+            updatedAt = currentTime,
+            isSynced = false
+        )
+        
+        localClassRepo.insertClass(newClass)
+        scheduleClassUploadWorker()
+        
+        return Result.success(newClass)
     }
 
     suspend fun updateClass(classModel: ClassModel): Result<Unit> {
-        val classToUpdate = classModel.copy(updatedAt = System.currentTimeMillis())
-        return firebaseClassRepo.updateClass(classToUpdate).onSuccess {
-            localClassRepo.insertClass(classToUpdate)
-        }
+        val updatedClass = classModel.copy(
+            updatedAt = System.currentTimeMillis(),
+            isSynced = false
+        )
+        localClassRepo.insertClass(updatedClass)
+        scheduleClassUploadWorker()
+        return Result.success(Unit)
     }
 
     suspend fun deleteClass(classId: String): Result<Unit> {
-        return firebaseClassRepo.deleteClass(classId).onSuccess {
-            localClassRepo.deleteClass(classId)
-            createTombstone(classId, "class")
-        }
+        localClassRepo.deleteClass(classId)
+        
+        val pendingDeletion = PendingDeletion(
+            id = classId,
+            type = "CLASS",
+            timestamp = System.currentTimeMillis()
+        )
+        pendingDeletionDao.insertPendingDeletion(pendingDeletion)
+        
+        scheduleClassUploadWorker()
+        return Result.success(Unit)
     }
 
     /* ============================================================
@@ -127,16 +187,35 @@ class ClassDivisionRepoManager @Inject constructor(
         }.map { }
     }
 
-    // Helper for Deletions
-    private suspend fun createTombstone(id: String, type: String) {
-        try {
-            val record = DeletedRecord(id = id, type = type, timestamp = System.currentTimeMillis())
-            FirebaseRefs.deletedRecordsRef.child(id).setValue(record).await()
-        } catch (e: Exception) {
-            Log.e("ClassDivisionRepo", "Failed to create tombstone", e)
-        }
+    // Workers
+    private fun scheduleClassUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        
+        val request = OneTimeWorkRequestBuilder<ClassUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, androidx.work.WorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MILLISECONDS)
+            .build()
+            
+        workManager.enqueueUniqueWork("ClassUploadWork", ExistingWorkPolicy.APPEND_OR_REPLACE, request)
     }
 
+    private fun scheduleDivisionUploadWorker() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+        
+        val request = OneTimeWorkRequestBuilder<DivisionUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, androidx.work.WorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MILLISECONDS)
+            .build()
+            
+        workManager.enqueueUniqueWork("DivisionUploadWork", ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+    }
+
+    // Helper for Deletions (Legacy/Manual usage if any, otherwise covered by deleteClass/deleteDivision)
+    // Exposed primarily for AppDataSyncManager if it handles downstream generic deletes
     suspend fun deleteClassLocally(id: String) = localClassRepo.deleteClass(id)
     suspend fun deleteDivisionLocally(id: String) = localDivisionRepo.deleteDivision(id)
 }
