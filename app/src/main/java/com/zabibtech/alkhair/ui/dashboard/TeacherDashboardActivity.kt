@@ -132,11 +132,12 @@ class TeacherDashboardActivity : AppCompatActivity() {
         }
 
         binding.cardStudentAttendance.setOnClickListener {
-                val intent = Intent(this, AttendanceActivity::class.java).apply {
-                    putExtra("role", Roles.STUDENT)
-                    putExtra("loggedInUser", Roles.TEACHER)
-                }
-                startActivity(intent)
+            val intent = Intent(this, AttendanceActivity::class.java).apply {
+                putExtra("role", Roles.STUDENT)
+                putExtra("loggedInUser", Roles.TEACHER)
+                putExtra("classId", loggedInUser?.classId)
+            }
+            startActivity(intent)
         }
 
         binding.cardFees.setOnClickListener {

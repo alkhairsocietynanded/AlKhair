@@ -181,7 +181,7 @@ class AttendanceActivity : AppCompatActivity() {
 
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
-                            DialogUtils.showAlert(applicationContext, "Success", "Attendance saved successfully.")
+                            DialogUtils.showAlert(this@AttendanceActivity, "Success", "Attendance saved successfully.")
                             viewModel.resetSaveState()
                         }
 
