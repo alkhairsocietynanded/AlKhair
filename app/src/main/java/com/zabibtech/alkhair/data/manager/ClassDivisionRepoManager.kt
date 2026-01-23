@@ -6,9 +6,8 @@ import com.zabibtech.alkhair.data.local.local_repos.LocalDivisionRepository
 import com.zabibtech.alkhair.data.models.ClassModel
 import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.DivisionModel
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseClassRepository
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseDivisionRepository
-import com.zabibtech.alkhair.utils.FirebaseRefs
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseClassRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseDivisionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
@@ -31,9 +30,9 @@ import androidx.work.OneTimeWorkRequest
 
 class ClassDivisionRepoManager @Inject constructor(
     private val localClassRepo: LocalClassRepository,
-    private val firebaseClassRepo: FirebaseClassRepository,
+    private val supabaseClassRepo: SupabaseClassRepository,
     private val localDivisionRepo: LocalDivisionRepository,
-    private val firebaseDivisionRepo: FirebaseDivisionRepository,
+    private val supabaseDivisionRepo: SupabaseDivisionRepository,
     private val workManager: WorkManager,
     private val pendingDeletionDao: PendingDeletionDao
 ) {
@@ -170,7 +169,7 @@ class ClassDivisionRepoManager @Inject constructor(
        ============================================================ */
 
     suspend fun syncDivisions(lastSync: Long): Result<Unit> {
-        return firebaseDivisionRepo.getDivisionsUpdatedAfter(lastSync).onSuccess { list ->
+        return supabaseDivisionRepo.getDivisionsUpdatedAfter(lastSync).onSuccess { list ->
             if (list.isNotEmpty()) {
                 val updated = list.map { it.copy(updatedAt = System.currentTimeMillis()) }
                 localDivisionRepo.insertDivisions(updated)
@@ -179,7 +178,7 @@ class ClassDivisionRepoManager @Inject constructor(
     }
 
     suspend fun syncClasses(lastSync: Long): Result<Unit> {
-        return firebaseClassRepo.getClassesUpdatedAfter(lastSync).onSuccess { list ->
+        return supabaseClassRepo.getClassesUpdatedAfter(lastSync).onSuccess { list ->
             if (list.isNotEmpty()) {
                 val updated = list.map { it.copy(updatedAt = System.currentTimeMillis()) }
                 localClassRepo.insertClasses(updated)

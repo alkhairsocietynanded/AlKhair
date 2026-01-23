@@ -6,8 +6,7 @@ import com.zabibtech.alkhair.data.local.local_repos.LocalHomeworkRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
 import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.Homework
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseHomeworkRepository
-import com.zabibtech.alkhair.utils.FirebaseRefs
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseHomeworkRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -27,7 +26,7 @@ import androidx.work.OneTimeWorkRequest
 @Singleton
 class HomeworkRepoManager @Inject constructor(
     private val localRepo: LocalHomeworkRepository,
-    private val remoteRepo: FirebaseHomeworkRepository,
+    private val remoteRepo: SupabaseHomeworkRepository,
     private val storageManager: StorageManager,
     private val pendingDeletionDao: PendingDeletionDao,
     private val workManager: WorkManager

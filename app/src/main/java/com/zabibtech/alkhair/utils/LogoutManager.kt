@@ -22,7 +22,7 @@ class LogoutManager @Inject constructor(
             // 1. Clear Local Data (Room + Prefs)
             appDataSyncManager.clearAllLocalData()
 
-            // 2. Sign out from Firebase
+            // 2. Sign out from Supabase (Handled by AuthRepoManager)
             authRepoManager.logout()
 
             // 3. Navigate to Login

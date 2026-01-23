@@ -53,7 +53,7 @@ object UserBuilder {
                     shift = shift,
                     parentName = parentName,
                     dateOfBirth = dateOfBirth,
-                    salary = salary,
+                    salary = salary.toDoubleOrNull() ?: 0.0,
                     dateOfJoining = doj
 //                    paidSalary = paidSalary,
 //                    dueSalary = dueSalary
@@ -80,7 +80,7 @@ object UserBuilder {
                     shift = shift,
                     parentName = parentName,
                     dateOfBirth = dateOfBirth,
-                    totalFees = totalFees,
+                    totalFees = totalFees.toDoubleOrNull() ?: 0.0,
                     dateOfJoining = doj
 //                    paidFees = paidFees,
 //                    dueFees = dueValue

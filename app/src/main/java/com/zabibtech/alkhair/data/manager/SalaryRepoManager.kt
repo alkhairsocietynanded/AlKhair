@@ -5,8 +5,7 @@ import com.zabibtech.alkhair.data.local.local_repos.LocalSalaryRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
 import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.SalaryModel
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseSalaryRepository
-import com.zabibtech.alkhair.utils.FirebaseRefs
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseSalaryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -26,7 +25,7 @@ import androidx.work.OneTimeWorkRequest
 @Singleton
 class SalaryRepoManager @Inject constructor(
     private val localRepo: LocalSalaryRepository,
-    private val remoteRepo: FirebaseSalaryRepository,
+    private val remoteRepo: SupabaseSalaryRepository,
     private val workManager: WorkManager,
     private val pendingDeletionDao: PendingDeletionDao
 ) : BaseRepoManager<SalaryModel>() {

@@ -12,7 +12,7 @@ import com.zabibtech.alkhair.data.local.local_repos.LocalFeesRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
 import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.PendingDeletion
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseFeesRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseFeesRepository
 import com.zabibtech.alkhair.data.worker.FeesUploadWorker
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
@@ -23,7 +23,7 @@ import javax.inject.Singleton
 @Singleton
 class FeesRepoManager @Inject constructor(
     private val localRepo: LocalFeesRepository,
-    private val remoteRepo: FirebaseFeesRepository,
+    private val remoteRepo: SupabaseFeesRepository,
     private val pendingDeletionDao: PendingDeletionDao,
     private val workManager: WorkManager
 ) : BaseRepoManager<FeesModel>() {

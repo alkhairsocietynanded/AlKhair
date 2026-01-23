@@ -6,7 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
 import com.zabibtech.alkhair.data.local.local_repos.LocalSalaryRepository
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseSalaryRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseSalaryRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +18,7 @@ class SalaryUploadWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val localSalaryRepository: LocalSalaryRepository,
     private val pendingDeletionDao: PendingDeletionDao,
-    private val firebaseSalaryRepository: FirebaseSalaryRepository
+    private val supabaseSalaryRepository: SupabaseSalaryRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -26,7 +26,7 @@ class SalaryUploadWorker @AssistedInject constructor(
             // Task 1: Upload Unsynced Salary
             val unsyncedSalaries = localSalaryRepository.getUnsyncedSalaries()
             if (unsyncedSalaries.isNotEmpty()) {
-                val result = firebaseSalaryRepository.saveSalaryBatch(unsyncedSalaries)
+                val result = supabaseSalaryRepository.saveSalaryBatch(unsyncedSalaries)
                 if (result.isSuccess) {
                     localSalaryRepository.markSalariesAsSynced(unsyncedSalaries.map { it.id })
                 } else {
@@ -37,7 +37,7 @@ class SalaryUploadWorker @AssistedInject constructor(
             // Task 2: Handle Pending Deletions
             val pendingDeletions = pendingDeletionDao.getPendingDeletionsByType("SALARY")
             if (pendingDeletions.isNotEmpty()) {
-                val result = firebaseSalaryRepository.deleteSalaryBatch(pendingDeletions.map { it.id })
+                val result = supabaseSalaryRepository.deleteSalaryBatch(pendingDeletions.map { it.id })
                 if (result.isSuccess) {
                     pendingDeletionDao.removePendingDeletions(pendingDeletions.map { it.id })
                 } else {

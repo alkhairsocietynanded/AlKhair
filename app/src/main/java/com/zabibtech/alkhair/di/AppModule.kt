@@ -99,5 +99,4 @@ object AppModule {
     fun provideWorkManager(@ApplicationContext context: Context): androidx.work.WorkManager {
         return androidx.work.WorkManager.getInstance(context)
     }
-
 }

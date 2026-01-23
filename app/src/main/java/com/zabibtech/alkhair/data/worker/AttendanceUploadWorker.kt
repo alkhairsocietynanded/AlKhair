@@ -1,11 +1,12 @@
 package com.zabibtech.alkhair.data.worker
 
+import androidx.work.ListenableWorker.Result
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.zabibtech.alkhair.data.local.local_repos.LocalAttendanceRepository
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseAttendanceRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseAttendanceRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -16,15 +17,15 @@ class AttendanceUploadWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
     private val localAttendanceRepository: LocalAttendanceRepository,
-    private val firebaseAttendanceRepository: FirebaseAttendanceRepository
+    private val supabaseAttendanceRepository: SupabaseAttendanceRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+    override suspend fun doWork(): androidx.work.ListenableWorker.Result = withContext(Dispatchers.IO) {
         try {
             // Task 1: Upload Unsynced Attendance
             val unsyncedAttendance = localAttendanceRepository.getUnsyncedAttendance()
             if (unsyncedAttendance.isNotEmpty()) {
-                val result = firebaseAttendanceRepository.saveAttendanceBatch(unsyncedAttendance)
+                val result = supabaseAttendanceRepository.saveAttendanceBatch(unsyncedAttendance)
                 if (result.isSuccess) {
                     unsyncedAttendance.forEach { 
                         localAttendanceRepository.markAttendanceAsSynced(it.studentId, it.classId, it.date)

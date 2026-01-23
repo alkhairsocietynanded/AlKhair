@@ -9,10 +9,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.zabibtech.alkhair" />
-                  <option name="mobileSdkAppId" value="1:285347718728:android:9fa00fc04350da1551da7d" />
-                  <option name="projectId" value="alkhair-8c719" />
-                  <option name="projectNumber" value="285347718728" />
+                  <option name="appId" value="PLACEHOLDER" />
+                  <option name="mobileSdkAppId" value="" />
+                  <option name="projectId" value="" />
+                  <option name="projectNumber" value="" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

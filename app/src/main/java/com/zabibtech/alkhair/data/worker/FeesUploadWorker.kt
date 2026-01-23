@@ -6,7 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
 import com.zabibtech.alkhair.data.local.local_repos.LocalFeesRepository
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseFeesRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseFeesRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +18,7 @@ class FeesUploadWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val localFeesRepository: LocalFeesRepository,
     private val pendingDeletionDao: PendingDeletionDao,
-    private val firebaseFeesRepository: FirebaseFeesRepository
+    private val supabaseFeesRepository: SupabaseFeesRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -26,7 +26,7 @@ class FeesUploadWorker @AssistedInject constructor(
             // Task 1: Upload Unsynced Fees
             val unsyncedFees = localFeesRepository.getUnsyncedFees()
             if (unsyncedFees.isNotEmpty()) {
-                val result = firebaseFeesRepository.saveFeesBatch(unsyncedFees)
+                val result = supabaseFeesRepository.saveFeesBatch(unsyncedFees)
                 if (result.isSuccess) {
                     localFeesRepository.markFeesAsSynced(unsyncedFees.map { it.id })
                 } else {
@@ -37,7 +37,7 @@ class FeesUploadWorker @AssistedInject constructor(
             // Task 2: Handle Pending Deletions
             val pendingDeletions = pendingDeletionDao.getPendingDeletionsByType("FEES")
             if (pendingDeletions.isNotEmpty()) {
-                val result = firebaseFeesRepository.deleteFeesBatch(pendingDeletions.map { it.id })
+                val result = supabaseFeesRepository.deleteFeesBatch(pendingDeletions.map { it.id })
                 if (result.isSuccess) {
                     pendingDeletionDao.removePendingDeletions(pendingDeletions.map { it.id })
                 } else {

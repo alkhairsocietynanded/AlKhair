@@ -149,9 +149,9 @@ class UserFormActivity : AppCompatActivity() {
             etPassword.setText(user.password)
             etAddress.setText(user.address)
             etSubject.setText(user.subject)
-            etSalary.setText(user.salary)
+            etSalary.setText(user.salary.toString())
             etDob.setText(user.dateOfBirth)
-            etTotalFees.setText(user.totalFees)
+            etTotalFees.setText(user.totalFees.toString())
 
             // Set IDs for logic
             selectedClassId = user.classId

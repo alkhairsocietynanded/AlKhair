@@ -4,7 +4,7 @@ import android.util.Log
 import com.zabibtech.alkhair.data.local.local_repos.LocalAttendanceRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
 import com.zabibtech.alkhair.data.models.Attendance
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseAttendanceRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseAttendanceRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,7 +21,7 @@ import androidx.work.OneTimeWorkRequest
 @Singleton
 class AttendanceRepoManager @Inject constructor(
     private val localAttendanceRepo: LocalAttendanceRepository,
-    private val firebaseAttendanceRepo: FirebaseAttendanceRepository,
+    private val remoteRepo: SupabaseAttendanceRepository,
     private val workManager: WorkManager
 ) : BaseRepoManager<Attendance>() {
 
@@ -49,7 +49,7 @@ class AttendanceRepoManager @Inject constructor(
      * यह पूरे स्कूल का अपडेटेड डेटा लाता है।
      */
     override suspend fun fetchRemoteUpdated(after: Long): List<Attendance> {
-        return firebaseAttendanceRepo.getAttendanceUpdatedAfter(after)
+        return remoteRepo.getAttendanceUpdatedAfter(after)
             .getOrElse {
                 Log.e("AttendanceRepoManager", "Global Sync failed", it)
                 emptyList()
@@ -61,7 +61,7 @@ class AttendanceRepoManager @Inject constructor(
      * टीचर के लिए सिर्फ उनकी क्लास का डेटा लाएं।
      */
     suspend fun syncClassAttendance(classId: String, shift: String, lastSync: Long): Result<Unit> {
-        return firebaseAttendanceRepo.getAttendanceForClassAndShiftUpdatedAfter(classId, shift, lastSync)
+        return remoteRepo.getAttendanceForClassAndShiftUpdatedAfter(classId, shift, lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) {
                     insertLocal(list)
@@ -77,7 +77,7 @@ class AttendanceRepoManager @Inject constructor(
      * यह सिर्फ उस स्टूडेंट का डेटा लाता है, जिससे बैंडविड्थ बचती है।
      */
     suspend fun syncStudentAttendance(studentId: String, lastSync: Long): Result<Unit> {
-        return firebaseAttendanceRepo.getAttendanceForStudentUpdatedAfter(studentId, lastSync)
+        return remoteRepo.getAttendanceForStudentUpdatedAfter(studentId, lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) {
                     // Local DB me insert karein (updatedAt pehle se set hai Firebase se)

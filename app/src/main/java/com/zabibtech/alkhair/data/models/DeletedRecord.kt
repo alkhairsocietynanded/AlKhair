@@ -1,9 +1,18 @@
 package com.zabibtech.alkhair.data.models
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@com.google.firebase.database.IgnoreExtraProperties
+@Serializable
+
 data class DeletedRecord(
-    val id: String = "",
-    val type: String = "", // "user", "class", "division", etc.
-    val timestamp: Long = System.currentTimeMillis()
+    // User DB Schema: id (text), type (text), timestamp (bigint)
+    @SerialName("id")
+    val recordId: String = "", // Maps DB 'id' -> Kotlin 'recordId'
+    
+    @SerialName("type")
+    val type: String = "", 
+    
+    @SerialName("timestamp")
+    val timestamp: Long = 0L
 )

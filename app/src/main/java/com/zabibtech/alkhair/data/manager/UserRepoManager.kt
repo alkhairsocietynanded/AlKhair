@@ -1,35 +1,31 @@
 package com.zabibtech.alkhair.data.manager
 
 import android.util.Log
-import com.zabibtech.alkhair.data.local.local_repos.LocalUserRepository
-import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
-import com.zabibtech.alkhair.data.models.DeletedRecord
-import com.zabibtech.alkhair.data.models.User
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseAuthRepository
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseUserRepository
-import com.zabibtech.alkhair.utils.FirebaseRefs
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-import javax.inject.Singleton
-import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
-import com.zabibtech.alkhair.data.models.PendingDeletion
-import com.zabibtech.alkhair.data.worker.UserUploadWorker
+import androidx.work.BackoffPolicy
 import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.BackoffPolicy
-import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit  
-import androidx.work.OneTimeWorkRequest
+import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
+import com.zabibtech.alkhair.data.local.local_repos.LocalUserRepository
+import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
+import com.zabibtech.alkhair.data.models.PendingDeletion
+import com.zabibtech.alkhair.data.models.User
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseAuthRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseUserRepository
+import com.zabibtech.alkhair.data.worker.UserUploadWorker
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class UserRepoManager @Inject constructor(
     private val localUserRepository: LocalUserRepository,
-    private val firebaseUserRepository: FirebaseUserRepository,
-    private val firebaseAuthRepository: FirebaseAuthRepository,
+    private val supabaseUserRepository: SupabaseUserRepository,
+    private val supabaseAuthRepository: SupabaseAuthRepository,
     private val pendingDeletionDao: PendingDeletionDao,
     private val workManager: WorkManager
 ) : BaseRepoManager<User>() {
@@ -44,7 +40,7 @@ class UserRepoManager @Inject constructor(
     suspend fun getUserById(uid: String): User? = localUserRepository.getUserById(uid).first()
 
     suspend fun getCurrentUser(): User? {
-        val uid = firebaseAuthRepository.currentUserUid() ?: return null
+        val uid = supabaseAuthRepository.currentUserUid() ?: return null
         return getUserById(uid)
     }
 
@@ -64,13 +60,13 @@ class UserRepoManager @Inject constructor(
 
     // 1. Global Sync (Admin)
     override suspend fun fetchRemoteUpdated(after: Long): List<User> =
-        firebaseUserRepository.getUsersUpdatedAfter(after).getOrElse { emptyList() }
+        supabaseUserRepository.getUsersUpdatedAfter(after).getOrElse { emptyList() }
 
     // 2. Class Sync (Teacher) - ✅ NEW
     suspend fun syncClassStudents(classId: String, shift: String,  lastSync: Long): Result<Unit> {
         // Shift validation (taaki empty shift par crash na ho)
         val targetShift = shift.ifBlank { "General" }
-        return firebaseUserRepository.getStudentsForClassUpdatedAfter(classId, targetShift,lastSync)
+        return supabaseUserRepository.getStudentsForClassUpdatedAfter(classId, targetShift,lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) insertLocal(list)
             }
@@ -79,7 +75,7 @@ class UserRepoManager @Inject constructor(
 
     // 3. Profile Sync (Student) - ✅ NEW
     suspend fun syncUserProfile(uid: String): Result<Unit> {
-        return firebaseUserRepository.getUserById(uid)
+        return supabaseUserRepository.getUserById(uid)
             .onSuccess { user ->
                 if (user != null) insertLocal(user)
             }

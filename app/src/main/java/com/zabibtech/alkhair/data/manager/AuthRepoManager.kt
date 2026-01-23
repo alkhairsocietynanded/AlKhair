@@ -1,27 +1,29 @@
 package com.zabibtech.alkhair.data.manager
 
+import kotlinx.coroutines.launch
+
 import com.zabibtech.alkhair.data.models.User
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseAuthRepository
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseUserRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseAuthRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseUserRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AuthRepoManager @Inject constructor(
-    private val firebaseAuthRepository: FirebaseAuthRepository,
-    private val firebaseUserRepository: FirebaseUserRepository, // Inject Remote Repo for fresh installs
+    private val authRepository: SupabaseAuthRepository,
+    private val userRepository: SupabaseUserRepository, // Inject Remote Repo for fresh installs
     private val userRepoManager: UserRepoManager // Inject Manager for Local Sync
 ) {
 
     /**
      * Login Logic:
-     * 1. Auth against Firebase Auth.
+     * 1. Auth against Supabase Auth.
      * 2. Check Local DB for User Profile.
-     * 3. If Local is empty (Fresh Install), fetch from Firebase Firestore.
+     * 3. If Local is empty (Fresh Install), fetch from Supabase.
      * 4. Save to Local DB.
      */
     suspend fun login(email: String, password: String): Result<User> {
-        return firebaseAuthRepository.login(email, password).fold(
+        return authRepository.login(email, password).fold(
             onSuccess = { uid ->
                 try {
                     // 1. Try Local First (Fastest)
@@ -31,7 +33,7 @@ class AuthRepoManager @Inject constructor(
                     }
 
                     // 2. If Local failed (New Device/Fresh Install), Fetch Remote
-                    val remoteUserResult = firebaseUserRepository.getUserById(uid)
+                    val remoteUserResult = userRepository.getUserById(uid)
 
                     remoteUserResult.fold(
                         onSuccess = { remoteUser ->
@@ -64,7 +66,7 @@ class AuthRepoManager @Inject constructor(
      * 2. Use UserRepoManager to Create User (Remote -> Local).
      */
     suspend fun signup(email: String, password: String, user: User): Result<User> {
-        return firebaseAuthRepository.signup(email, password).fold(
+        return authRepository.signup(email, password).fold(
             onSuccess = { uid ->
                 // 1. Encrypt Password before saving locally
                 val encryptedPassword = com.zabibtech.alkhair.utils.EncryptionUtils.encrypt(password)
@@ -87,10 +89,21 @@ class AuthRepoManager @Inject constructor(
     }
 
     fun logout() {
-        firebaseAuthRepository.logout()
+        // Run blocking or launch in scope if needed, but repo method is suspend.
+        // Manager method is currently synchronous (fun logout()).
+        // Ideally should be suspend, or we launch here. 
+        // For now, let's keep it synchronous wrapper if possible or change signature.
+        // Migration note: The original logout() was not suspend?
+        // Ah, FirebaseAuth.signOut() is synchronous. Supabase.signOut() is suspend.
+        // I need to update this method to be suspend OR launch a coroutine scope.
+        // Or check if SupabaseAuthRepo has a blocking option? No.
+        // I will change it to suspend.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            authRepository.logout()
+        }
     }
 
     fun getCurrentUserUid(): String? {
-        return firebaseAuthRepository.currentUserUid()
+        return authRepository.currentUserUid()
     }
 }

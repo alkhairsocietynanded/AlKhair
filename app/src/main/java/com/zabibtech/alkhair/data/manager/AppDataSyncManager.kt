@@ -2,8 +2,6 @@ package com.zabibtech.alkhair.data.manager
 
 import android.util.Log
 import com.zabibtech.alkhair.data.datastore.AppDataStore
-import com.zabibtech.alkhair.data.models.DeletedRecord
-import com.zabibtech.alkhair.utils.FirebaseRefs
 import com.zabibtech.alkhair.utils.Roles
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -23,7 +21,8 @@ class AppDataSyncManager @Inject constructor(
     private val feesRepoManager: FeesRepoManager,
     private val salaryRepoManager: SalaryRepoManager,
     private val homeworkRepoManager: HomeworkRepoManager,
-    private val announcementRepoManager: AnnouncementRepoManager
+    private val announcementRepoManager: AnnouncementRepoManager,
+    private val deletionRepository: com.zabibtech.alkhair.data.remote.supabase.SupabaseDeletionRepository
 ) {
 
     companion object {
@@ -217,35 +216,34 @@ class AppDataSyncManager @Inject constructor(
         }
 
     /**
-     * 🗑️ Tombstone delete sync
+     * 🗑️ Tombstone delete sync - Supabase Implementation
      */
     private suspend fun syncDeletions(after: Long): Result<Unit> {
         Log.d(TAG, "Starting deletion sync after: $after")
         return try {
-            val snapshot = FirebaseRefs.deletedRecordsRef
-                .orderByChild("timestamp")
-                .startAt(after.toDouble())
-                .get()
-                .await()
+            val result = deletionRepository.getDeletedRecords(after)
 
-            val records = snapshot.children.mapNotNull { it.getValue(DeletedRecord::class.java) }
+            if (result.isFailure) return Result.failure(result.exceptionOrNull()!!)
+
+            val records = result.getOrElse { emptyList() }
             Log.d(TAG, "Found ${records.size} records to delete.")
 
             if (records.isNotEmpty()) {
                 records.forEach { record ->
                     try {
-                        Log.d(TAG, "Deleting ${record.type} with id: ${record.id}")
+                        Log.d(TAG, "Deleting ${record.type} with id: ${record.recordId}")
                         when (record.type) {
-                            "user" -> userRepoManager.deleteLocally(record.id)
-                            "class" -> classDivisionRepoManager.deleteClassLocally(record.id)
-                            "division" -> classDivisionRepoManager.deleteDivisionLocally(record.id)
-                            "fees" -> feesRepoManager.deleteLocally(record.id)
-                            "salary" -> salaryRepoManager.deleteLocally(record.id)
-                            "homework" -> homeworkRepoManager.deleteLocally(record.id)
-                            "announcement" -> announcementRepoManager.deleteLocally(record.id)
+                            "users" -> userRepoManager.deleteLocally(record.recordId)
+                            "classes" -> classDivisionRepoManager.deleteClassLocally(record.recordId)
+                            "divisions" -> classDivisionRepoManager.deleteDivisionLocally(record.recordId)
+                            "fees" -> feesRepoManager.deleteLocally(record.recordId)
+                            "salary" -> salaryRepoManager.deleteLocally(record.recordId)
+                            "homework" -> homeworkRepoManager.deleteLocally(record.recordId)
+                            "announcements" -> announcementRepoManager.deleteLocally(record.recordId)
+                            "attendance" -> attendanceRepoManager.deleteLocally(record.recordId)
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Failed deleting ${record.type} : ${record.id}", e)
+                        Log.e(TAG, "Failed deleting ${record.type} : ${record.recordId}", e)
                     }
                 }
             }

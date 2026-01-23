@@ -12,7 +12,7 @@ import com.zabibtech.alkhair.data.models.DashboardStats
 import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.di.ApplicationScope
-import com.zabibtech.alkhair.ui.main.Temp
+
 import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
@@ -45,13 +45,7 @@ class TeacherDashboardViewModel @Inject constructor(
         triggerBackgroundSync()
     }
 
-    // In your Activity or ViewModel
-    fun runMigrationScript() {
-        viewModelScope.launch {
-            Log.d("Migration", "Starting User Migration...")
-            Temp.runFullSystemMigration()
-        }
-    }
+
 
     private fun triggerBackgroundSync() {
         externalScope.launch {
@@ -109,7 +103,7 @@ class TeacherDashboardViewModel @Inject constructor(
             val totalCollectedThisMonth = currentMonthFees.sumOf { it.paidAmount }
 
             val totalExpectedMonthly = myStudents.sumOf { student ->
-                student.totalFees.toDoubleOrNull() ?: 0.0
+                student.totalFees
             }
 
             val totalPendingThisMonth =

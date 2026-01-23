@@ -2,10 +2,6 @@ package com.zabibtech.alkhair
 
 
 import android.app.Application
-import com.google.firebase.FirebaseApp
-import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
-import com.google.firebase.database.FirebaseDatabase
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
@@ -24,12 +20,6 @@ class MyApp : Application(), androidx.work.Configuration.Provider {
         // Force Light Mode
         androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
 
-        FirebaseApp.initializeApp(this)
-        val firebaseAppCheck = FirebaseAppCheck.getInstance()
-        firebaseAppCheck.installAppCheckProviderFactory(
-            PlayIntegrityAppCheckProviderFactory.getInstance()
-        )
-        // Offline persistence
-        FirebaseDatabase.getInstance().setPersistenceEnabled(false)
+        // Offline persistence - Removed for Supabase
     }
 }

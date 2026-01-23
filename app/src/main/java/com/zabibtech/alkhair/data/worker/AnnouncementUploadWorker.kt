@@ -6,7 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
 import com.zabibtech.alkhair.data.local.local_repos.LocalAnnouncementRepository
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseAnnouncementRepository
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseAnnouncementRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +18,7 @@ class AnnouncementUploadWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val localAnnouncementRepository: LocalAnnouncementRepository,
     private val pendingDeletionDao: PendingDeletionDao,
-    private val firebaseAnnouncementRepository: FirebaseAnnouncementRepository
+    private val supabaseAnnouncementRepository: SupabaseAnnouncementRepository
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -26,7 +26,7 @@ class AnnouncementUploadWorker @AssistedInject constructor(
             // Task 1: Upload Unsynced Announcements
             val unsyncedAnnouncements = localAnnouncementRepository.getUnsyncedAnnouncements()
             if (unsyncedAnnouncements.isNotEmpty()) {
-                val result = firebaseAnnouncementRepository.saveAnnouncementBatch(unsyncedAnnouncements)
+                val result = supabaseAnnouncementRepository.saveAnnouncementBatch(unsyncedAnnouncements)
                 if (result.isSuccess) {
                     localAnnouncementRepository.markAnnouncementsAsSynced(unsyncedAnnouncements.map { it.id })
                 } else {
@@ -37,7 +37,7 @@ class AnnouncementUploadWorker @AssistedInject constructor(
             // Task 2: Handle Pending Deletions
             val pendingDeletions = pendingDeletionDao.getPendingDeletionsByType("ANNOUNCEMENT")
             if (pendingDeletions.isNotEmpty()) {
-                val result = firebaseAnnouncementRepository.deleteAnnouncementBatch(pendingDeletions.map { it.id })
+                val result = supabaseAnnouncementRepository.deleteAnnouncementBatch(pendingDeletions.map { it.id })
                 if (result.isSuccess) {
                     pendingDeletionDao.removePendingDeletions(pendingDeletions.map { it.id })
                 } else {

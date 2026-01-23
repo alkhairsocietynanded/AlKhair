@@ -34,7 +34,7 @@ import com.zabibtech.alkhair.data.models.PendingDeletion
         DivisionModel::class,
         PendingDeletion::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

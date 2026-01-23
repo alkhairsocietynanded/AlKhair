@@ -4,12 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zabibtech.alkhair.data.manager.AppDataSyncManager
+import com.zabibtech.alkhair.data.manager.UserRepoManager
 import com.zabibtech.alkhair.data.manager.AttendanceRepoManager
 import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager
-import com.zabibtech.alkhair.data.manager.UserRepoManager
 import com.zabibtech.alkhair.data.models.DashboardStats
 import com.zabibtech.alkhair.di.ApplicationScope
-import com.zabibtech.alkhair.ui.main.Temp
 import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
@@ -28,7 +27,6 @@ import java.util.Calendar
 import javax.inject.Inject
 
 
-
 @HiltViewModel
 class AdminDashboardViewModel @Inject constructor(
     private val appDataSyncManager: AppDataSyncManager,
@@ -41,6 +39,9 @@ class AdminDashboardViewModel @Inject constructor(
     init {
         triggerBackgroundSync()
     }
+
+
+
     private fun triggerBackgroundSync() {
         // ✅ 2. Use externalScope to run sync
         // This coroutine will NOT be cancelled when MainActivity finishes.

@@ -2,17 +2,24 @@ package com.zabibtech.alkhair.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(tableName = "announcements")
-@com.google.firebase.database.IgnoreExtraProperties
+
 data class Announcement(
     @PrimaryKey
     val id: String = "",
     val title: String = "",
     val content: String = "",
-    val timeStamp: Long = 0,
-    val target: String = "ALL", // Values: "ALL" or Class Name (e.g., "Class 10")
+    // timestamp is BigInt in SQL
+    val timeStamp: Long = 0, 
+    @SerialName("target_id")
+    val target: String = "ALL", // Mapped to target_id
+    @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
-    @get:com.google.firebase.database.Exclude
+    @SerialName("is_synced")
+
     override val isSynced: Boolean = true
 ) : Syncable

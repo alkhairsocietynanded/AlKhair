@@ -1,9 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services")
-    id ("kotlin-parcelize")
-    id ("com.google.dagger.hilt.android")
+    alias(libs.plugins.kotlin.serialization)
+
+    id("kotlin-parcelize")
+    id("com.google.dagger.hilt.android")
     kotlin("kapt") // kapt zaroori hai
 }
 
@@ -53,7 +54,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.fragment.ktx)
-    implementation(libs.firebase.appcheck.playintegrity)
+
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.hilt.common)
@@ -61,30 +62,25 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.database)
-    implementation(libs.firebase.storage)
-    implementation(libs.firebase.appcheck)
-    implementation(libs.firebase.appcheck.playintegrity)
+
 
     // MVVM + Coroutines
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services) // for Task.await()
+    implementation(libs.kotlinx.serialization.json)
 // UI
     implementation(libs.androidx.recyclerview)
     implementation(libs.view)
 
 // Hilt
-    implementation (libs.hilt.android)
-    kapt (libs.hilt.compiler)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
 
     // ViewModel integration (agar chahiye)
 //    implementation (libs.androidx.hilt.lifecycle.viewmodel)
-    kapt (libs.androidx.hilt.compiler)
+    kapt(libs.androidx.hilt.compiler)
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.gson)
@@ -104,4 +100,11 @@ dependencies {
 
     // ✅ ML Kit Barcode Scanning (BUNDLED version - No internet needed)
     implementation(libs.barcode.scanning)
+
+    // Supabase
+    implementation(platform(libs.bom))
+    implementation(libs.postgrest.kt)
+    implementation(libs.ktor.client.android)
+    implementation(libs.auth.kt)
+    implementation(libs.storage.kt)
 }

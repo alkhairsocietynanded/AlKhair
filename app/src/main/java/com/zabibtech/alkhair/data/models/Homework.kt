@@ -4,24 +4,34 @@ import android.os.Parcelable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Parcelize
 @Entity(tableName = "homework")
-@com.google.firebase.database.IgnoreExtraProperties
+
 data class Homework(
     @PrimaryKey
     val id: String = "",
+    @SerialName("class_id")
     val classId: String = "",
-    val className: String = "",
+    @SerialName("class_name")
+    val className: String = "", // Likely fetched via join
     val division: String = "",
     val shift: String = "",
     val subject: String = "",
     val title: String = "",
     val description: String = "",
-    val date: String = "",
-    val teacherId: String = "",
+    @SerialName("due_date")
+    val date: String = "", // Mapped to due_date in SQL
+    @SerialName("teacher_id")
+    val teacherId: String? = null,
+    @SerialName("attachment_url")
     val attachmentUrl: String? = null,
+    @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
-    @get:com.google.firebase.database.Exclude
+    @SerialName("is_synced")
+
     override val isSynced: Boolean = true
-) :Parcelable, Syncable //
+) :Parcelable, Syncable

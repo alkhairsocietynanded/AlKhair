@@ -147,7 +147,8 @@ class AttendanceViewModel @Inject constructor(
             val todayDate = DateUtils.formatDate(Calendar.getInstance())
 
             // Teacher details fetch karein
-            val targetClassId = if (!currentUser?.classId.isNullOrBlank()) currentUser.classId else Constants.STAFF_CLASS_ID
+            // Teacher details fetch karein
+            val targetClassId = currentUser?.classId?.takeIf { it.isNotBlank() } ?: Constants.STAFF_CLASS_ID
             val targetShift = currentUser?.shift ?: "General" // ✅ Get Teacher's Shift
 
             val attendanceRecord = Attendance(

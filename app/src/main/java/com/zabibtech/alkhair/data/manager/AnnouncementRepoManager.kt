@@ -5,8 +5,7 @@ import com.zabibtech.alkhair.data.local.local_repos.LocalAnnouncementRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
 import com.zabibtech.alkhair.data.models.Announcement
 import com.zabibtech.alkhair.data.models.DeletedRecord
-import com.zabibtech.alkhair.data.remote.firebase.FirebaseAnnouncementRepository
-import com.zabibtech.alkhair.utils.FirebaseRefs
+import com.zabibtech.alkhair.data.remote.supabase.SupabaseAnnouncementRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -26,7 +25,7 @@ import androidx.work.OneTimeWorkRequest
 @Singleton
 class AnnouncementRepoManager @Inject constructor(
     private val localAnnouncementRepo: LocalAnnouncementRepository,
-    private val firebaseAnnouncementRepo: FirebaseAnnouncementRepository,
+    private val remoteRepo: SupabaseAnnouncementRepository,
     private val workManager: WorkManager,
     private val pendingDeletionDao: PendingDeletionDao
 ) : BaseRepoManager<Announcement>() {
@@ -48,7 +47,7 @@ class AnnouncementRepoManager @Inject constructor(
 
     // 1. Global Sync (Used by AppDataSyncManager for ADMIN)
     override suspend fun fetchRemoteUpdated(after: Long): List<Announcement> {
-        return firebaseAnnouncementRepo.getAnnouncementsUpdatedAfter(after)
+        return remoteRepo.getAnnouncementsUpdatedAfter(after)
             .getOrElse {
                 Log.e("AnnouncementRepo", "Global sync failed", it)
                 emptyList()
@@ -57,7 +56,7 @@ class AnnouncementRepoManager @Inject constructor(
 
     // 2. Targeted Sync (Used by AppDataSyncManager for STUDENT/TEACHER)
     suspend fun syncTargetAnnouncements(target: String, lastSync: Long): Result<Unit> {
-        return firebaseAnnouncementRepo.getAnnouncementsForTargetUpdatedAfter(target, lastSync)
+        return remoteRepo.getAnnouncementsForTargetUpdatedAfter(target, lastSync)
             .onSuccess { list ->
                 if (list.isNotEmpty()) {
                     insertLocal(list) // Save to Room
