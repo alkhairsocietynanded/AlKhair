@@ -47,6 +47,7 @@ class UserFormActivity : AppCompatActivity() {
     private var role = Roles.STUDENT
     private var mode = Modes.CREATE
     private var userToEdit: User? = null
+    private var loadedDivisions: List<DivisionModel> = emptyList() // ✅ Store divisions
 
     // Selection State
     private var selectedClassId: String? = null
@@ -105,9 +106,9 @@ class UserFormActivity : AppCompatActivity() {
 
         // 2. Password Visibility (Admin or New User only)
         layoutPassword.apply {
-            visibility = when {
-                mode == Modes.CREATE -> View.VISIBLE
-                mode == Modes.UPDATE && role == Roles.ADMIN -> View.VISIBLE
+            visibility = when (mode) {
+                Modes.CREATE -> View.VISIBLE
+                Modes.UPDATE if role == Roles.ADMIN -> View.VISIBLE
                 else -> View.GONE
             }
             isEnabled = true
@@ -225,6 +226,7 @@ class UserFormActivity : AppCompatActivity() {
                         }
                         is UiState.Success -> {
                             val data = state.data
+                            loadedDivisions = data.divisions // ✅ Cache list
                             setupDropdowns(data.divisions, data.classes)
                         }
                         is UiState.Error -> {
@@ -264,12 +266,17 @@ class UserFormActivity : AppCompatActivity() {
     }
 
     private fun handleSave() {
+        // Resolve Division ID from cached list based on name in EditText
+        val divisionName = binding.etDivision.text.toString()
+        val selectedDivisionId = loadedDivisions.find { it.name == divisionName }?.id
+
         // Use Builder to construct object from Views
         val user = UserBuilder.build(
             binding = binding,
             role = role,
             mode = mode,
             selectedClassId = selectedClassId,
+            selectedDivisionId = selectedDivisionId, // ✅ Pass ID
             userToEdit = userToEdit
         ) ?: return
 

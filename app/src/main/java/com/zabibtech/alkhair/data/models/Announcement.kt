@@ -19,7 +19,8 @@ data class Announcement(
     val target: String = "ALL", // Mapped to target_id
     @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
+    
+    @kotlinx.serialization.Transient
     @SerialName("is_synced")
-
     override val isSynced: Boolean = true
 ) : Syncable

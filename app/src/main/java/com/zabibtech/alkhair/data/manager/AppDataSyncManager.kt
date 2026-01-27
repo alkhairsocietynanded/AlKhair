@@ -89,8 +89,26 @@ class AppDataSyncManager @Inject constructor(
 
                 supervisorScope {
 
-                    // List to hold all sync jobs.
-                    // Type is Result<Any> to accommodate both Result<Long> (timestamps) and Result<Unit> (void).
+                    // ====================================================
+                    // 🌍 1. SYNC CLASSES & DIVISIONS FIRST (Sequential)
+                    // ====================================================
+                    // Important for hydration (User names, Homework division names etc).
+                    // We sync these sequentially and await result before proceeding.
+                    Log.d(TAG, "Step 1: Syncing Metadata (Classes/Divisions)")
+                    
+                    val classJob = async { classDivisionRepoManager.syncClasses(queryTime).map { it as Any } }
+                    val divJob = async { classDivisionRepoManager.syncDivisions(queryTime).map { it as Any } }
+                    
+                    // Await Metadata
+                    val metadataResults = listOf(classJob, divJob).awaitAll()
+                    Log.d(TAG, "Step 1 Finished: Metadata Synced.")
+
+
+                    // ====================================================
+                    // 🚀 2. SYNC DEPENDENT DATA (Parallel)
+                    // ====================================================
+                    Log.d(TAG, "Step 2: Syncing Dependent Entities")
+                    // List to hold remaining sync jobs.
                     val syncJobs = mutableListOf<Deferred<Result<Any>>>()
 
                     // ====================================================
@@ -169,20 +187,17 @@ class AppDataSyncManager @Inject constructor(
                     }
 
                     // ====================================================
-                    // 🌍 COMMON JOBS (Metadata & Deletions) - For All Roles
+                    // 🌍 COMMON JOBS (Deletions) - For All Roles
                     // ====================================================
-                    Log.d(TAG, "Syncing common jobs")
-                    syncJobs.add(async { classDivisionRepoManager.syncClasses(queryTime).map { it as Any } })
-                    syncJobs.add(async { classDivisionRepoManager.syncDivisions(queryTime).map { it as Any } })
-
+                    
                     if (!isFirstSync) {
                         Log.d(TAG, "Syncing deletions")
                         syncJobs.add(async { syncDeletions(queryTime).map { it as Any } })
                     }
 
                     // --- EXECUTION & TIMESTAMP CALCULATION ---
-                    Log.d(TAG, "Awaiting all sync jobs.")
-                    val results = syncJobs.awaitAll()
+                    Log.d(TAG, "Awaiting dependent sync jobs.")
+                    val results = syncJobs.awaitAll() + metadataResults // Merge results for timestamp calc
                     Log.d(TAG, "All sync jobs finished.")
 
                     // Calculate Max Timestamp to update local sync time correctly

@@ -70,7 +70,7 @@ class StudentSignupActivity : AppCompatActivity() {
                 divisionName = section
             )
 
-            viewModel.signup(email, password, student)
+            viewModel.signup(student)
         }
     }
 

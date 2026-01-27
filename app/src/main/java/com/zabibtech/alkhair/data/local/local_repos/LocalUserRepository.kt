@@ -11,6 +11,7 @@ class LocalUserRepository @Inject constructor(
     fun getUserById(uid: String): Flow<User?> = userDao.getUserById(uid)
 
     suspend fun getUserByIdOneShot(uid: String): User? = userDao.getUserByIdOneShot(uid)
+    suspend fun getUsersByIds(uids: List<String>): List<User> = userDao.getUsersByIds(uids)
 
     fun getAllUsers(): Flow<List<User>> = userDao.getAllUsers()
 

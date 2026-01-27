@@ -13,9 +13,11 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.FeesModel
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.DialogAddEditFeesBinding
+import com.zabibtech.alkhair.utils.DateUtils
 import com.zabibtech.alkhair.utils.FeeUtils
 import com.zabibtech.alkhair.utils.getParcelableCompat
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.Locale
 
 class AddEditFeesDialog : BottomSheetDialogFragment() {
@@ -88,11 +90,40 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 val (year, month) = it.monthYear.split("-")
                 binding.spinnerMonth.setText(month, false)
                 binding.spinnerYear.setText(year, false)
+
+                if (it.paymentDate.isNotBlank()) {
+                    try {
+                        val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(it.paymentDate)
+                        if (date != null) {
+                            binding.etPaymentDate.setText(
+                                SimpleDateFormat(
+                                    "dd MMM yyyy",
+                                    Locale.US
+                                ).format(date)
+                            )
+                            binding.etPaymentDate.tag = it.paymentDate
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             }
         } else {
             // Add Mode
             binding.tvDialogTitle.text = "Add Fee"
             binding.btnSave.text = "Save"
+
+            // Auto-select current month and year using DateUtils
+            binding.spinnerMonth.setText(DateUtils.currentMonthNameFull(), false)
+            binding.spinnerYear.setText(DateUtils.currentYear(), false)
+
+            // Auto-fill Payment Date with Today
+            val todayCal = java.util.Calendar.getInstance()
+            val displayDate = DateUtils.formatDate(todayCal, "dd MMM yyyy")
+            val dbDate = DateUtils.formatDate(todayCal, "yyyy-MM-dd")
+
+            binding.etPaymentDate.setText(displayDate)
+            binding.etPaymentDate.tag = dbDate
         }
         updateCalculatedNet()
     }
@@ -122,6 +153,40 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
     }
 
     private fun setupButtons() {
+        // Date Picker Logic
+        val dateClick = View.OnClickListener {
+            val calendar = java.util.Calendar.getInstance()
+            if (!binding.etPaymentDate.text.isNullOrBlank()) {
+                try {
+                    // Tag contains "yyyy-MM-dd"
+                    val date = SimpleDateFormat(
+                        "yyyy-MM-dd",
+                        Locale.US
+                    ).parse(binding.etPaymentDate.tag.toString())
+                    if (date != null) {
+                        calendar.time = date
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            DateUtils.showMaterialDatePicker(
+                parentFragmentManager,
+                calendar
+            ) { newCalendar ->
+                val dbFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                val displayFormat = SimpleDateFormat("dd MMM yyyy", Locale.US)
+                val date = newCalendar.time
+
+                binding.etPaymentDate.setText(displayFormat.format(date))
+                binding.etPaymentDate.tag = dbFormat.format(date) // Save DB format in tag
+            }
+        }
+
+        binding.etPaymentDate.setOnClickListener(dateClick)
+        binding.tilPaymentDate.setEndIconOnClickListener(dateClick)
+
         binding.btnSave.setOnClickListener {
             val student = user
             if (student == null) {
@@ -142,6 +207,9 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
             val paid = binding.etPaidAmount.text.toString().toDoubleOrNull() ?: 0.0
             val disc = binding.etDiscounts.text.toString().toDoubleOrNull() ?: 0.0
             val remarks = binding.etNotes.text.toString()
+
+            // Read Payment Date from UI (tag holds the DB format yyyy-MM-dd)
+            val paymentDate = binding.etPaymentDate.tag?.toString() ?: ""
 
             if (base <= 0) {
                 binding.tilBaseAmount.error = "Base Amount must be greater than 0"
@@ -168,7 +236,8 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 dueAmount = dueAmount,
                 netFees = base - disc,
                 paymentStatus = paymentStatus,
-                remarks = remarks
+                remarks = remarks,
+                paymentDate = paymentDate
             ) ?: FeesModel(
                 studentId = student.uid,
                 studentName = student.name,
@@ -181,7 +250,8 @@ class AddEditFeesDialog : BottomSheetDialogFragment() {
                 discounts = disc,
                 netFees = base - disc,
                 paymentStatus = paymentStatus,
-                remarks = remarks
+                remarks = remarks,
+                paymentDate = paymentDate
             )
 
             feesViewModel.saveFee(fees)

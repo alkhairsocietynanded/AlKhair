@@ -19,7 +19,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit  
+import java.util.concurrent.TimeUnit
 import androidx.work.OneTimeWorkRequest
 
 @Singleton
@@ -27,8 +27,48 @@ class SalaryRepoManager @Inject constructor(
     private val localRepo: LocalSalaryRepository,
     private val remoteRepo: SupabaseSalaryRepository,
     private val workManager: WorkManager,
-    private val pendingDeletionDao: PendingDeletionDao
+    private val pendingDeletionDao: PendingDeletionDao,
+    private val localUserRepository: com.zabibtech.alkhair.data.local.local_repos.LocalUserRepository
 ) : BaseRepoManager<SalaryModel>() {
+
+    /* ============================================================
+       📦 SSOT — LOCAL OBSERVATION
+       ============================================================ */
+// ... (existing code)
+
+    /* ============================================================
+       🔧 LOCAL HELPER OVERRIDES (With Hydration)
+       ============================================================ */
+
+    override suspend fun insertLocal(items: List<SalaryModel>) {
+        val hydrated = hydrateSalaries(items)
+        localRepo.insertSalaries(hydrated)
+    }
+
+    override suspend fun insertLocal(item: SalaryModel) {
+        val hydrated = hydrateSalaries(listOf(item)).first()
+        localRepo.insertSalary(hydrated)
+    }
+
+    // 💧 Hydration Logic
+    private suspend fun hydrateSalaries(salaries: List<SalaryModel>): List<SalaryModel> {
+        if (salaries.isEmpty()) return salaries
+
+        // 1. Collect staff IDs
+        val staffIds = salaries.map { it.staffId }.distinct()
+
+        // 2. Bulk fetch Users
+        val userMap = localUserRepository.getUsersByIds(staffIds).associateBy { it.uid }
+
+        // 3. Populate Names based on Match
+        return salaries.map { salary ->
+            val staff = userMap[salary.staffId]
+            salary.copy(
+                staffName = staff?.name ?: salary.staffName
+            )
+        }
+    }
+
 
     /* ============================================================
        📦 SSOT — LOCAL OBSERVATION
@@ -65,10 +105,11 @@ class SalaryRepoManager @Inject constructor(
        ============================================================ */
 
     suspend fun createSalary(salary: SalaryModel): Result<Unit> {
+        Log.d("SalaryRepoManager", "createSalary called for: ${salary.staffName}")
         // 1. Prepare Local Data
         val newId = salary.id.ifEmpty { java.util.UUID.randomUUID().toString() }
         val currentTime = System.currentTimeMillis()
-        
+
         val newSalary = salary.copy(
             id = newId,
             netSalary = salary.calculateNet(),
@@ -80,10 +121,11 @@ class SalaryRepoManager @Inject constructor(
 
         // 2. Insert Local Immediately
         insertLocal(newSalary)
-        
+        Log.d("SalaryRepoManager", "Inserted local salary: $newId. Scheduling worker...")
+
         // 3. Schedule Background Sync
         scheduleUploadWorker()
-        
+
         return Result.success(Unit)
     }
 
@@ -96,20 +138,20 @@ class SalaryRepoManager @Inject constructor(
             netSalary = salary.calculateNet(),
             isSynced = false
         )
-        
+
         // 2. Insert Local Immediately
         insertLocal(updatedLocalSalary)
-        
+
         // 3. Schedule Background Sync
         scheduleUploadWorker()
-        
+
         return Result.success(Unit)
     }
 
     suspend fun deleteSalary(id: String): Result<Unit> {
         // 1. Delete Local
         deleteLocally(id)
-        
+
         // 2. Mark for deletion
         val pendingDeletion = PendingDeletion(
             id = id,
@@ -117,14 +159,15 @@ class SalaryRepoManager @Inject constructor(
             timestamp = System.currentTimeMillis()
         )
         pendingDeletionDao.insertPendingDeletion(pendingDeletion)
-        
+
         // 3. Schedule Upload Worker
         scheduleUploadWorker()
-        
+
         return Result.success(Unit)
     }
-    
+
     private fun scheduleUploadWorker() {
+        Log.d("SalaryRepoManager", "scheduleUploadWorker called")
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
@@ -146,8 +189,7 @@ class SalaryRepoManager @Inject constructor(
     }
 
     // Base Implementations (Ensure these methods exist in LocalRepo)
-    override suspend fun insertLocal(items: List<SalaryModel>) = localRepo.insertSalaries(items)
-    override suspend fun insertLocal(item: SalaryModel) = localRepo.insertSalary(item)
+    // insertLocal is overridden above with hydration logic
     override suspend fun deleteLocally(id: String) = localRepo.deleteSalary(id)
     override suspend fun clearLocal() = localRepo.clearAll()
 }

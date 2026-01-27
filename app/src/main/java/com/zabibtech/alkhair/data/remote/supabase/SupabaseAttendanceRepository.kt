@@ -28,7 +28,7 @@ class SupabaseAttendanceRepository @Inject constructor(
                     classId = classId,
                     date = date,
                     status = status,
-                    shift = safeShift,
+                    // shift = safeShift, // Removed from Supabase payload
                     updatedAt = currentTime,
                     isSynced = true // Remote is always synced relative to itself
                 )
@@ -78,18 +78,14 @@ class SupabaseAttendanceRepository @Inject constructor(
 
     suspend fun getAttendanceForClassAndShiftUpdatedAfter(
         classId: String,
-        shift: String,
+        shift: String, // Kept for signature compatibility but unused
         timestamp: Long
     ): Result<List<Attendance>> {
         return try {
-            val safeShift = shift.ifBlank { "General" }
             val list = supabase.from("attendance").select {
                 filter {
                     Attendance::classId eq classId
                     Attendance::updatedAt gt timestamp
-                    if (safeShift != "All") {
-                        Attendance::shift eq safeShift
-                    }
                 }
             }.decodeList<Attendance>()
             Result.success(list)

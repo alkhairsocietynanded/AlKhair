@@ -52,6 +52,7 @@ auth-kt = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "bo
 barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
 bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "bom" }
 
+functions-kt = { module = "io.github.jan-tennert.supabase:functions-kt" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }

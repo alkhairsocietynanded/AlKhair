@@ -25,8 +25,11 @@ class FeesRepoManager @Inject constructor(
     private val localRepo: LocalFeesRepository,
     private val remoteRepo: SupabaseFeesRepository,
     private val pendingDeletionDao: PendingDeletionDao,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val localUserRepository: com.zabibtech.alkhair.data.local.local_repos.LocalUserRepository
 ) : BaseRepoManager<FeesModel>() {
+
+
 
     /* ============================================================
        📦 READ — SSOT (Flow from Room)
@@ -131,16 +134,40 @@ class FeesRepoManager @Inject constructor(
     }
 
     /* ============================================================
-       🔧 LOCAL HELPER OVERRIDES
+       🔧 LOCAL HELPER OVERRIDES (With Hydration)
        ============================================================ */
 
-    override suspend fun insertLocal(items: List<FeesModel>) =
-        localRepo.insertFees(items)
+    override suspend fun insertLocal(items: List<FeesModel>) {
+        val hydrated = hydrateFees(items)
+        localRepo.insertFees(hydrated)
+    }
 
-    override suspend fun insertLocal(item: FeesModel) =
-        localRepo.insertFee(item)
+    override suspend fun insertLocal(item: FeesModel) {
+        val hydrated = hydrateFees(listOf(item)).first()
+        localRepo.insertFee(hydrated)
+    }
 
     override suspend fun deleteLocally(id: String) =
         localRepo.deleteFee(id)
     override suspend fun clearLocal() = localRepo.clearAll()
+    
+    // 💧 Hydration Logic
+    private suspend fun hydrateFees(fees: List<FeesModel>): List<FeesModel> {
+        if (fees.isEmpty()) return fees
+
+        // 1. Collect student IDs
+        val studentIds = fees.map { it.studentId }.distinct()
+
+        // 2. Bulk fetch Users
+        val userMap = localUserRepository.getUsersByIds(studentIds).associateBy { it.uid }
+
+        // 3. Populate Names/Shifts
+        return fees.map { fee ->
+            val student = userMap[fee.studentId]
+            fee.copy(
+                studentName = student?.name ?: fee.studentName,
+                shift = if (fee.shift.isBlank()) student?.shift ?: "" else fee.shift
+            )
+        }
+    }
 }

@@ -55,7 +55,9 @@ class DropdownHelper(
         classView: AutoCompleteTextView,
         preSelectedClass: String? = null
     ) {
-        val filteredClasses = allClasses.filter { it.division == divisionName }
+        // ✅ Fix: Filter by divisionId, not division name (which might be empty after sync)
+        val divisionId = allDivisions.find { it.name == divisionName }?.id
+        val filteredClasses = allClasses.filter { it.divisionId == divisionId }
         val classNames = filteredClasses.map { it.className }
 
         classView.setAdapter(

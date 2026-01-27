@@ -138,7 +138,7 @@ class UserViewModel @Inject constructor(
         Log.d(TAG, "createUser: Attempting to create user: ${user.email}")
         _mutationState.value = UiState.Loading
         viewModelScope.launch {
-            authRepoManager.signup(user.email, user.password, user).fold(
+            authRepoManager.signup(user).fold(
                 onSuccess = {
                     Log.d(TAG, "createUser: Success for user: ${it.email}")
                     _mutationState.value = UiState.Success(it)

@@ -74,7 +74,7 @@ class ClassManagerActivity : AppCompatActivity() {
             onEdit = { classModel ->
                 val sheet = AddClassSheet.newInstance(
                     divisions = currentDivisions.map { it.name },
-                    existingDivision = classModel.division,
+                    existingDivision = classModel.divisionName,
                     existingClassName = classModel.className,
                     existingClassId = classModel.id
                 )
@@ -101,7 +101,7 @@ class ClassManagerActivity : AppCompatActivity() {
                     putExtra("role", role)
                     putExtra("classId", classModel.id)
                     putExtra("className", classModel.className)
-                    putExtra("division", classModel.division)
+                    putExtra("division", classModel.divisionName)
                 }
                 startActivity(target)
             }
@@ -177,14 +177,20 @@ class ClassManagerActivity : AppCompatActivity() {
 
     private fun buildListItems(divisions: List<DivisionModel>, classes: List<ClassModel>): List<ClassListItem> {
         if (divisions.isEmpty()) return emptyList()
-
+        
         val items = mutableListOf<ClassListItem>()
-        val groupedClasses = classes.groupBy { it.division }
-
-        divisions.forEach { div ->
-            val classList = groupedClasses[div.name]
+        // ✅ Fix: Group by divisionId (since division name might be empty)
+        val groupedClasses = classes.groupBy { it.divisionId }
+        
+        // Sort divisions if needed, e.g. alphabetical
+        val sortedDivisions = divisions.sortedBy { it.name }
+        
+        sortedDivisions.forEach { div ->
+            items.add(ClassListItem.Header(div.name))
+            
+            // ✅ Fix: Access by Division ID
+            val classList = groupedClasses[div.id]
             if (!classList.isNullOrEmpty()) {
-                items.add(ClassListItem.Header(div.name))
                 items.addAll(classList.map { ClassListItem.ClassItem(it) })
             }
         }

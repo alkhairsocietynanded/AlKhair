@@ -23,6 +23,8 @@ object DateUtils {
 
     fun currentYear(): String = formatDate(Calendar.getInstance(), "yyyy")
 
+    fun currentMonthNameFull(): String = formatDate(Calendar.getInstance(), "MMMM")
+
     // --- Helper: Current month index (0 = Jan, 11 = Dec) ---
     fun getCurrentMonthIndex(): Int {
         return Calendar.getInstance().get(Calendar.MONTH)

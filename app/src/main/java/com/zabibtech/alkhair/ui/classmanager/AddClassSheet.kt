@@ -69,19 +69,25 @@ class AddClassSheet : BottomSheetDialogFragment() {
                 context = requireContext(),
                 title = "Create New Division",
                 message = "Division '$division' does not exist. Do you want to create it?",
-                positiveText = "Create"
-            ) {
-                viewModel.addDivision(division)
-                saveClass(division, className)
-            }
+                positiveText = "Create",
+                onConfirmed = {
+                      android.util.Log.d("AddClassSheet", "User confirmed creation of division: $division")
+                      // ⚠️ IMPORTANT: Do NOT call viewModel.addDivision() explicitly here.
+                      // The RepoManager.addClass() function now automatically handles creating 
+                      // the division if it's missing, inside the same flow. 
+                      // Calling it twice here causes race conditions and UI bugs.
+                      saveClass(division, className)
+                }
+            )
         }
     }
     private fun saveClass(division: String, className: String) {
+        android.util.Log.d("AddClassSheet", "Saving class: $className in $division")
         if (existingClassId != null) {
             // Update existing class
             val updatedClass = ClassModel(
                 id = existingClassId!!,
-                division = division,
+                divisionName = division,
                 className = className
             )
             viewModel.updateClass(updatedClass)

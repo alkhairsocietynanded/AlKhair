@@ -23,7 +23,6 @@ data class User(
     // Transient password for UI/Signup flow only - DO NOT SAVE TO DB
     @androidx.room.Ignore
     @kotlinx.serialization.Transient
-
     var password: String = "",
 
     @SerialName("role")
@@ -47,11 +46,14 @@ data class User(
     
     // These might be joins in Supabase, but for local cache we might keep them or fetch via relation
     // For now we keep them but they might be null if not joined
+    // These might be joins in Supabase, but for local cache we might keep them or fetch via relation
+    // For now we keep them but they might be null if not joined
     @SerialName("class_name")
-    var className: String = "", 
+    var className: String = "",
+    
     @SerialName("division_name")
     var divisionName: String = "",
-
+    
     var subject: String = "",
     var shift: String = "General",
     
@@ -65,23 +67,30 @@ data class User(
     
     // Derived/Snapshot fields (SQL table has total_fees, salary)
     // paidFees and dueFees might be calculated clientside or joined
+    @kotlinx.serialization.Transient
     @SerialName("paid_fees")
     var paidFees: Double = 0.0,
+    
+    @kotlinx.serialization.Transient
     @SerialName("due_fees")
     var dueFees: Double = 0.0,
 
     // 🔹 Salary-related (for Teachers)
     var salary: Double = 0.0,
+    
+    @kotlinx.serialization.Transient
     @SerialName("paid_salary")
     var paidSalary: Double = 0.0,
+    
+    @kotlinx.serialization.Transient
     @SerialName("due_salary")
     var dueSalary: Double = 0.0,
 
     @SerialName("updated_at")
     override var updatedAt: Long = System.currentTimeMillis(),
     
+    @kotlinx.serialization.Transient
     @SerialName("is_synced")
-
     override var isSynced: Boolean = true
 ) : Parcelable, Syncable
 

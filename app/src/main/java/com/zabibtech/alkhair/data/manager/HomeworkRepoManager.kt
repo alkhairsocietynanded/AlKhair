@@ -1,14 +1,11 @@
 package com.zabibtech.alkhair.data.manager
 
 import android.net.Uri
-import android.util.Log
 import com.zabibtech.alkhair.data.local.local_repos.LocalHomeworkRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
-import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.Homework
 import com.zabibtech.alkhair.data.remote.supabase.SupabaseHomeworkRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
@@ -20,8 +17,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit  
-import androidx.work.OneTimeWorkRequest
+import java.util.concurrent.TimeUnit
 
 @Singleton
 class HomeworkRepoManager @Inject constructor(
@@ -29,7 +25,10 @@ class HomeworkRepoManager @Inject constructor(
     private val remoteRepo: SupabaseHomeworkRepository,
     private val storageManager: StorageManager,
     private val pendingDeletionDao: PendingDeletionDao,
-    private val workManager: WorkManager
+
+    private val workManager: WorkManager,
+    private val classRepo: com.zabibtech.alkhair.data.local.local_repos.LocalClassRepository,
+    private val divisionRepo: com.zabibtech.alkhair.data.local.local_repos.LocalDivisionRepository
 ) : BaseRepoManager<Homework>() {
 
     /* ============================================================
@@ -50,14 +49,40 @@ class HomeworkRepoManager @Inject constructor(
        ============================================================ */
 
     // 1. Global Sync (Admin)
-    override suspend fun fetchRemoteUpdated(after: Long): List<Homework> =
-        remoteRepo.getHomeworkUpdatedAfter(after).getOrElse { emptyList() }
+    override suspend fun fetchRemoteUpdated(after: Long): List<Homework> {
+        val remoteList = remoteRepo.getHomeworkUpdatedAfter(after).getOrElse { emptyList() }
+        // Hydrate className AND division locally
+        return remoteList.map { homework ->
+            val fetchedClass = classRepo.getClassById(homework.classId)
+            var divName = ""
+            if (fetchedClass?.divisionId != null) {
+                val fetchedDiv = divisionRepo.getDivisionById(fetchedClass.divisionId)
+                divName = fetchedDiv?.name ?: ""
+            }
+            homework.copy(
+                className = fetchedClass?.className ?: "",
+                divisionName = divName
+            )
+        }
+    }
 
     // 2. Class Targeted Sync (Student) - ✅ New Optimization
     suspend fun syncClassHomework(classId: String, shift: String, lastSync: Long): Result<Unit> {
         return remoteRepo.getHomeworkForClassAndShiftUpdatedAfter(classId, shift, lastSync)
             .onSuccess { list ->
-                if (list.isNotEmpty()) insertLocal(list)
+                if (list.isNotEmpty()) {
+                    // Hydrate with known name if possible, or lookup
+                    val fetchedClass = classRepo.getClassById(classId)
+                    val className = fetchedClass?.className ?: ""
+                    var divName = ""
+                    if (fetchedClass?.divisionId != null) {
+                         val fetchedDiv = divisionRepo.getDivisionById(fetchedClass.divisionId)
+                         divName = fetchedDiv?.name ?: ""
+                    }
+                    
+                    val hydratedList = list.map { it.copy(className = className, divisionName = divName) }
+                    insertLocal(hydratedList)
+                }
             }
             .map { }
     }

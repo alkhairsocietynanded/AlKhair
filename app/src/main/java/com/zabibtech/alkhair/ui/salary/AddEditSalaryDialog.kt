@@ -14,6 +14,7 @@ import com.zabibtech.alkhair.R
 import com.zabibtech.alkhair.data.models.SalaryModel
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.DialogAddEditSalaryBinding
+import com.zabibtech.alkhair.utils.DateUtils
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -107,6 +108,14 @@ class AddEditSalaryDialog : BottomSheetDialogFragment() {
             binding.etTeacherName.setText(selectedTeacher?.name, false)
 
             updateCalculatedNet()
+        } ?: run {
+            // Add Mode Defaults
+            binding.tvDialogTitle.text = getString(R.string.add_salary)
+            binding.btnSave.text = "Save"
+            
+            // Auto-select current month and year using DateUtils
+            binding.spinnerMonth.setText(DateUtils.currentMonthNameFull(), false)
+            binding.spinnerYear.setText(DateUtils.currentYear(), false)
         }
     }
 
@@ -182,25 +191,6 @@ class AddEditSalaryDialog : BottomSheetDialogFragment() {
             dismiss()
         }
     }
-
-    /*    private fun getMonthNumber(monthName: String): String {
-            val monthMap = mapOf(
-                "January" to "01", "February" to "02", "March" to "03",
-                "April" to "04", "May" to "05", "June" to "06",
-                "July" to "07", "August" to "08", "September" to "09",
-                "October" to "10", "November" to "11", "December" to "12"
-            )
-            return monthMap[monthName] ?: ""
-        }
-
-        private fun getMonthName(monthNumber: Int): String {
-            val months = listOf(
-                "January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"
-            )
-            return if (monthNumber in 1..12) months[monthNumber - 1] else ""
-        }*/
-
 
     override fun onDestroyView() {
         super.onDestroyView()

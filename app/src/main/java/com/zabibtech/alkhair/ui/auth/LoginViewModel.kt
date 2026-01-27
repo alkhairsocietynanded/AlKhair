@@ -33,10 +33,10 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun signup(email: String, password: String, user: User) {
+    fun signup(user: User) {
         _loginState.value = UiState.Loading
         viewModelScope.launch {
-            authRepoManager.signup(email, password, user).fold(
+            authRepoManager.signup(user).fold(
                 onSuccess = { savedUser ->
                     _loginState.value = UiState.Success(savedUser)
                 },

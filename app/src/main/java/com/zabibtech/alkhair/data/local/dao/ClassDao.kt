@@ -18,6 +18,12 @@ interface ClassDao {
     @Query("SELECT * FROM classes")
     fun getAllClasses(): Flow<List<ClassModel>>
 
+    @Query("SELECT * FROM classes")
+    suspend fun getAllClassesOneShot(): List<ClassModel>
+
+    @Query("SELECT * FROM classes WHERE id = :classId LIMIT 1")
+    suspend fun getClassById(classId: String): ClassModel?
+
     @Query("DELETE FROM classes WHERE id = :classId")
     suspend fun deleteClass(classId: String)
 

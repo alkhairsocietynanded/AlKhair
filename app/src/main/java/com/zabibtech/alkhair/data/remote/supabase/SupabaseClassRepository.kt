@@ -63,7 +63,7 @@ class SupabaseClassRepository @Inject constructor(
         return try {
             val list = supabase.from("classes").select {
                 filter {
-                    ClassModel::division eq divisionName
+                    ClassModel::divisionName eq divisionName
                 }
             }.decodeList<ClassModel>()
             Result.success(list)

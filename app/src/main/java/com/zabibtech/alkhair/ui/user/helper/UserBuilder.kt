@@ -10,6 +10,7 @@ object UserBuilder {
         role: String,
         mode: String,
         selectedClassId: String?,
+        selectedDivisionId: String?,
         userToEdit: User?
     ): User? {
         val name = binding.etName.text.toString().trim()
@@ -44,6 +45,7 @@ object UserBuilder {
                     email = email,
                     role = Roles.TEACHER,
                     divisionName = division,
+                    divisionId = selectedDivisionId, // ✅ Set Division ID
                     className = className,
                     classId = selectedClassId.orEmpty(),
                     subject = subject,
@@ -72,6 +74,7 @@ object UserBuilder {
                     email = email,
                     role = Roles.STUDENT,
                     divisionName = division,
+                    divisionId = selectedDivisionId, // ✅ Set Division ID
                     className = className,
                     classId = selectedClassId.orEmpty(),
                     phone = phone,

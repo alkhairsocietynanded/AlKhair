@@ -1,9 +1,22 @@
 package com.zabibtech.alkhair.data.remote.supabase
 
 import android.util.Log
+import com.zabibtech.alkhair.data.models.User
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.functions.functions
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,28 +25,49 @@ class SupabaseAuthRepository @Inject constructor(
     private val supabase: SupabaseClient
 ) {
 
-    suspend fun signup(email: String, password: String): Result<String> {
+    suspend fun signup(user: User): Result<String> {
         return try {
-            supabase.auth.signUpWith(Email) {
-                this.email = email
-                this.password = password
+            // ✅ Fix: Use buildJsonObject to avoid "Serializing collections of different element types" error
+            val jsonBody = buildJsonObject {
+                put("email", user.email)
+                put("password", user.password)
+                put("name", user.name)
+                put("role", user.role)
+                put("phone", user.phone)
+                put("address", user.address)
+                put("subject", user.subject)
+                put("shift", user.shift)
+                put("parent_name", user.parentName)
+                put("dob", user.dateOfBirth)
+                put("doj", user.dateOfJoining)
+                put("total_fees", user.totalFees)
+                put("salary", user.salary)
+
+                // Handle Nullables explicitly
+                if (user.classId != null) put("class_id", user.classId)
+                if (user.divisionId != null) put("division_id", user.divisionId)
             }
-            val user = supabase.auth.currentUserOrNull()
-            if (user?.id != null) {
-                Result.success(user.id)
+
+            val response = supabase.functions.invoke("create-user") {
+                contentType(ContentType.Application.Json)
+                setBody(jsonBody)
+            }
+
+            // Response is strictly HttpResponse in this version
+            val responseText = response.bodyAsText()
+            val data = Json.parseToJsonElement(responseText).jsonObject
+
+            // Access properties safely
+            val uid = data["uid"]?.jsonPrimitive?.content
+                ?: data["user"]?.jsonObject?.get("id")?.jsonPrimitive?.content
+
+            if (uid != null) {
+                Result.success(uid)
             } else {
-                // Sometimes signup might require email confirmation, but usually returns user object
-                // If auto-confirm is off, we might get a user but session is null.
-                // For now, assume success if no exception.
-                 // We need the ID to save the profile.
-                 // Check if session is null logic
-                 val session = supabase.auth.currentSessionOrNull()
-                 // If session is null but no error, maybe email confirm needed?
-                 // But for this app, we assume we get the ID.
-                Result.success(user?.id ?: "")
+                Result.failure(Exception("Signup successful but no UID returned"))
             }
         } catch (e: Exception) {
-            Log.e("SupabaseAuthRepo", "Error signing up", e)
+            Log.e("SupabaseAuthRepo", "Error signing up via Edge Function", e)
             Result.failure(e)
         }
     }
@@ -44,7 +78,8 @@ class SupabaseAuthRepository @Inject constructor(
                 this.email = email
                 this.password = password
             }
-            val uid = supabase.auth.currentUserOrNull()?.id ?: throw Exception("Login failed: UID is null")
+            val uid = supabase.auth.currentUserOrNull()?.id
+                ?: throw Exception("Login failed: UID is null")
             Result.success(uid)
         } catch (e: Exception) {
             Log.e("SupabaseAuthRepo", "Error logging in", e)
@@ -64,6 +99,10 @@ class SupabaseAuthRepository @Inject constructor(
 
     fun currentUserUid(): String? {
         return supabase.auth.currentUserOrNull()?.id
+    }
+
+    fun getSessionStatus(): Flow<SessionStatus> {
+        return supabase.auth.sessionStatus
     }
 
     suspend fun logout() {

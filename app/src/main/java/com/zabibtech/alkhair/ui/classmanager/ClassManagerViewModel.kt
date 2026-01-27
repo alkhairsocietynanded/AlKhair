@@ -70,7 +70,7 @@ class ClassManagerViewModel @Inject constructor(
             _operationState.value = UiState.Error("Invalid input.")
             return
         }
-        val newClass = ClassModel(className = className, division = divisionName)
+        val newClass = ClassModel(className = className, divisionName = divisionName)
         launchOperation { repoManager.addClass(newClass) }
     }
 

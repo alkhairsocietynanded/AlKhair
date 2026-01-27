@@ -40,6 +40,21 @@ class FeesAdapter(
             // Status Chip
             chipStatus.text = feesModel.paymentStatus
 
+            // Payment Date
+            if (feesModel.paymentDate.isNotBlank()) {
+                try {
+                    val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                    val outputFormat = SimpleDateFormat("dd MMM yyyy", Locale.US)
+                    val date = inputFormat.parse(feesModel.paymentDate)
+                    tvPaymentDate.text = "Paid on: ${outputFormat.format(date!!)}"
+                    tvPaymentDate.visibility = android.view.View.VISIBLE
+                } catch (e: Exception) {
+                     tvPaymentDate.visibility = android.view.View.GONE
+                }
+            } else {
+                tvPaymentDate.visibility = android.view.View.GONE
+            }
+
             // Apply color logic
             applyColors(feesModel)
 

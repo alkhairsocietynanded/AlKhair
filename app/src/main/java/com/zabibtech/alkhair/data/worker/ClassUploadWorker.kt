@@ -26,11 +26,15 @@ class ClassUploadWorker @AssistedInject constructor(
         try {
             // Task 1: Upload Unsynced Classes
             val unsyncedClasses = localClassRepository.getUnsyncedClasses()
+            android.util.Log.d("ClassUploadWorker", "Found ${unsyncedClasses.size} unsynced classes")
+            
             if (unsyncedClasses.isNotEmpty()) {
                 val result = supabaseClassRepository.saveClassBatch(unsyncedClasses)
                 if (result.isSuccess) {
+                    android.util.Log.d("ClassUploadWorker", "Successfully uploaded classes")
                     localClassRepository.markClassesAsSynced(unsyncedClasses.map { it.id })
                 } else {
+                    android.util.Log.e("ClassUploadWorker", "Failed to upload classes: ${result.exceptionOrNull()?.message}")
                     return@withContext Result.retry()
                 }
             }

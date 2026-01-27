@@ -11,6 +11,9 @@ class LocalDivisionRepository @Inject constructor(
     private val divisionDao: DivisionDao
 ) {
     fun getAllDivisions(): Flow<List<DivisionModel>> = divisionDao.getAllDivisions()
+    suspend fun getAllDivisionsOneShot(): List<DivisionModel> = divisionDao.getAllDivisionsOneShot()
+
+    suspend fun getDivisionById(divisionId: String): DivisionModel? = divisionDao.getDivisionById(divisionId)
 
     suspend fun insertDivision(division: DivisionModel) = divisionDao.insertDivision(division)
 
@@ -24,4 +27,6 @@ class LocalDivisionRepository @Inject constructor(
     suspend fun getUnsyncedDivisions(): List<DivisionModel> = divisionDao.getUnsyncedDivisions()
 
     suspend fun markDivisionsAsSynced(ids: List<String>) = divisionDao.markDivisionsAsSynced(ids)
+
+    suspend fun getDivisionByName(name: String): DivisionModel? = divisionDao.getDivisionByName(name)
 }

@@ -16,9 +16,11 @@ data class Homework(
     val id: String = "",
     @SerialName("class_id")
     val classId: String = "",
+    @kotlinx.serialization.Transient
     @SerialName("class_name")
     val className: String = "", // Likely fetched via join
-    val division: String = "",
+    @kotlinx.serialization.Transient
+    val divisionName: String = "",
     val shift: String = "",
     val subject: String = "",
     val title: String = "",
@@ -31,7 +33,8 @@ data class Homework(
     val attachmentUrl: String? = null,
     @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
-    @SerialName("is_synced")
 
+    @kotlinx.serialization.Transient
+    @SerialName("is_synced")
     override val isSynced: Boolean = true
 ) :Parcelable, Syncable

@@ -1,33 +1,18 @@
 package com.zabibtech.alkhair.ui.main
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.zabibtech.alkhair.data.manager.AppDataSyncManager
-import com.zabibtech.alkhair.data.manager.AttendanceRepoManager
 import com.zabibtech.alkhair.data.manager.AuthRepoManager
-import com.zabibtech.alkhair.data.manager.ClassDivisionRepoManager
 import com.zabibtech.alkhair.data.manager.UserRepoManager
 import com.zabibtech.alkhair.data.models.User
-import com.zabibtech.alkhair.utils.DateUtils
-import com.zabibtech.alkhair.utils.Roles
 import com.zabibtech.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import java.util.Calendar
-import javax.inject.Inject
-import com.zabibtech.alkhair.di.ApplicationScope
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
 @HiltViewModel
@@ -46,14 +31,35 @@ class MainViewModel @Inject constructor(
     fun checkUserSession() {
         viewModelScope.launch(Dispatchers.IO) { // ✅ Run on Background Thread
             _userSessionState.value = UiState.Loading
-            try {
-                val uid = authRepoManager.getCurrentUserUid()
-                val user = if (uid != null) userRepoManager.getUserById(uid) else null
-
-                // Switch back to Main to update UI State
-                _userSessionState.value = UiState.Success(user)
-            } catch (e: Exception) {
-                _userSessionState.value = UiState.Error(e.message ?: "Session Error")
+            
+            // Collect session status to wait for auto-load to complete
+            authRepoManager.monitorSession().collect { status ->
+                when (status) {
+                    is SessionStatus.Authenticated -> {
+                        val uid = authRepoManager.getCurrentUserUid()
+                        if (uid != null) {
+                            val user = userRepoManager.getUserById(uid)
+                            _userSessionState.value = UiState.Success(user)
+                        } else {
+                             // Should not happen if Authenticated, but handling just in case
+                            _userSessionState.value = UiState.Error("Authenticated but no UID found")
+                        }
+                    }
+                    is SessionStatus.NotAuthenticated -> {
+                         // Only treat as "not logged in" if explicitly NotAuthenticated (after load attempt)
+                         if(authRepoManager.getCurrentUserUid() == null) {
+                             _userSessionState.value = UiState.Success(null) // Trigger Login
+                         }
+                    }
+                    is SessionStatus.Initializing -> {
+                        // Still loading, keep waiting...
+                         _userSessionState.value = UiState.Loading
+                    }
+                    is SessionStatus.RefreshFailure -> {
+                        // Failed to refresh session, treat as logged out
+                        _userSessionState.value = UiState.Success(null)
+                    }
+                }
             }
         }
     }

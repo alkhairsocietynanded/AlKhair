@@ -17,13 +17,16 @@ data class SalaryModel(
     @SerialName("staff_id")
     val staffId: String = "",
     // staffName likely fetched via join
+    @kotlinx.serialization.Transient
     @SerialName("staff_name")
     val staffName: String = "",
     @SerialName("month_year")
     val monthYear: String = "", // Format: YYYY-MM
     @SerialName("basic_salary")
     val basicSalary: Double = 0.0,
+    @SerialName("allowances")
     val allowances: Double = 0.0,
+    @SerialName("deductions")
     val deductions: Double = 0.0,
     @SerialName("net_salary")
     var netSalary: Double = 0.0,
@@ -36,12 +39,14 @@ data class SalaryModel(
     val createdAt: Long = System.currentTimeMillis(),
 
     // New field for combined indexing
+    @kotlinx.serialization.Transient
     @SerialName("staff_month")
     val staffMonth: String = "${staffId}_${monthYear}",
     @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
+    
+    @kotlinx.serialization.Transient
     @SerialName("is_synced")
-
     override val isSynced: Boolean = true
 ) : Syncable, 
     Parcelable {

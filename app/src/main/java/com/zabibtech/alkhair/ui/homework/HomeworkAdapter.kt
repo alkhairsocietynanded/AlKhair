@@ -26,7 +26,7 @@ class HomeworkAdapter(
                 tvTitle.text = homework.title
                 tvSubject.text = homework.subject
                 tvClass.text = homework.className
-                tvDivision.text = homework.division
+                tvDivision.text = homework.divisionName
                 tvDate.text = homework.date
                 tvDescription.text = homework.description
 

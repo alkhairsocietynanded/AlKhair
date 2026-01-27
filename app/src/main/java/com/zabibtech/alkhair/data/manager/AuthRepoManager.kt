@@ -65,22 +65,20 @@ class AuthRepoManager @Inject constructor(
      * 1. Create Auth Account.
      * 2. Use UserRepoManager to Create User (Remote -> Local).
      */
-    suspend fun signup(email: String, password: String, user: User): Result<User> {
-        return authRepository.signup(email, password).fold(
+    suspend fun signup(user: User): Result<User> {
+        return authRepository.signup(user).fold(
             onSuccess = { uid ->
                 // 1. Encrypt Password before saving locally
-                val encryptedPassword = com.zabibtech.alkhair.utils.EncryptionUtils.encrypt(password)
-                
+
                 val finalUser = user.copy(
                     uid = uid,
-                    password = encryptedPassword,
-                    isSynced = false,
+                    isSynced = true, // ✅ Synced via Edge Function
                     updatedAt = System.currentTimeMillis()
                 )
                 
-                // 2. Save Local & Schedule Sync (Hybrid Flow)
-                // We use createUser from UserRepoManager which handles Local Insert + Worker Schedule
-                userRepoManager.createUser(finalUser)
+                // 2. Save Local Only (No Worker needed as Edge Function synced it)
+                userRepoManager.saveUserLocally(finalUser)
+                Result.success(finalUser)
             },
             onFailure = { e ->
                 Result.failure(e)
@@ -106,4 +104,6 @@ class AuthRepoManager @Inject constructor(
     fun getCurrentUserUid(): String? {
         return authRepository.currentUserUid()
     }
+
+    fun monitorSession() = authRepository.getSessionStatus()
 }

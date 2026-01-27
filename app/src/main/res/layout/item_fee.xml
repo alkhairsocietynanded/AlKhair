@@ -29,6 +29,18 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="January 2024" />
 
+        <!-- Payment Date -->
+        <TextView
+            android:id="@+id/tvPaymentDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceCaption"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintStart_toStartOf="@+id/tvMonthYear"
+            app:layout_constraintTop_toBottomOf="@+id/tvMonthYear"
+            tools:text="Paid on: 12 Jan 2024" />
+
         <!-- Status Chip -->
         <com.google.android.material.chip.Chip
             android:id="@+id/chipStatus"
@@ -63,11 +75,11 @@
             android:id="@+id/labelBaseAmount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="4dp"
             android:text="Base Amount:"
             android:textAppearance="?attr/textAppearanceBody2"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvMonthYear" />
+            app:layout_constraintTop_toBottomOf="@+id/tvPaymentDate" />
 
         <TextView
             android:id="@+id/tvBaseAmount"

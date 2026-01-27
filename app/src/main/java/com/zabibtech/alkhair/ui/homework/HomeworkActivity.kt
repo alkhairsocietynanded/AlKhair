@@ -68,7 +68,16 @@ class HomeworkActivity : AppCompatActivity(), LoadingDialogFragment.OnLoadingFin
                     .show(supportFragmentManager, "EditHomeworkDialog")
             },
             onDelete = { homework ->
-                viewModel.deleteHomework(homework.id)
+                DialogUtils.showConfirmation(
+                    context = this@HomeworkActivity,
+                    title = "Delete Homework",
+                    message = "Are you sure you want to delete '${homework.title}'?",
+                    positiveText = "Delete",
+                    negativeText = "Cancel",
+                    onConfirmed = {
+                        viewModel.deleteHomework(homework.id)
+                    }
+                )
             }
         )
 
@@ -139,16 +148,16 @@ class HomeworkActivity : AppCompatActivity(), LoadingDialogFragment.OnLoadingFin
         // ✍️ Create / Update / Delete Result
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.mutationState.collect { state ->
+                viewModel.deleteMutationState.collect { state ->
                     when (state) {
                         is UiState.Success -> {
                             DialogUtils.hideLoading(supportFragmentManager)
                             Toast.makeText(
                                 this@HomeworkActivity,
-                                "Operation successful",
+                                "Deleted successfully",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            viewModel.resetMutationState()
+                            viewModel.resetDeleteMutationState()
                         }
 
                         is UiState.Error -> {
@@ -158,12 +167,12 @@ class HomeworkActivity : AppCompatActivity(), LoadingDialogFragment.OnLoadingFin
                                 state.message,
                                 Toast.LENGTH_LONG
                             ).show()
-                            viewModel.resetMutationState()
+                            viewModel.resetDeleteMutationState()
                         }
 
                         UiState.Loading -> DialogUtils.showLoading(
                             supportFragmentManager, 
-                            "Please wait...", 
+                            "Deleting...", 
                             10000
                         )
                         UiState.Idle -> Unit

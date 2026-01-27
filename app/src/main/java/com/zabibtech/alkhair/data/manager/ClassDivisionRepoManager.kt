@@ -4,13 +4,11 @@ import android.util.Log
 import com.zabibtech.alkhair.data.local.local_repos.LocalClassRepository
 import com.zabibtech.alkhair.data.local.local_repos.LocalDivisionRepository
 import com.zabibtech.alkhair.data.models.ClassModel
-import com.zabibtech.alkhair.data.models.DeletedRecord
 import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.remote.supabase.SupabaseClassRepository
 import com.zabibtech.alkhair.data.remote.supabase.SupabaseDivisionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
@@ -24,7 +22,6 @@ import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
-import androidx.work.OneTimeWorkRequest
 
 @Singleton
 
@@ -72,6 +69,12 @@ class ClassDivisionRepoManager @Inject constructor(
 
     // --- DIVISIONS ---
     suspend fun addDivision(division: DivisionModel): Result<DivisionModel> {
+        // Prevent duplicate division names
+        val existing = localDivisionRepo.getDivisionByName(division.name)
+        if (existing != null) {
+            return Result.success(existing)
+        }
+        
         val newId = division.id.ifEmpty { java.util.UUID.randomUUID().toString() }
         val currentTime = System.currentTimeMillis()
         
@@ -114,27 +117,36 @@ class ClassDivisionRepoManager @Inject constructor(
 
     // --- CLASSES ---
     suspend fun addClass(classModel: ClassModel): Result<ClassModel> {
-        // Validation: Ensure division exists (locally check is enough effectively, or auto-create local/synced later)
-        // For local-first, we assume valid input or handle constraints.
-        // If division doesn't exist locally, we might want to auto-create it locally too?
-        // Original logic: ensure division exists remotely. 
-        // New logic: Check local division, if missing, create local division.
+        Log.d("RepoManager", "addClass called for: ${classModel.className} in ${classModel.divisionName}")
         
-        val divExists = localDivisionRepo.getAllDivisions().first().any { it.name == classModel.division }
-        if (!divExists) {
-             addDivision(DivisionModel(name = classModel.division))
+        var existingDiv = localDivisionRepo.getDivisionByName(classModel.divisionName)
+        Log.d("RepoManager", "Existing division found: ${existingDiv?.id}")
+
+        if (existingDiv == null) {
+              Log.d("RepoManager", "Division not found, creating new: ${classModel.divisionName}")
+              val newDivResult = addDivision(DivisionModel(name = classModel.divisionName))
+              if (newDivResult.isSuccess) {
+                  existingDiv = newDivResult.getOrNull()
+                  Log.d("RepoManager", "New division created: ${existingDiv?.id}")
+              } else {
+                  Log.e("RepoManager", "Failed to create division: ${newDivResult.exceptionOrNull()}")
+              }
         }
+        
+        val divId = existingDiv?.id ?: return Result.failure(Exception("Failed to create or find Division"))
 
         val newId = classModel.id.ifEmpty { java.util.UUID.randomUUID().toString() }
         val currentTime = System.currentTimeMillis()
         
         val newClass = classModel.copy(
             id = newId,
+            divisionId = divId, // ✅ Link Foreign Key
             updatedAt = currentTime,
             isSynced = false
         )
         
         localClassRepo.insertClass(newClass)
+        Log.d("RepoManager", "Class inserted locally: $newId")
         scheduleClassUploadWorker()
         
         return Result.success(newClass)
@@ -186,32 +198,32 @@ class ClassDivisionRepoManager @Inject constructor(
         }.map { }
     }
 
-    // Workers
-    private fun scheduleClassUploadWorker() {
+    // Workers - Unified Sync Chain (Divisions -> Classes)
+    private fun scheduleStructureSync() {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
         
-        val request = OneTimeWorkRequestBuilder<ClassUploadWorker>()
+        val divRequest = OneTimeWorkRequestBuilder<DivisionUploadWorker>()
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, androidx.work.WorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MILLISECONDS)
             .build()
             
-        workManager.enqueueUniqueWork("ClassUploadWork", ExistingWorkPolicy.APPEND_OR_REPLACE, request)
-    }
+        val classRequest = OneTimeWorkRequestBuilder<ClassUploadWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, androidx.work.WorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MILLISECONDS)
+            .build()
 
-    private fun scheduleDivisionUploadWorker() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        
-        val request = OneTimeWorkRequestBuilder<DivisionUploadWorker>()
-            .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, androidx.work.WorkRequest.MIN_BACKOFF_MILLIS, TimeUnit.MILLISECONDS)
-            .build()
-            
-        workManager.enqueueUniqueWork("DivisionUploadWork", ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+        // Chain: Division -> Class
+        // Using APPEND_OR_REPLACE ensures correct order even if called multiple times
+        workManager.beginUniqueWork("StructureSync", ExistingWorkPolicy.APPEND_OR_REPLACE, divRequest)
+            .then(classRequest)
+            .enqueue()
     }
+    
+    // Legacy wrappers if needed, but better to update call sites to name it correctly
+    private fun scheduleDivisionUploadWorker() = scheduleStructureSync()
+    private fun scheduleClassUploadWorker() = scheduleStructureSync()
 
     // Helper for Deletions (Legacy/Manual usage if any, otherwise covered by deleteClass/deleteDivision)
     // Exposed primarily for AppDataSyncManager if it handles downstream generic deletes

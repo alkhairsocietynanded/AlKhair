@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.zabibtech.alkhair.data.models.ClassModel
+import com.zabibtech.alkhair.data.models.DivisionModel
 import com.zabibtech.alkhair.data.models.Homework
 import com.zabibtech.alkhair.data.models.User
 import com.zabibtech.alkhair.databinding.DialogAddHomeworkBinding
@@ -40,7 +41,9 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     private var isEditMode = false
     private var existingHomework: Homework? = null
     private var selectedClassId: String? = null
+
     private var classList: List<ClassModel> = emptyList()
+    private var divisionList: List<DivisionModel> = emptyList()
 
     // Current User (Teacher/Admin)
     private var currentUser: User? = null
@@ -159,7 +162,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             // Only prefill these if visible (Admin)
             if (binding.tilClass.isVisible) {
                 binding.etClass.setText(existingHomework?.className, false)
-                binding.etDivision.setText(existingHomework?.division, false)
+                binding.etDivision.setText(existingHomework?.divisionName, false)
                 binding.etShift.setText(existingHomework?.shift, false)
             }
 
@@ -179,7 +182,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             existingHomework = existingHomework,
             classId = selectedClassId ?: "", // Uses Teacher's ID or Admin's selection
             className = binding.etClass.text.toString().trim(),
-            division = binding.etDivision.text.toString().trim(),
+            divisionName = binding.etDivision.text.toString().trim(),
             shift = binding.etShift.text.toString().trim(),
             subject = binding.etSubject.text.toString().trim(),
             title = binding.etTitle.text.toString().trim(),
@@ -193,19 +196,19 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
     private fun observeMutationState() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.mutationState.collect { state ->
+                viewModel.homeworkMutationState.collect { state ->
                     when (state) {
                         is UiState.Loading -> binding.btnSubmitHomework.isEnabled = false
                         is UiState.Success -> {
                             binding.btnSubmitHomework.isEnabled = true
                             Toast.makeText(requireContext(), if (isEditMode) "Updated" else "Added", Toast.LENGTH_SHORT).show()
-                            viewModel.resetMutationState()
-                            dismiss()
+                            dismiss() // Close first
+                            viewModel.resetHomeworkMutationState()
                         }
                         is UiState.Error -> {
                             binding.btnSubmitHomework.isEnabled = true
                             Toast.makeText(requireContext(), state.message, Toast.LENGTH_LONG).show()
-                            viewModel.resetMutationState()
+                            viewModel.resetHomeworkMutationState()
                         }
                         else -> binding.btnSubmitHomework.isEnabled = true
                     }
@@ -221,15 +224,7 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
                 viewModel.classesState.collect { state ->
                     if (state is UiState.Success) {
                         classList = state.data
-                        val classNames = state.data.map { it.className }.distinct()
-                        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, classNames)
-                        binding.etClass.setAdapter(adapter)
-
-                        binding.etClass.setOnItemClickListener { _, _, position, _ ->
-                            val selectedName = adapter.getItem(position)
-                            val selectedObj = classList.find { it.className == selectedName }
-                            selectedClassId = selectedObj?.id
-                        }
+                        updateClassDropdown()
                     }
                 }
             }
@@ -239,17 +234,57 @@ class AddHomeworkDialog : BottomSheetDialogFragment() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.divisionsState.collect { state ->
                     if (state is UiState.Success) {
-                        val divisionNames = state.data.map { it.name }.distinct()
-                        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, divisionNames)
+                        divisionList = state.data
+                        // ✅ Pass Objects directly
+                        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, divisionList)
                         binding.etDivision.setAdapter(adapter)
                     }
                 }
             }
         }
 
+        // Listener for Division Selection
+        binding.etDivision.setOnItemClickListener { parent, _, position, _ ->
+             // ✅ Cast directly to Object
+             val selectedDiv = parent.getItemAtPosition(position) as DivisionModel
+             updateClassDropdown(selectedDiv)
+             
+             binding.etClass.text = null // Reset class selection
+             selectedClassId = null
+        }
+
         val shifts = listOf(Shift.SUBAH, Shift.DOPAHAR, Shift.SHAAM)
         val shiftAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, shifts)
         binding.etShift.setAdapter(shiftAdapter)
+    }
+
+    private fun updateClassDropdown(selectedDivision: DivisionModel? = null) {
+        if (classList.isEmpty()) return
+
+        // Optimize: Do filtering in background if list is very large, but for now just ensure efficiency
+        val filteredClasses = if (selectedDivision != null) {
+             classList.filter { it.divisionId == selectedDivision.id }
+        } else {
+             // If text is empty, show all. If text is present but no object passed, try to find.
+             val currentText = binding.etDivision.text.toString()
+             if (currentText.isBlank()) classList 
+             else {
+                 val div = divisionList.find { it.name == currentText }
+                 if (div != null) classList.filter { it.divisionId == div.id } else classList
+             }
+        }
+
+        // ✅ Pass Objects directly
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, filteredClasses)
+        binding.etClass.setAdapter(adapter)
+
+        binding.etClass.setOnItemClickListener { parent, _, position, _ ->
+             // ✅ Cast directly to Object
+             if (adapter.count > position) { // Safety check
+                 val selectedObj = parent.getItemAtPosition(position) as ClassModel
+                 selectedClassId = selectedObj.id
+             }
+        }
     }
 
     private fun validateInput(): Boolean {

@@ -31,7 +31,7 @@ interface HomeworkDao {
 
     // 2. Student View (Specific Class + Division)
     // Example: Class 10, Section A
-    @Query("SELECT * FROM homework WHERE className = :className AND division = :division ORDER BY date DESC")
+    @Query("SELECT * FROM homework WHERE className = :className AND divisionName = :division ORDER BY date DESC")
     fun getHomeworkByClassAndDivision(className: String, division: String): Flow<List<Homework>>
 
     // 3. Teacher View (Broad Class Filter)

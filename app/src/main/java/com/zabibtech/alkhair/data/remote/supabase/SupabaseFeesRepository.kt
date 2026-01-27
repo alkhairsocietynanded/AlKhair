@@ -46,9 +46,7 @@ class SupabaseFeesRepository @Inject constructor(
                 filter {
                     FeesModel::classId eq classId
                     FeesModel::updatedAt gt timestamp
-                    if (safeShift != "All") {
-                         FeesModel::shift eq safeShift
-                    }
+
                 }
             }.decodeList<FeesModel>()
             Result.success(list)
@@ -75,7 +73,7 @@ class SupabaseFeesRepository @Inject constructor(
             Result.failure(e)
         }
     }
-    
+
     // ✅ ADMIN SYNC (Global)
     suspend fun getFeesUpdatedAfter(timestamp: Long): Result<List<FeesModel>> {
         return try {
@@ -106,15 +104,15 @@ class SupabaseFeesRepository @Inject constructor(
             Result.failure(e)
         }
     }
-    
+
     suspend fun getFee(feeId: String): Result<FeesModel> {
-         return try {
+        return try {
             val fee = supabase.from("fees").select {
                 filter {
                     FeesModel::id eq feeId
                 }
             }.decodeSingleOrNull<FeesModel>()
-            
+
             if (fee != null) Result.success(fee)
             else Result.failure(NoSuchElementException("Fee not found"))
         } catch (e: Exception) {
@@ -148,15 +146,15 @@ class SupabaseFeesRepository @Inject constructor(
 
     suspend fun deleteFeesBatch(ids: List<String>): Result<Unit> {
         return try {
-             supabase.from("fees").delete {
+            supabase.from("fees").delete {
                 filter {
                     FeesModel::id isIn ids
                 }
             }
             Result.success(Unit)
         } catch (e: Exception) {
-             Log.e("SupabaseFeesRepo", "Error deleting batch fees", e)
-             Result.failure(e)
+            Log.e("SupabaseFeesRepo", "Error deleting batch fees", e)
+            Result.failure(e)
         }
     }
 }

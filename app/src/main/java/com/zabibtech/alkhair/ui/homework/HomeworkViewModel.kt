@@ -78,8 +78,15 @@ class HomeworkViewModel @Inject constructor(
        ✍️ MUTATIONS
        ============================================================ */
 
-    private val _mutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
-    val mutationState: StateFlow<UiState<Unit>> = _mutationState
+    /* ============================================================
+       ✍️ MUTATIONS
+       ============================================================ */
+
+    private val _homeworkMutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val homeworkMutationState: StateFlow<UiState<Unit>> = _homeworkMutationState
+
+    private val _deleteMutationState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val deleteMutationState: StateFlow<UiState<Unit>> = _deleteMutationState
 
     // Private helper
     private fun saveHomework(
@@ -87,7 +94,7 @@ class HomeworkViewModel @Inject constructor(
         isEdit: Boolean,
         newAttachmentUri: Uri? = null
     ) {
-        _mutationState.value = UiState.Loading
+        _homeworkMutationState.value = UiState.Loading
 
         viewModelScope.launch {
             val result = if (isEdit) {
@@ -96,7 +103,7 @@ class HomeworkViewModel @Inject constructor(
                 homeworkRepoManager.createHomework(homework, newAttachmentUri)
             }
 
-            _mutationState.value = result.fold(
+            _homeworkMutationState.value = result.fold(
                 onSuccess = { UiState.Success(Unit) },
                 onFailure = { UiState.Error(it.message ?: "Operation Failed") }
             )
@@ -111,7 +118,7 @@ class HomeworkViewModel @Inject constructor(
         existingHomework: Homework?,
         classId: String,
         className: String,
-        division: String,
+        divisionName: String,
         shift: String,
         subject: String,
         title: String,
@@ -126,7 +133,7 @@ class HomeworkViewModel @Inject constructor(
             id = existingHomework?.id ?: "",
             classId = classId,
             className = className,
-            division = division,
+            divisionName = divisionName, // @Transient handles this for remote
             shift = shift,
             subject = subject,
             title = title,
@@ -141,9 +148,9 @@ class HomeworkViewModel @Inject constructor(
     }
 
     fun deleteHomework(id: String) {
-        _mutationState.value = UiState.Loading
+        _deleteMutationState.value = UiState.Loading
         viewModelScope.launch {
-            _mutationState.value = homeworkRepoManager.deleteHomework(id)
+            _deleteMutationState.value = homeworkRepoManager.deleteHomework(id)
                 .fold(
                     onSuccess = { UiState.Success(Unit) },
                     onFailure = { UiState.Error(it.message ?: "Delete failed") }
@@ -151,7 +158,11 @@ class HomeworkViewModel @Inject constructor(
         }
     }
 
-    fun resetMutationState() {
-        _mutationState.value = UiState.Idle
+    fun resetHomeworkMutationState() {
+        _homeworkMutationState.value = UiState.Idle
+    }
+
+    fun resetDeleteMutationState() {
+        _deleteMutationState.value = UiState.Idle
     }
 }

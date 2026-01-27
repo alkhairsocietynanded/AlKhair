@@ -26,11 +26,15 @@ class DivisionUploadWorker @AssistedInject constructor(
         try {
             // Task 1: Upload Unsynced Divisions
             val unsyncedDivisions = localDivisionRepository.getUnsyncedDivisions()
+            android.util.Log.d("DivisionUploadWorker", "Found ${unsyncedDivisions.size} unsynced divisions")
+
             if (unsyncedDivisions.isNotEmpty()) {
                 val result = supabaseDivisionRepository.saveDivisionBatch(unsyncedDivisions)
                 if (result.isSuccess) {
+                    android.util.Log.d("DivisionUploadWorker", "Successfully uploaded divisions")
                     localDivisionRepository.markDivisionsAsSynced(unsyncedDivisions.map { it.id })
                 } else {
+                    android.util.Log.e("DivisionUploadWorker", "Failed to upload divisions: ${result.exceptionOrNull()?.message}")
                     return@withContext Result.retry()
                 }
             }

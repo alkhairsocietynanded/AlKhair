@@ -14,10 +14,13 @@ data class Attendance(
     val classId: String = "",
     val date: String = "",       // yyyy-MM-dd
     val status: String = "",      // Present | Absent | Leave
-    val shift: String = "",
+    
+    @kotlinx.serialization.Transient
+    val shift: String = "", // Not needed in Supabase as we use ClassID
     @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
+    
+    @kotlinx.serialization.Transient
     @SerialName("is_synced")
-
     override val isSynced: Boolean = true
 ) : Syncable

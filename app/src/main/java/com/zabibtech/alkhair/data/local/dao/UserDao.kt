@@ -21,6 +21,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE uid = :uid")
     suspend fun getUserByIdOneShot(uid: String): User?
 
+    @Query("SELECT * FROM users WHERE uid IN (:uids)")
+    suspend fun getUsersByIds(uids: List<String>): List<User>
+
     @Query("SELECT * FROM users ORDER BY name ASC")
     fun getAllUsers(): Flow<List<User>>
 

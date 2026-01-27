@@ -17,10 +17,11 @@ data class FeesModel(
     @SerialName("student_id")
     val studentId: String = "",
     // studentName might need to be fetched via join or kept as local cache
-    @SerialName("student_name")
-    val studentName: String = "", 
+    @kotlinx.serialization.Transient
+    val studentName: String = "",
     @SerialName("class_id")
     val classId: String? = null,
+    @kotlinx.serialization.Transient
     val shift: String = "",
     @SerialName("month_year")
     val monthYear: String = "", // Format: YYYY-MM
@@ -40,7 +41,8 @@ data class FeesModel(
     val paymentStatus: String = "Pending", // Pending, Paid
     @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
-    @SerialName("is_synced")
 
+    @kotlinx.serialization.Transient
+    @SerialName("is_synced")
     override val isSynced: Boolean = true
-) :Parcelable, Syncable
+) : Parcelable, Syncable

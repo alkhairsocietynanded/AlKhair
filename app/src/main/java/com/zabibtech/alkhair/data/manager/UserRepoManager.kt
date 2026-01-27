@@ -8,6 +8,8 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.zabibtech.alkhair.data.local.dao.PendingDeletionDao
+import com.zabibtech.alkhair.data.local.local_repos.LocalClassRepository
+import com.zabibtech.alkhair.data.local.local_repos.LocalDivisionRepository
 import com.zabibtech.alkhair.data.local.local_repos.LocalUserRepository
 import com.zabibtech.alkhair.data.manager.base.BaseRepoManager
 import com.zabibtech.alkhair.data.models.PendingDeletion
@@ -17,6 +19,7 @@ import com.zabibtech.alkhair.data.remote.supabase.SupabaseUserRepository
 import com.zabibtech.alkhair.data.worker.UserUploadWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +27,8 @@ import javax.inject.Singleton
 @Singleton
 class UserRepoManager @Inject constructor(
     private val localUserRepository: LocalUserRepository,
+    private val localClassRepository: LocalClassRepository,
+    private val localDivisionRepository: LocalDivisionRepository,
     private val supabaseUserRepository: SupabaseUserRepository,
     private val supabaseAuthRepository: SupabaseAuthRepository,
     private val pendingDeletionDao: PendingDeletionDao,
@@ -35,9 +40,10 @@ class UserRepoManager @Inject constructor(
        ============================================================ */
     override fun observeLocal(): Flow<List<User>> = localUserRepository.getAllUsers()
 
-    fun observeUsersByRole(role: String): Flow<List<User>> = localUserRepository.getUsersByRole(role)
+    fun observeUsersByRole(role: String): Flow<List<User>> =
+        localUserRepository.getUsersByRole(role)
 
-    suspend fun getUserById(uid: String): User? = localUserRepository.getUserById(uid).first()
+    suspend fun getUserById(uid: String): User? = localUserRepository.getUserByIdOneShot(uid)
 
     suspend fun getCurrentUser(): User? {
         val uid = supabaseAuthRepository.currentUserUid() ?: return null
@@ -63,10 +69,14 @@ class UserRepoManager @Inject constructor(
         supabaseUserRepository.getUsersUpdatedAfter(after).getOrElse { emptyList() }
 
     // 2. Class Sync (Teacher) - ✅ NEW
-    suspend fun syncClassStudents(classId: String, shift: String,  lastSync: Long): Result<Unit> {
+    suspend fun syncClassStudents(classId: String, shift: String, lastSync: Long): Result<Unit> {
         // Shift validation (taaki empty shift par crash na ho)
         val targetShift = shift.ifBlank { "General" }
-        return supabaseUserRepository.getStudentsForClassUpdatedAfter(classId, targetShift,lastSync)
+        return supabaseUserRepository.getStudentsForClassUpdatedAfter(
+            classId,
+            targetShift,
+            lastSync
+        )
             .onSuccess { list ->
                 if (list.isNotEmpty()) insertLocal(list)
             }
@@ -106,7 +116,9 @@ class UserRepoManager @Inject constructor(
         return Result.success(updatedUser)
     }
 
-    suspend fun saveUserLocally(user: User) { insertLocal(user) }
+    suspend fun saveUserLocally(user: User) {
+        insertLocal(user)
+    }
 
     suspend fun deleteUser(uid: String): Result<Unit> {
         deleteLocally(uid)
@@ -120,7 +132,7 @@ class UserRepoManager @Inject constructor(
         return Result.success(Unit)
     }
 
-     private fun scheduleUploadWorker() {
+    private fun scheduleUploadWorker() {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
@@ -141,9 +153,44 @@ class UserRepoManager @Inject constructor(
         )
     }
 
-    // Base Impl
-    override suspend fun insertLocal(items: List<User>) = localUserRepository.insertUsers(items)
-    override suspend fun insertLocal(item: User) = localUserRepository.insertUser(item)
+    // Base Impl with Hydration
+    override suspend fun insertLocal(items: List<User>) {
+        val hydrated = hydrateUsers(items)
+        localUserRepository.insertUsers(hydrated)
+    }
+
+    override suspend fun insertLocal(item: User) {
+        val hydrated = hydrateUsers(listOf(item)).first()
+        localUserRepository.insertUser(hydrated)
+    }
+
     override suspend fun deleteLocally(id: String) = localUserRepository.deleteUser(id)
     override suspend fun clearLocal() = localUserRepository.clearAll()
+
+    // 💧 Hydration Logic (Populate Names)
+    private suspend fun hydrateUsers(users: List<User>): List<User> {
+        if (users.isEmpty()) return users
+
+        // Bulk Fetch Maps (Efficient)
+        val classMap = localClassRepository.getAllClassesOneShot().associateBy { it.id }
+        val divisionMap = localDivisionRepository.getAllDivisionsOneShot().associateBy { it.id }
+
+        return users.map { user ->
+            // Hydrate Class Name
+            var cName = user.className
+            val cId = user.classId
+            if (!cId.isNullOrBlank()) {
+                 cName = classMap[cId]?.className ?: cName
+            }
+
+            // Hydrate Division Name
+            var dName = user.divisionName
+            val dId = user.divisionId
+            if (!dId.isNullOrBlank()) {
+                dName = divisionMap[dId]?.name ?: dName
+            }
+
+            user.copy(className = cName, divisionName = dName)
+        }
+    }
 }

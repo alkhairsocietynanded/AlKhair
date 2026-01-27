@@ -11,6 +11,9 @@ class LocalClassRepository @Inject constructor(
     private val classDao: ClassDao
 ) {
     fun getAllClasses(): Flow<List<ClassModel>> = classDao.getAllClasses()
+    suspend fun getAllClassesOneShot(): List<ClassModel> = classDao.getAllClassesOneShot()
+
+    suspend fun getClassById(classId: String): ClassModel? = classDao.getClassById(classId)
 
     suspend fun insertClass(classModel: ClassModel) = classDao.insertClass(classModel)
 

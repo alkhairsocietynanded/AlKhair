@@ -14,7 +14,10 @@ data class DivisionModel(
     val name: String = "",
     @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
+    
+    @kotlinx.serialization.Transient
     @SerialName("is_synced")
-
     override val isSynced: Boolean = true
-) : Syncable // ✅ Interface implement karein
+) : Syncable {
+    override fun toString(): String = name
+}
