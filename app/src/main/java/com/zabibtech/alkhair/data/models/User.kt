@@ -46,11 +46,11 @@ data class User(
     
     // These might be joins in Supabase, but for local cache we might keep them or fetch via relation
     // For now we keep them but they might be null if not joined
-    // These might be joins in Supabase, but for local cache we might keep them or fetch via relation
-    // For now we keep them but they might be null if not joined
+    @kotlinx.serialization.Transient
     @SerialName("class_name")
     var className: String = "",
     
+    @kotlinx.serialization.Transient
     @SerialName("division_name")
     var divisionName: String = "",
     
