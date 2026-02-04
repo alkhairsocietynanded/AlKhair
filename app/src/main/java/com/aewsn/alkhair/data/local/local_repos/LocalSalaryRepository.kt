@@ -1,0 +1,32 @@
+package com.aewsn.alkhair.data.local.local_repos
+
+import com.aewsn.alkhair.data.local.dao.SalaryDao
+import com.aewsn.alkhair.data.models.SalaryModel
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+class LocalSalaryRepository @Inject constructor(
+    private val salaryDao: SalaryDao
+) {
+    fun getSalaryById(id: String): Flow<SalaryModel?> = salaryDao.getSalaryById(id)
+
+    fun getSalariesByStaffId(staffId: String): Flow<List<SalaryModel>> = 
+        salaryDao.getSalariesByStaffId(staffId)
+
+    fun getFilteredSalaries(staffId: String?, monthYear: String?): Flow<List<SalaryModel>> =
+        salaryDao.getFilteredSalaries(staffId, monthYear)
+
+    fun getAllSalaries(): Flow<List<SalaryModel>> = salaryDao.getAllSalaries()
+
+    suspend fun insertSalary(salary: SalaryModel) = salaryDao.insertSalary(salary)
+
+    suspend fun insertSalaries(salaries: List<SalaryModel>) = salaryDao.insertSalaries(salaries)
+
+    suspend fun deleteSalary(id: String) = salaryDao.deleteSalary(id)
+
+    suspend fun clearAll() = salaryDao.clearAllSalaries()
+
+    suspend fun getUnsyncedSalaries(): List<SalaryModel> = salaryDao.getUnsyncedSalaries()
+
+    suspend fun markSalariesAsSynced(ids: List<String>) = salaryDao.markSalariesAsSynced(ids)
+}

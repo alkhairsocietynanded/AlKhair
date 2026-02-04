@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.zabibtech.alkhair"
+    namespace = "com.aewsn.alkhair"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.zabibtech.alkhair"
+        applicationId = "com.aewsn.alkhair"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
