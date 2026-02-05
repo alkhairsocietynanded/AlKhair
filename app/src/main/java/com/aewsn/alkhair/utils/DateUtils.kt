@@ -12,6 +12,28 @@ object DateUtils {
     // --- Current Date / Month / Year Strings ---
     fun today(): String = formatDate(Calendar.getInstance(), "yyyy-MM-dd")
 
+    fun getDatesBetween(startDateStr: String, endDateStr: String): List<String> {
+        val dates = mutableListOf<String>()
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        try {
+            val startDate = sdf.parse(startDateStr)
+            val endDate = sdf.parse(endDateStr)
+            
+            if (startDate != null && endDate != null) {
+                val calendar = Calendar.getInstance()
+                calendar.time = startDate
+                
+                while (!calendar.time.after(endDate)) {
+                    dates.add(sdf.format(calendar.time))
+                    calendar.add(Calendar.DAY_OF_MONTH, 1)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return dates
+    }
+
     // Teacher Dashboard me use hone wala function
     fun getCurrentMonthForFee(): String {
         val cal = Calendar.getInstance()

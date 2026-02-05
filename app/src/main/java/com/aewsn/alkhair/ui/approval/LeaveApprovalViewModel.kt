@@ -32,21 +32,19 @@ class LeaveApprovalViewModel @Inject constructor(
             _leavesState.value = UiState.Loading
             try {
                 if (currentUser.role.equals("admin", ignoreCase = true)) {
-                    // Admin: Sync and Load All
-                    launch { leaveRepoManager.syncAllLeaves() }
+                    // Admin: Load All (Sync managed externally)
                     leaveRepoManager.getAllLeaves()
                         .catch { e -> _leavesState.value = UiState.Error(e.message ?: "Error loading leaves") }
                         .collectLatest { leaves ->
                             _leavesState.value = UiState.Success(leaves)
                         }
                 } else if (currentUser.role.equals("teacher", ignoreCase = true)) {
-                    // Teacher: Sync and Load Class Leaves
+                    // Teacher: Load Class Leaves (Sync managed externally)
                     val classId = currentUser.classId
                     if (classId.isNullOrEmpty()) {
                         _leavesState.value = UiState.Error("No class assigned to teacher")
                         return@launch
                     }
-                    launch { leaveRepoManager.syncLeavesForClass(classId) }
                     leaveRepoManager.getLeavesForClass(classId)
                         .catch { e -> _leavesState.value = UiState.Error(e.message ?: "Error loading class leaves") }
                         .collectLatest { leaves ->

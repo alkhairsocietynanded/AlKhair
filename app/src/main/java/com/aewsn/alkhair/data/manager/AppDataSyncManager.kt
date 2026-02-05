@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.max
+import androidx.core.content.edit
 
 @Singleton
 class AppDataSyncManager @Inject constructor(
@@ -23,7 +24,8 @@ class AppDataSyncManager @Inject constructor(
     private val homeworkRepoManager: HomeworkRepoManager,
     private val announcementRepoManager: AnnouncementRepoManager,
     private val leaveRepoManager: LeaveRepoManager,
-    private val deletionRepository: SupabaseDeletionRepository
+    private val deletionRepository: SupabaseDeletionRepository,
+    private val sharedPreferences: android.content.SharedPreferences
 ) {
 
     companion object {
@@ -123,6 +125,7 @@ class AppDataSyncManager @Inject constructor(
                         syncJobs.add(async { homeworkRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { announcementRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { attendanceRepoManager.sync(queryTime).map { it as Any } })
+                        syncJobs.add(async { leaveRepoManager.sync(queryTime).map { it as Any } })
                     }
 
                     // ====================================================
@@ -146,6 +149,7 @@ class AppDataSyncManager @Inject constructor(
                             syncJobs.add(async { homeworkRepoManager.syncClassHomework(teacherClassId, teacherShift, queryTime).map { it as Any } })
                             syncJobs.add(async { attendanceRepoManager.syncClassAttendance(teacherClassId, teacherShift, queryTime).map { it as Any } })
                             syncJobs.add(async { feesRepoManager.syncClassFees(teacherClassId, teacherShift,queryTime).map { it as Any }  })
+                            syncJobs.add(async { leaveRepoManager.syncLeavesForClass(teacherClassId, queryTime).map { it as Any } })
                         } else {
                             Log.d(TAG, "Teacher has no class, syncing profile only.")
                             // Fallback: Sync self profile only
@@ -259,6 +263,7 @@ class AppDataSyncManager @Inject constructor(
                             "salary" -> salaryRepoManager.deleteLocally(record.recordId)
                             "homework" -> homeworkRepoManager.deleteLocally(record.recordId)
                             "announcements" -> announcementRepoManager.deleteLocally(record.recordId)
+                            "leaves" -> leaveRepoManager.deleteLocally(record.recordId)
                             "attendance" -> attendanceRepoManager.deleteLocally(record.recordId)
                         }
                     } catch (e: Exception) {
@@ -292,6 +297,9 @@ class AppDataSyncManager @Inject constructor(
         // 2. Clear Sync Timestamp (Important!)
         // Taaki naya user login kare to full sync ho
         appDataStore.clearAll()
+        
+        // 3. Clear SharedPreferences (Old remnants or specific flags)
+        sharedPreferences.edit { clear() }
 
         Log.d("AppDataSyncManager", "All local data cleared.")
     }
