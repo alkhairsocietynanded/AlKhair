@@ -15,7 +15,7 @@ import com.aewsn.alkhair.R
 import com.aewsn.alkhair.data.models.User
 import com.aewsn.alkhair.databinding.ActivityStudentSignupBinding
 import com.aewsn.alkhair.ui.dashboard.AdminDashboardActivity
-import com.aewsn.alkhair.ui.dashboard.StudentDashboardActivity
+import com.aewsn.alkhair.ui.student.StudentActivity
 import com.aewsn.alkhair.ui.dashboard.TeacherDashboardActivity
 import com.aewsn.alkhair.utils.DialogUtils
 import com.aewsn.alkhair.utils.UiState
@@ -105,7 +105,7 @@ class StudentSignupActivity : AppCompatActivity() {
         val destination = when (user.role) {
             "admin" -> AdminDashboardActivity::class.java
             "teacher" -> TeacherDashboardActivity::class.java
-            "student" -> StudentDashboardActivity::class.java
+            "student" -> StudentActivity::class.java
             else -> LoginActivity::class.java // Fallback to login
         }
         startActivity(Intent(this, destination))

@@ -14,6 +14,7 @@ data class Announcement(
     val title: String = "",
     val content: String = "",
     // timestamp is BigInt in SQL
+    @SerialName("timestamp")
     val timeStamp: Long = 0, 
     @SerialName("target_id")
     val target: String = "ALL", // Mapped to target_id

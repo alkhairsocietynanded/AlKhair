@@ -66,13 +66,14 @@ class SupabaseAnnouncementRepository @Inject constructor(
         return try {
             val list = supabase.from("announcements").select {
                 filter {
-                    Announcement::target eq target
+                    eq("target_id", target)
                     Announcement::updatedAt gt timestamp
                 }
             }.decodeList<Announcement>()
+            Log.d("SupabaseAnnouncementRepo", "Fetched ${list.size} announcements for target: $target")
             Result.success(list)
         } catch (e: Exception) {
-            Log.e("SupabaseAnnouncementRepo", "Error fetching targeted announcements", e)
+            Log.e("SupabaseAnnouncementRepo", "Error fetching targeted announcements: ${e.message}", e)
             Result.failure(e)
         }
     }

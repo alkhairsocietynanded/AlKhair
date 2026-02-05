@@ -111,17 +111,25 @@ class FeesFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
+        val isStudent = user?.role?.equals("student", ignoreCase = true) == true
+        
         adapter = FeesAdapter(
+            isReadOnly = isStudent,
             onDeleteClick = { fee ->
-                DialogUtils.showConfirmation(
-                    requireContext(),
-                    title = "Delete Fee Record",
-                    message = "Are you sure you want to delete this fee record?",
-                    onConfirmed = { feesViewModel.deleteFee(fee.id) }
-                )
+                // Extra check, though button should be hidden
+                if (!isStudent) {
+                    DialogUtils.showConfirmation(
+                        requireContext(),
+                        title = "Delete Fee Record",
+                        message = "Are you sure you want to delete this fee record?",
+                        onConfirmed = { feesViewModel.deleteFee(fee.id) }
+                    )
+                }
             },
             onEditClick = { fee ->
-                showAddFeeDialog(fee)
+                if (!isStudent) {
+                    showAddFeeDialog(fee)
+                }
             }
         )
 
@@ -129,11 +137,16 @@ class FeesFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@FeesFragment.adapter
         }
+        
+        // Hide FAB for students
+        binding.fabAddFee.isVisible = !isStudent
     }
 
     private fun setupListeners() {
-        binding.fabAddFee.setOnClickListener {
-            showAddFeeDialog()
+        if (binding.fabAddFee.isVisible) {
+            binding.fabAddFee.setOnClickListener {
+                showAddFeeDialog()
+            }
         }
     }
 

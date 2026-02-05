@@ -13,7 +13,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.aewsn.alkhair.data.models.User
 import com.aewsn.alkhair.databinding.ActivityLoginBinding
 import com.aewsn.alkhair.ui.dashboard.AdminDashboardActivity
-import com.aewsn.alkhair.ui.dashboard.StudentDashboardActivity
+import com.aewsn.alkhair.ui.student.StudentActivity
 import com.aewsn.alkhair.ui.dashboard.TeacherDashboardActivity
 import com.aewsn.alkhair.utils.DialogUtils
 import com.aewsn.alkhair.utils.UiState
@@ -97,7 +97,7 @@ class LoginActivity : AppCompatActivity() {
         val destination = when (user.role.lowercase()) { // Added lowercase for safety
             "admin" -> AdminDashboardActivity::class.java
             "teacher" -> TeacherDashboardActivity::class.java
-            "student" -> StudentDashboardActivity::class.java
+            "student" -> StudentActivity::class.java
             else -> null
         }
 

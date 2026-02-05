@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class FeesAdapter(
+    private val isReadOnly: Boolean = false,
     private val onDeleteClick: (FeesModel) -> Unit,
     private val onEditClick: (FeesModel) -> Unit
 ) : ListAdapter<FeesModel, FeesAdapter.FeeViewHolder>(DiffCallback()) {
@@ -71,7 +72,11 @@ class FeesAdapter(
             applyColors(feesModel)
 
             // 3-dot popup menu
-            btnMore.setOnClickListener { view ->
+            if (isReadOnly) {
+                btnMore.visibility = android.view.View.GONE
+            } else {
+                btnMore.visibility = android.view.View.VISIBLE
+                btnMore.setOnClickListener { view ->
                 val popup = PopupMenu(view.context, view)
                 popup.menuInflater.inflate(R.menu.menu_fee_item, popup.menu)
                 popup.setOnMenuItemClickListener { item ->
@@ -90,6 +95,7 @@ class FeesAdapter(
                     }
                 }
                 popup.show()
+            }
             }
         }
 

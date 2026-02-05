@@ -17,7 +17,7 @@ import com.aewsn.alkhair.data.models.User
 import com.aewsn.alkhair.databinding.ActivityMainBinding
 import com.aewsn.alkhair.ui.auth.LoginActivity
 import com.aewsn.alkhair.ui.dashboard.AdminDashboardActivity
-import com.aewsn.alkhair.ui.dashboard.StudentDashboardActivity
+import com.aewsn.alkhair.ui.student.StudentActivity
 import com.aewsn.alkhair.ui.dashboard.TeacherDashboardActivity
 import com.aewsn.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         val destination = when (cleanRole) {
             "admin" -> AdminDashboardActivity::class.java
             "teacher" -> TeacherDashboardActivity::class.java
-            "student" -> StudentDashboardActivity::class.java
+            "student" -> StudentActivity::class.java
             else -> {
                 Log.e("MainActivity", "Unknown role: $cleanRole")
                 LoginActivity::class.java

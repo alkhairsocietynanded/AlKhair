@@ -158,7 +158,7 @@ class AppDataSyncManager @Inject constructor(
                         Log.d(TAG, "Syncing for STUDENT")
 
                         // 1. Targeted Announcements (Global)
-                        syncJobs.add(async { announcementRepoManager.syncTargetAnnouncements("ALL", queryTime).map { it as Any } })
+                        syncJobs.add(async { announcementRepoManager.syncTargetAnnouncements("All", queryTime).map { it as Any } })
 
                         val userClassId = currentUser?.classId
                         val userShift = currentUser?.shift ?: "" // ✅ Get Student Shift
