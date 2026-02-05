@@ -50,7 +50,8 @@ class StudentDashboardFragment : Fragment() {
         }
         
         binding.cardApplyLeave.setOnClickListener {
-            android.widget.Toast.makeText(requireContext(), "Leave application coming soon!", android.widget.Toast.LENGTH_SHORT).show()
+            val bottomSheet = com.aewsn.alkhair.ui.student.leave.ApplyLeaveBottomSheet()
+            bottomSheet.show(parentFragmentManager, com.aewsn.alkhair.ui.student.leave.ApplyLeaveBottomSheet.TAG)
         }
         
         binding.cardSubmitHomework.setOnClickListener {

@@ -30,6 +30,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE role = :role ORDER BY name ASC")
     fun getUsersByRole(role: String): Flow<List<User>>
 
+    @Query("SELECT * FROM users WHERE classId = :classId AND role = 'student'")
+    suspend fun getUsersByClass(classId: String): List<User>
+
     @Query("DELETE FROM users WHERE uid = :uid")
     suspend fun deleteUser(uid: String)
 

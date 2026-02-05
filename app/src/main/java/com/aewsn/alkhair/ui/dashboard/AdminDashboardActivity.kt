@@ -130,6 +130,17 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, SalaryActivity::class.java))
         }
 
+        binding.cardLeaveApproval.setOnClickListener {
+            // Admin can see all leaves, pass User object if required for filtering or just Role
+             val intent = Intent(this, com.aewsn.alkhair.ui.approval.LeaveApprovalActivity::class.java).apply {
+                // Admin doesn't need specific user object, but we pass dummy or just rely on global auth
+                // Or we can pass a dummy "Admin" user object if the Fragment expects it
+                // Ideally, ViewModel fetches current User.
+                putExtra("user", com.aewsn.alkhair.data.models.User(uid = "admin_dummy", role = Roles.ADMIN, name = "Admin"))
+            }
+            startActivity(intent)
+        }
+
         // --- Actions ---
         binding.cardLogout.setOnClickListener {
             logoutManager.logout(this)

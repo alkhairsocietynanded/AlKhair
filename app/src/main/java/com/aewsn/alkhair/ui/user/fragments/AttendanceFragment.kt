@@ -120,48 +120,86 @@ class AttendanceFragment : Fragment() {
             }
         }
 
-        // Observe the ViewModel for attendance data
+        // Initialize Adapter
+        val leaveAdapter = com.aewsn.alkhair.ui.student.adapter.LeaveHistoryAdapter(
+            onEditClick = { leave ->
+                val bottomSheet = com.aewsn.alkhair.ui.student.leave.ApplyLeaveBottomSheet.newInstance(leave)
+                bottomSheet.show(parentFragmentManager, com.aewsn.alkhair.ui.student.leave.ApplyLeaveBottomSheet.TAG)
+            },
+            onDeleteClick = { leave ->
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Delete Application")
+                    .setMessage("Are you sure you want to delete this leave application?")
+                    .setPositiveButton("Delete") { _, _ ->
+                        viewModel.deleteLeave(leave)
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+        )
+        binding.rvLeaveHistory.apply {
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+            adapter = leaveAdapter
+        }
+
+        // Observe the ViewModel for attendance and leaves
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.userAttendance.collectLatest { state ->
-                    when (state) {
-                        is UiState.Loading -> showLoading(true)
-                        is UiState.Success -> {
-                            showLoading(false)
+                launch {
+                    viewModel.userAttendance.collectLatest { state ->
+                        when (state) {
+                            is UiState.Loading -> showLoading(true)
+                            is UiState.Success -> {
+                                showLoading(false)
 
-                            // Correctly process the List<Attendance>
-                            val attendanceMap = mutableMapOf<LocalDate, String>()
-                            state.data.forEach { attendanceRecord ->
-                                try {
-                                    val date = LocalDate.parse(attendanceRecord.date) // "yyyy-MM-dd" format
-                                    attendanceMap[date] = attendanceRecord.status
-                                } catch (e: Exception) {
-                                    Log.e("AttendanceFragment", "Invalid date format: ${attendanceRecord.date}", e)
-                                }
-                            }
-
-                            // Update the calendar day binder with the new data
-                            binding.calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
-                                override fun create(view: View) = DayViewContainer(view)
-                                override fun bind(container: DayViewContainer, data: CalendarDay) {
-                                    container.textView.text = data.date.dayOfMonth.toString()
-                                    container.textView.background = null
-                                    container.textView.alpha = if (data.position == DayPosition.MonthDate) 1f else 0.3f
-
-                                    when (attendanceMap[data.date]) {
-                                        "Present" -> container.textView.setBackgroundResource(R.drawable.bg_present_day)
-                                        "Absent" -> container.textView.setBackgroundResource(R.drawable.bg_absent_day)
-                                        "Leave" -> container.textView.setBackgroundResource(R.drawable.bg_leave_day)
+                                // Correctly process the List<Attendance>
+                                val attendanceMap = mutableMapOf<LocalDate, String>()
+                                state.data.forEach { attendanceRecord ->
+                                    try {
+                                        val date = LocalDate.parse(attendanceRecord.date) // "yyyy-MM-dd" format
+                                        attendanceMap[date] = attendanceRecord.status
+                                    } catch (e: Exception) {
+                                        Log.e("AttendanceFragment", "Invalid date format: ${attendanceRecord.date}", e)
                                     }
                                 }
+
+                                // Update the calendar day binder with the new data
+                                binding.calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {
+                                    override fun create(view: View) = DayViewContainer(view)
+                                    override fun bind(container: DayViewContainer, data: CalendarDay) {
+                                        container.textView.text = data.date.dayOfMonth.toString()
+                                        container.textView.background = null
+                                        container.textView.alpha = if (data.position == DayPosition.MonthDate) 1f else 0.3f
+
+                                        when (attendanceMap[data.date]) {
+                                            "Present" -> container.textView.setBackgroundResource(R.drawable.bg_present_day)
+                                            "Absent" -> container.textView.setBackgroundResource(R.drawable.bg_absent_day)
+                                            "Leave" -> container.textView.setBackgroundResource(R.drawable.bg_leave_day)
+                                        }
+                                    }
+                                }
+                                binding.calendarView.notifyCalendarChanged()
                             }
-                            binding.calendarView.notifyCalendarChanged()
+                            is UiState.Error -> {
+                                showLoading(false)
+                                DialogUtils.showAlert(requireContext(), "Error", state.message)
+                            }
+                            else -> showLoading(false)
                         }
-                        is UiState.Error -> {
-                            showLoading(false)
-                            DialogUtils.showAlert(requireContext(), "Error", state.message)
+                    }
+                }
+                
+                launch {
+                    viewModel.userLeaves.collectLatest { state ->
+                        when (state) {
+                            is UiState.Success -> {
+                                leaveAdapter.submitList(state.data)
+                            }
+                            is UiState.Error -> {
+                                Log.e("AttendanceFragment", "Error loading leaves: ${state.message}")
+                            }
+                            else -> {}
                         }
-                        else -> showLoading(false)
                     }
                 }
             }

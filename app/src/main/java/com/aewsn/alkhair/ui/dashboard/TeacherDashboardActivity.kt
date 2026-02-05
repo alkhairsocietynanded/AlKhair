@@ -160,6 +160,14 @@ class TeacherDashboardActivity : AppCompatActivity() {
         binding.cardSalary.setOnClickListener {
             startActivity(Intent(this, SalaryActivity::class.java))
         }
+
+        binding.cardLeaveApproval.setOnClickListener {
+             val intent = Intent(this, com.aewsn.alkhair.ui.approval.LeaveApprovalActivity::class.java).apply {
+                putExtra("user", loggedInUser)
+            }
+            startActivity(intent)
+        }
+        
         binding.cardProfile.setOnClickListener {
             val intent = Intent(this, UserDetailActivity::class.java).apply {
                 putExtra("userId", loggedInUser?.uid)

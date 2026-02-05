@@ -21,8 +21,12 @@ class StudentViewModel @Inject constructor(
     private val userRepoManager: UserRepoManager,
     private val attendanceRepoManager: AttendanceRepoManager,
     private val announcementRepoManager: AnnouncementRepoManager,
-    private val appDataSyncManager: com.aewsn.alkhair.data.manager.AppDataSyncManager
+    private val appDataSyncManager: com.aewsn.alkhair.data.manager.AppDataSyncManager,
+    private val leaveRepoManager: com.aewsn.alkhair.data.manager.LeaveRepoManager
 ) : ViewModel() {
+
+    private val _leaveSubmissionState = MutableStateFlow<UiState<Boolean>>(UiState.Idle)
+    val leaveSubmissionState: StateFlow<UiState<Boolean>> = _leaveSubmissionState.asStateFlow()
 
     private val _currentUser = MutableStateFlow<UiState<User>>(UiState.Loading)
     val currentUser: StateFlow<UiState<User>> = _currentUser.asStateFlow()
@@ -96,5 +100,42 @@ class StudentViewModel @Inject constructor(
         viewModelScope.launch {
             authRepoManager.logout()
         }
+    }
+
+    fun applyLeave(startDate: String, endDate: String, reason: String) {
+        viewModelScope.launch {
+            val user = (_currentUser.value as? UiState.Success)?.data ?: return@launch
+            _leaveSubmissionState.value = UiState.Loading
+            
+            val leave = com.aewsn.alkhair.data.models.Leave(
+                studentId = user.uid,
+                startDate = startDate,
+                endDate = endDate,
+                reason = reason
+            )
+
+            val result = leaveRepoManager.applyLeave(leave)
+            result.onSuccess {
+                _leaveSubmissionState.value = UiState.Success(true)
+            }.onFailure { e ->
+                _leaveSubmissionState.value = UiState.Error(e.message ?: "Failed to submit leave")
+            }
+        }
+    }
+
+    fun updateLeave(leave: com.aewsn.alkhair.data.models.Leave) {
+        viewModelScope.launch {
+            _leaveSubmissionState.value = UiState.Loading
+            val result = leaveRepoManager.updateLeave(leave)
+            result.onSuccess {
+                _leaveSubmissionState.value = UiState.Success(true)
+            }.onFailure { e ->
+                _leaveSubmissionState.value = UiState.Error(e.message ?: "Failed to update leave")
+            }
+        }
+    }
+
+    fun resetLeaveState() {
+        _leaveSubmissionState.value = UiState.Idle
     }
 }

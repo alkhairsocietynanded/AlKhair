@@ -17,6 +17,8 @@ class LocalUserRepository @Inject constructor(
 
     fun getUsersByRole(role: String): Flow<List<User>> = userDao.getUsersByRole(role)
 
+    suspend fun getUsersByClass(classId: String): List<User> = userDao.getUsersByClass(classId)
+
     suspend fun insertUser(user: User) = userDao.insertUser(user)
 
     suspend fun insertUsers(users: List<User>) = userDao.insertUsers(users)

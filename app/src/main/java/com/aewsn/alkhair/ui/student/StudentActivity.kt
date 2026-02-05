@@ -115,7 +115,8 @@ class StudentActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_home -> binding.viewPager.currentItem = 0
                 R.id.nav_fees -> binding.viewPager.currentItem = 1
-                R.id.nav_profile -> binding.viewPager.currentItem = 2
+                R.id.nav_attendance -> binding.viewPager.currentItem = 2
+                R.id.nav_profile -> binding.viewPager.currentItem = 3
             }
             true
         }

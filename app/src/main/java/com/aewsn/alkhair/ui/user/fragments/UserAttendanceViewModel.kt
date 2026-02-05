@@ -16,11 +16,13 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class UserAttendanceViewModel @Inject constructor(
-    private val attendanceRepoManager: AttendanceRepoManager
+    private val attendanceRepoManager: AttendanceRepoManager,
+    private val leaveRepoManager: com.aewsn.alkhair.data.manager.LeaveRepoManager
 ) : ViewModel() {
 
     private val _userIdFilter = MutableStateFlow<String?>(null)
@@ -53,4 +55,42 @@ class UserAttendanceViewModel @Inject constructor(
             SharingStarted.WhileSubscribed(5000),
             UiState.Idle
         )
+        
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val userLeaves: StateFlow<UiState<List<com.aewsn.alkhair.data.models.Leave>>> = _userIdFilter
+        .flatMapLatest { userId ->
+            if (userId.isNullOrBlank()) {
+                flowOf(UiState.Idle)
+            } else {
+                leaveRepoManager.getLeavesForStudent(userId)
+                    .map { list ->
+                         UiState.Success(list) as UiState<List<com.aewsn.alkhair.data.models.Leave>>
+                    }
+                    .onStart { emit(UiState.Loading) }
+                    .catch { emit(UiState.Error(it.message ?: "Failed to load leaves")) }
+            }
+        }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            UiState.Idle
+        )
+
+    fun deleteLeave(leave: com.aewsn.alkhair.data.models.Leave) {
+        viewModelScope.launch {
+            leaveRepoManager.deleteLeave(leave.id)
+                .onSuccess {
+                    // Refresh (handled by flow automatically)
+                }
+                .onFailure {
+                    // Handle error (maybe show toast via event channel)
+                }
+        }
+    }
+
+    fun updateLeave(leave: com.aewsn.alkhair.data.models.Leave) {
+        viewModelScope.launch {
+            leaveRepoManager.updateLeave(leave)
+        }
+    }
 }

@@ -50,6 +50,9 @@
             android:name=".ui.attendance.AttendanceActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.approval.LeaveApprovalActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.student.StudentActivity"
             android:exported="false" />
         <activity

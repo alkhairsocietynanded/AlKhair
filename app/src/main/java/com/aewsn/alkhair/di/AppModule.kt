@@ -41,6 +41,12 @@ object AppModule {
         return ShiftDataStore(appDataStore)
     }
 
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(@ApplicationContext context: Context): android.content.SharedPreferences {
+        return context.getSharedPreferences("alkhair_prefs", Context.MODE_PRIVATE)
+    }
+
     // =============================
     // Room Database
     // =============================
@@ -93,6 +99,10 @@ object AppModule {
     @Provides
     @Singleton
     fun providePendingDeletionDao(db: AppDatabase) = db.pendingDeletionDao()
+
+    @Provides
+    @Singleton
+    fun provideLeaveDao(db: AppDatabase) = db.leaveDao()
 
     @Provides
     @Singleton

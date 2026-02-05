@@ -2,6 +2,7 @@ package com.aewsn.alkhair.data.manager
 
 import android.util.Log
 import com.aewsn.alkhair.data.datastore.AppDataStore
+import com.aewsn.alkhair.data.remote.supabase.SupabaseDeletionRepository
 import com.aewsn.alkhair.utils.Roles
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -21,7 +22,8 @@ class AppDataSyncManager @Inject constructor(
     private val salaryRepoManager: SalaryRepoManager,
     private val homeworkRepoManager: HomeworkRepoManager,
     private val announcementRepoManager: AnnouncementRepoManager,
-    private val deletionRepository: com.aewsn.alkhair.data.remote.supabase.SupabaseDeletionRepository
+    private val leaveRepoManager: LeaveRepoManager,
+    private val deletionRepository: SupabaseDeletionRepository
 ) {
 
     companion object {
@@ -183,6 +185,9 @@ class AppDataSyncManager @Inject constructor(
 
                         // 5. My Profile
                         syncJobs.add(async { userRepoManager.syncUserProfile(currentUid).map { it as Any } })
+
+                        // 6. My Leaves (New!)
+                        syncJobs.add(async { leaveRepoManager.syncLeavesForStudent(currentUid, queryTime).map { it as Any } })
                     }
 
                     // ====================================================
@@ -280,7 +285,9 @@ class AppDataSyncManager @Inject constructor(
         homeworkRepoManager.clearLocal()
         salaryRepoManager.clearLocal()
 //        classDivisionRepoManager.clearLocal()
+//        classDivisionRepoManager.clearLocal()
         announcementRepoManager.clearLocal()
+        leaveRepoManager.clearLocal()
 
         // 2. Clear Sync Timestamp (Important!)
         // Taaki naya user login kare to full sync ho

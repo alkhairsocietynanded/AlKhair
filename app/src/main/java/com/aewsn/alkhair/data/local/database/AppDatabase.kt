@@ -31,9 +31,10 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         Homework::class,
         ClassModel::class,
         DivisionModel::class,
-        PendingDeletion::class
+        PendingDeletion::class,
+        com.aewsn.alkhair.data.models.Leave::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -46,5 +47,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun classDao(): ClassDao
     abstract fun divisionDao(): DivisionDao
     abstract fun pendingDeletionDao(): PendingDeletionDao
+    abstract fun leaveDao(): com.aewsn.alkhair.data.local.dao.LeaveDao
 
 }
