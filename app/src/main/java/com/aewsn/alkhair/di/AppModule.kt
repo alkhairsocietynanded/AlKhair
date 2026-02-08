@@ -109,4 +109,23 @@ object AppModule {
     fun provideWorkManager(@ApplicationContext context: Context): androidx.work.WorkManager {
         return androidx.work.WorkManager.getInstance(context)
     }
+
+    @Provides
+    @Singleton
+    fun provideN8nApiService(): com.aewsn.alkhair.data.remote.n8nApiService {
+        val n8nBaseUrl = "https://revlum4e5b.app.n8n.cloud/"
+        
+        val client = okhttp3.OkHttpClient.Builder()
+            .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+
+        return retrofit2.Retrofit.Builder()
+            .baseUrl(n8nBaseUrl)
+            .client(client)
+            .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
+            .build()
+            .create(com.aewsn.alkhair.data.remote.n8nApiService::class.java)
+    }
 }

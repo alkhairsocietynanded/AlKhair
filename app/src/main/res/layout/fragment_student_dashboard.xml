@@ -337,7 +337,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:letterSpacing="0.1"
-                        android:text="ACADEMIC SESSION 2023-24"
+                        android:text="ACADEMIC SESSION 2026-27"
                         android:textColor="#94A3B8"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -429,9 +429,9 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Action: Fees -->
+                <!-- Action: Study Material -->
                 <LinearLayout
-                    android:id="@+id/actionFees"
+                    android:id="@+id/actionStudyMaterial"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -449,7 +449,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
-                            android:src="@android:drawable/ic_menu_compass"
+                            android:src="@drawable/ic_study_material"
                             app:tint="#22C55E" />
                     </androidx.cardview.widget.CardView>
 
@@ -457,15 +457,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Fees"
+                        android:text="Study\nMaterial"
+                        android:gravity="center"
                         android:textColor="#334155"
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Action: Library -->
+                <!-- Action: Syllabus -->
                 <LinearLayout
-                    android:id="@+id/actionLibrary"
+                    android:id="@+id/actionSyllabus"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -483,7 +484,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
-                            android:src="@android:drawable/ic_menu_sort_by_size"
+                            android:src="@drawable/ic_syllabus"
                             app:tint="#EAB308" />
                     </androidx.cardview.widget.CardView>
 
@@ -491,7 +492,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Library"
+                        android:text="Syllabus"
                         android:textColor="#334155"
                         android:textSize="12sp"
                         android:textStyle="bold" />

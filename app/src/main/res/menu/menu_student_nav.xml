@@ -2,17 +2,22 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:icon="@android:drawable/ic_menu_agenda"
+        android:icon="@drawable/ic_home"
         android:title="Home" />
+
+    <item
+        android:id="@+id/nav_homework"
+        android:icon="@drawable/ic_homework"
+        android:title="Homework" />
     
     <item
         android:id="@+id/nav_fees"
-        android:icon="@android:drawable/ic_dialog_email"
+        android:icon="@drawable/ic_salary"
         android:title="Fees" />
 
     <item
         android:id="@+id/nav_attendance"
-        android:icon="@android:drawable/ic_menu_my_calendar"
+        android:icon="@drawable/ic_calendar"
         android:title="Attendance" />
 
     <item

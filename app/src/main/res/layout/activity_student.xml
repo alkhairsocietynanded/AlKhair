@@ -37,13 +37,25 @@
             android:background="@android:color/transparent"
             app:elevation="0dp"
             app:itemIconTint="@color/bottom_nav_item_color"
-            app:itemRippleColor="#33E91E63"
-            app:itemTextColor="@color/bottom_nav_item_color"
             app:labelFontScalingEnabled="true"
             app:labelMaxLines="1"
             app:labelVisibilityMode="unlabeled"
             app:menu="@menu/menu_student_nav" />
 
     </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAskAi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="#0F172A"
+        android:contentDescription="Ask AI"
+        android:src="@drawable/ic_chat"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/navContainer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@android:color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

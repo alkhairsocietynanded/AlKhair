@@ -14,17 +14,7 @@
         app:liftOnScroll="true"
         app:liftOnScrollColor="?attr/colorPrimary">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:layout_scrollFlags="scroll|enterAlways|snap"
-            app:liftOnScroll="true"
-            app:navigationIcon="@drawable/ic_arrow_back"
-            app:navigationIconTint="?attr/colorOnPrimary"
-            app:title="User Detail"
-            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
-            app:titleTextColor="?attr/colorOnPrimary" />
+
 
         <!-- TabLayout -->
         <com.google.android.material.tabs.TabLayout

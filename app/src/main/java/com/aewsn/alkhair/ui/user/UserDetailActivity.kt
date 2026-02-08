@@ -28,20 +28,24 @@ class UserDetailActivity : AppCompatActivity() {
         binding = ActivityUserDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ✅ Insets handle karo - Apply top padding to AppBarLayout only
-        ViewCompat.setOnApplyWindowInsetsListener(binding.appBarLayout) { v, insets ->
+        // ✅ Handle Insets globally for the Activity
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(0, systemBars.top, 0, 0)
+            
+            // Only apply top padding to the AppBar, leave other sides alone for children
+            binding.appBarLayout.setPadding(0, systemBars.top, 0, 0)
+            
+            // Return insets so ViewPager/Fragment can consume bottom inset
             insets
         }
-        setupToolbar()
+
+        // Fix Status Bar Icon Color (Make them white)
+        val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.isAppearanceLightStatusBars = false
+
 
         val user = intent.extras?.getParcelableCompat("user", User::class.java)
         // Get user details from intent
-
-
-        supportActionBar?.title = user?.name
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val fragments = if (user?.role == Roles.STUDENT) {
             listOf(
@@ -63,14 +67,6 @@ class UserDetailActivity : AppCompatActivity() {
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.text = pagerAdapter.getTitle(position)
         }.attach()
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
-        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

@@ -35,7 +35,14 @@ class FeesViewModel @Inject constructor(
     /* ============================================================
        📦 STUDENTS DATA (Cached for calculations)
        ============================================================ */
-    // Removed manual loading. Now using observeUsersByRole directly in combine.
+
+    /* ============================================================
+       📦 USER ROLE (For UI Logic)
+       ============================================================ */
+    val currentUserRole: StateFlow<String?> = userRepoManager.getCurrentUserFlow()
+        .map { it?.role }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
 
 
     /* ============================================================

@@ -37,7 +37,7 @@ class StudentDashboardFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         setupListeners()
         observeUserData()
     }
@@ -45,24 +45,62 @@ class StudentDashboardFragment : Fragment() {
     private fun setupListeners() {
         binding.btnLogout.setOnClickListener {
             viewModel.logout()
-            startActivity(Intent(requireContext(), com.aewsn.alkhair.ui.auth.LoginActivity::class.java))
+            startActivity(
+                Intent(
+                    requireContext(),
+                    com.aewsn.alkhair.ui.auth.LoginActivity::class.java
+                )
+            )
             requireActivity().finishAffinity()
         }
-        
+
         binding.cardApplyLeave.setOnClickListener {
             val bottomSheet = com.aewsn.alkhair.ui.student.leave.ApplyLeaveBottomSheet()
-            bottomSheet.show(parentFragmentManager, com.aewsn.alkhair.ui.student.leave.ApplyLeaveBottomSheet.TAG)
+            bottomSheet.show(
+                parentFragmentManager,
+                com.aewsn.alkhair.ui.student.leave.ApplyLeaveBottomSheet.TAG
+            )
         }
-        
+
         binding.cardSubmitHomework.setOnClickListener {
-            android.widget.Toast.makeText(requireContext(), "Homework submission coming soon!", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                requireContext(),
+                "Homework submission coming soon!",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
+
+        binding.actionStudyMaterial.setOnClickListener {
+            showComingSoonDialog("Study Material")
+        }
+
+        binding.actionSyllabus.setOnClickListener {
+            showComingSoonDialog("Syllabus")
+        }
+        binding.actionTimetable.setOnClickListener {
+            showComingSoonDialog("Time Table")
+        }
+        binding.actionResults.setOnClickListener {
+            showComingSoonDialog("Results")
+        }
+    }
+
+    private fun showComingSoonDialog(featureName: String) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Coming Soon")
+            .setMessage("$featureName feature is currently under development.")
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun observeUserData() {
         val announcementAdapter = DashboardAnnouncementAdapter()
         binding.rvAnnouncements.apply {
-            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(
+                requireContext(),
+                androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL,
+                false
+            )
             adapter = announcementAdapter
         }
 
@@ -74,13 +112,18 @@ class StudentDashboardFragment : Fragment() {
                             is UiState.Success -> {
                                 val user = state.data
                                 binding.tvWelcomeName.text = "Hi, ${user.name} \uD83D\uDC4B"
-                                
-                                val dateFormat = java.text.SimpleDateFormat("EEEE, MMMM d, yyyy", java.util.Locale.getDefault())
+
+                                val dateFormat = java.text.SimpleDateFormat(
+                                    "EEEE, MMMM d, yyyy",
+                                    java.util.Locale.getDefault()
+                                )
                                 binding.tvDate.text = dateFormat.format(java.util.Date())
                             }
+
                             is UiState.Error -> {
                                 binding.tvWelcomeName.text = "Hi, Student"
                             }
+
                             else -> {}
                         }
                     }

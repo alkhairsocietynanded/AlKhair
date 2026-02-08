@@ -12,8 +12,13 @@ import javax.inject.Singleton
 class AuthRepoManager @Inject constructor(
     private val authRepository: SupabaseAuthRepository,
     private val userRepository: SupabaseUserRepository, // Inject Remote Repo for fresh installs
-    private val userRepoManager: UserRepoManager // Inject Manager for Local Sync
+    private val userRepoManager: UserRepoManager, // Inject Manager for Local Sync
+    private val appDataStore: com.aewsn.alkhair.data.datastore.AppDataStore
 ) {
+
+    companion object {
+        private const val KEY_CURRENT_UID = "current_user_uid"
+    }
 
     /**
      * Login Logic:
@@ -27,6 +32,7 @@ class AuthRepoManager @Inject constructor(
             onSuccess = { uid ->
                 try {
                     // 1. Try Local First (Fastest)
+                    saveLoginState(uid) // ✅ Persist Login State
                     val localUser = userRepoManager.getUserById(uid)
                     if (localUser != null) {
                         return Result.success(localUser)
@@ -41,6 +47,7 @@ class AuthRepoManager @Inject constructor(
                                 // 3. Save to Local DB (Sync)
                                 // ERROR FIXED: insertLocal is protected. Use saveUserLocally (see UserRepoManager note below)
                                 userRepoManager.saveUserLocally(remoteUser)
+                                saveLoginState(uid) // ✅ Persist Login State
                                 Result.success(remoteUser)
                             } else {
                                 Result.failure(Exception("User profile not found in database."))
@@ -78,6 +85,7 @@ class AuthRepoManager @Inject constructor(
                 
                 // 2. Save Local Only (No Worker needed as Edge Function synced it)
                 userRepoManager.saveUserLocally(finalUser)
+                saveLoginState(uid) // ✅ Persist Login State
                 Result.success(finalUser)
             },
             onFailure = { e ->
@@ -86,19 +94,29 @@ class AuthRepoManager @Inject constructor(
         )
     }
 
-    fun logout() {
-        // Run blocking or launch in scope if needed, but repo method is suspend.
-        // Manager method is currently synchronous (fun logout()).
-        // Ideally should be suspend, or we launch here. 
-        // For now, let's keep it synchronous wrapper if possible or change signature.
-        // Migration note: The original logout() was not suspend?
-        // Ah, FirebaseAuth.signOut() is synchronous. Supabase.signOut() is suspend.
-        // I need to update this method to be suspend OR launch a coroutine scope.
-        // Or check if SupabaseAuthRepo has a blocking option? No.
-        // I will change it to suspend.
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+    suspend fun logout() {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            clearLoginState() // ✅ Clear Persistent State
             authRepository.logout()
         }
+    }
+
+    /* ============================================================
+       🔐 Session Persistence Utilities
+       ============================================================ */
+
+    suspend fun saveLoginState(uid: String) {
+        appDataStore.saveString(KEY_CURRENT_UID, uid)
+    }
+
+    private suspend fun clearLoginState() {
+        // Clear EVERYTHING (Session, Sync Timestamps, etc) on logout to prevent data leakage/sync issues
+        appDataStore.clearAll()
+    }
+
+    suspend fun getLocalLoginUid(): String? {
+        val uid = appDataStore.getString(KEY_CURRENT_UID, "")
+        return if (uid.isNotEmpty()) uid else null
     }
 
     fun getCurrentUserUid(): String? {

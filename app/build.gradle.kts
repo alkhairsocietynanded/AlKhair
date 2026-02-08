@@ -84,6 +84,9 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.gson)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.markwon.core)
 
     implementation(libs.mpandroidchart)
 

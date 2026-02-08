@@ -154,14 +154,50 @@ class AttendanceFragment : Fragment() {
 
                                 // Correctly process the List<Attendance>
                                 val attendanceMap = mutableMapOf<LocalDate, String>()
+                                var presentCount = 0
+                                var absentCount = 0
+                                var leaveCount = 0
+
                                 state.data.forEach { attendanceRecord ->
                                     try {
                                         val date = LocalDate.parse(attendanceRecord.date) // "yyyy-MM-dd" format
                                         attendanceMap[date] = attendanceRecord.status
+                                        
+                                        when (attendanceRecord.status) {
+                                            "Present" -> presentCount++
+                                            "Absent" -> absentCount++
+                                            "Leave" -> leaveCount++
+                                        }
                                     } catch (e: Exception) {
                                         Log.e("AttendanceFragment", "Invalid date format: ${attendanceRecord.date}", e)
                                     }
                                 }
+
+                                // Update Dashboard UI (Overall Attendance)
+                                val totalDays = presentCount + absentCount + leaveCount
+                                val percentage = if (totalDays > 0) {
+                                    (presentCount.toFloat() / totalDays.toFloat()) * 100
+                                } else {
+                                    0f
+                                }
+                                
+                                binding.tvAttendancePercentage.text = String.format("%.1f%%", percentage)
+                                binding.progressIndicator.setProgress(percentage.toInt(), true)
+                                
+                                val (statusText, statusColor) = when {
+                                    percentage >= 75 -> "Excellent" to "#10B981" // Green
+                                    percentage >= 60 -> "Good" to "#F59E0B"      // Orange
+                                    else -> "Low Attendance" to "#EF4444"         // Red
+                                }
+                                
+                                binding.tvAttendanceStatus.text = statusText
+                                binding.tvAttendanceStatus.setTextColor(android.graphics.Color.parseColor(statusColor))
+
+                                // Update Stats Row Cards
+                                binding.tvTotalDaysCard.text = totalDays.toString()
+                                binding.tvPresentCard.text = presentCount.toString()
+                                binding.tvAbsentCard.text = absentCount.toString()
+                                binding.tvLeaveCard.text = leaveCount.toString()
 
                                 // Update the calendar day binder with the new data
                                 binding.calendarView.dayBinder = object : MonthDayBinder<DayViewContainer> {

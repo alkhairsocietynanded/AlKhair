@@ -62,6 +62,11 @@ class UserRepoManager @Inject constructor(
         return user
     }
 
+    fun getCurrentUserFlow(): Flow<User?> {
+        val uid = supabaseAuthRepository.currentUserUid() ?: return kotlinx.coroutines.flow.flowOf(null)
+        return localUserRepository.getUserById(uid)
+    }
+
     suspend fun getUsersByRole(role: String): Result<List<User>> {
         return try {
             val users = localUserRepository.getUsersByRole(role).first()

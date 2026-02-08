@@ -31,6 +31,7 @@ import com.aewsn.alkhair.utils.LogoutManager
 import com.aewsn.alkhair.utils.Modes
 import com.aewsn.alkhair.utils.Roles
 import com.aewsn.alkhair.utils.UiState
+import androidx.core.view.isVisible
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -142,11 +143,12 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
         // --- Actions ---
+        // --- Actions ---
         binding.cardLogout.setOnClickListener {
             logoutManager.logout(this)
         }
 
-        binding.fabAnnounce.setOnClickListener {
+        binding.cardAnnounce.setOnClickListener {
             val addAnnouncementSheet = AddAnnouncementSheet()
             addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
         }
@@ -155,6 +157,11 @@ class AdminDashboardActivity : AppCompatActivity() {
             // In SSOT, swipe refresh triggers a Sync. The UI updates via Flow automatically.
             // mainViewModel.syncData() // If exposed. For now, just reset the loader.
             binding.swipeRefreshLayout.isRefreshing = false
+        }
+        
+        binding.fabAskAi.isVisible = true
+        binding.fabAskAi.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatActivity::class.java))
         }
     }
 

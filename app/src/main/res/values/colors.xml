@@ -104,4 +104,8 @@
     <color name="dopahar">#D73C31</color>
     <color name="shaam">#B11C73</color>
 
+    <!-- Navigation Colors - Requested Update -->
+    <color name="nav_highlighter">#C084FC</color> <!-- Light Purple -->
+    <color name="nav_icon_selected_on_highlight">#FFFFFF</color> <!-- Deep Purple for readability on light highlight -->
+
 </resources>

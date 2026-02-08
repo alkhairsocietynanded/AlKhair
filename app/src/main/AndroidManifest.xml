@@ -6,6 +6,14 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- ✅ UPI Apps Visibility for Android 11+ (API 30) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+    </queries>
+
     <application
         android:name=".MyApp"
         android:allowBackup="false"
@@ -52,6 +60,10 @@
         <activity
             android:name=".ui.approval.LeaveApprovalActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.chat.ChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.student.StudentActivity"
             android:exported="false" />

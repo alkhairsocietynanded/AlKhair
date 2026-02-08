@@ -22,173 +22,272 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="100dp">
+            android:paddingBottom="130dp">
 
-            <!-- Fees Summary Dashboard -->
+            <!-- Title Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp">
+
+                <ImageView
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_white_rounded"
+                    android:backgroundTint="#FFFFFF"
+                    android:contentDescription="Back"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_back"
+                    android:visibility="gone"
+                    app:tint="#1E293B"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Fees &amp; Payments"
+                    android:textColor="#1E293B"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/btnNotify"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_white_rounded"
+                    android:backgroundTint="#FFFFFF"
+                    android:contentDescription="Notifications"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_notifications"
+                    app:tint="#1E293B" />
+            </LinearLayout>
+
+            <!-- Teal Hero Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/feeSummaryCard"
-                style="@style/Widget.Material3.CardView.Outlined"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
-                android:layout_marginVertical="8dp">
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="#10B981"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:strokeWidth="0dp">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/feeSummaryLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp">
+                    android:padding="24dp">
+
+                    <TextView
+                        android:id="@+id/lblTotalOutstanding"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:alpha="0.9"
+                        android:letterSpacing="0.05"
+                        android:text="TOTAL OUTSTANDING"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvTotalDueAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="₹0.00"
+                        android:textColor="#FFFFFF"
+                        android:textSize="36sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/lblTotalOutstanding" />
+
+                    <TextView
+                        android:id="@+id/lblNextDue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:alpha="0.8"
+                        android:text="Tap for details"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvTotalDueAmount"
+                        app:layout_constraintVertical_bias="1.0" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPayNow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:backgroundTint="#FFFFFF"
+                        android:text="Pay Now"
+                        android:textColor="#10B981"
+                        android:textStyle="bold"
+                        app:cornerRadius="20dp"
+                        app:icon="@drawable/ic_arrow_forward"
+                        app:iconGravity="textEnd"
+                        app:iconTint="#10B981"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvTotalDueAmount" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Fees Summary Dashboard (Restored) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/dashboardCard"
+                style="@style/Widget.Material3.CardView.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="24dp"
+                android:layout_marginTop="-8dp"
+                app:cardBackgroundColor="#FFFFFF"
+                app:cardElevation="2dp"
+                app:strokeColor="#E2E8F0"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:baselineAligned="false">
 
                     <!-- Total Fees -->
                     <LinearLayout
-                        android:id="@+id/totalFeesContainer"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:gravity="center"
-                        android:orientation="vertical"
-                        app:layout_constraintEnd_toStartOf="@+id/divider1"
-                        app:layout_constraintHorizontal_chainStyle="spread_inside"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent">
+                        android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tvTotalFees"
+                            android:id="@+id/lblTotalFees"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Total Fees"
-                            android:textAppearance="?attr/textAppearanceLabelMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                            android:textSize="12sp"
+                            android:textColor="#64748B" />
 
                         <TextView
                             android:id="@+id/tvTotalFeesAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="4dp"
                             android:text="₹0"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textColor="?attr/colorPrimary" />
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#0F172A" />
                     </LinearLayout>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        android:id="@+id/divider1"
+                    <View
                         android:layout_width="1dp"
-                        android:layout_height="0dp"
-                        android:orientation="vertical"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/totalPaidContainer"
-                        app:layout_constraintStart_toEndOf="@+id/totalFeesContainer"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        android:layout_height="match_parent"
+                        android:background="#E2E8F0"
+                        android:layout_marginVertical="4dp"/>
 
                     <!-- Total Paid -->
                     <LinearLayout
-                        android:id="@+id/totalPaidContainer"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:gravity="center"
-                        android:orientation="vertical"
-                        app:layout_constraintEnd_toStartOf="@+id/divider2"
-                        app:layout_constraintStart_toEndOf="@+id/divider1"
-                        app:layout_constraintTop_toTopOf="parent">
+                        android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tvTotalPaid"
+                            android:id="@+id/lblTotalPaid"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Total Paid"
-                            android:textAppearance="?attr/textAppearanceLabelMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                            android:textSize="12sp"
+                            android:textColor="#64748B" />
 
                         <TextView
                             android:id="@+id/tvTotalPaidAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="4dp"
                             android:text="₹0"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textColor="@color/design_default_color_primary" />
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#10B981" />
                     </LinearLayout>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        android:id="@+id/divider2"
+                    <View
                         android:layout_width="1dp"
-                        android:layout_height="0dp"
-                        android:orientation="vertical"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/discountContainer"
-                        app:layout_constraintStart_toEndOf="@+id/totalPaidContainer"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        android:layout_height="match_parent"
+                        android:background="#E2E8F0"
+                        android:layout_marginVertical="4dp"/>
 
                     <!-- Discounts -->
                     <LinearLayout
-                        android:id="@+id/discountContainer"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:gravity="center"
-                        android:orientation="vertical"
-                        app:layout_constraintEnd_toStartOf="@+id/divider3"
-                        app:layout_constraintStart_toEndOf="@+id/divider2"
-                        app:layout_constraintTop_toTopOf="parent">
+                        android:orientation="vertical">
 
                         <TextView
-                            android:id="@+id/tvTotalDiscount"
+                            android:id="@+id/lblTotalDiscount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Discounts"
-                            android:textAppearance="?attr/textAppearanceLabelMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                            android:text="Discount"
+                            android:textSize="12sp"
+                            android:textColor="#64748B" />
 
                         <TextView
                             android:id="@+id/tvTotalDiscountAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="4dp"
                             android:text="₹0"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textColor="@color/design_default_color_secondary" />
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#F59E0B" />
                     </LinearLayout>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        android:id="@+id/divider3"
-                        android:layout_width="1dp"
-                        android:layout_height="0dp"
-                        android:orientation="vertical"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@+id/totalDueContainer"
-                        app:layout_constraintStart_toEndOf="@+id/discountContainer"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <!-- Total Due -->
-                    <LinearLayout
-                        android:id="@+id/totalDueContainer"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/divider3"
-                        app:layout_constraintTop_toTopOf="parent">
-
-                        <TextView
-                            android:id="@+id/tvTotalDue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Total Due"
-                            android:textAppearance="?attr/textAppearanceLabelMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
-
-                        <TextView
-                            android:id="@+id/tvTotalDueAmount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="₹0"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textColor="?attr/colorError" />
-                    </LinearLayout>
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- List Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingBottom="12dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Transaction History"
+                    android:textColor="#0F172A"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="VIEW ALL"
+                    android:textColor="#10B981"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Content Area -->
             <FrameLayout

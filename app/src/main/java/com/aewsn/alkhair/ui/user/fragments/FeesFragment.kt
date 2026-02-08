@@ -19,6 +19,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.aewsn.alkhair.data.models.FeesModel
 import com.aewsn.alkhair.data.models.User
 import com.aewsn.alkhair.databinding.FragmentFeesBinding
+import android.content.Intent
+import android.net.Uri
+import androidx.core.view.doOnLayout
 import com.aewsn.alkhair.ui.fees.AddEditFeesDialog
 import com.aewsn.alkhair.ui.fees.FeesViewModel
 import com.aewsn.alkhair.ui.user.adapters.FeesAdapter
@@ -40,6 +43,7 @@ class FeesFragment : Fragment() {
     private lateinit var adapter: FeesAdapter
 
     private var user: User? = null
+    private var currentDueAmount: Double = 0.0
 
     companion object {
         private const val ARG_USER = "arg_user"
@@ -83,13 +87,21 @@ class FeesFragment : Fragment() {
        ============================================================ */
 
     private fun setupInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.fabAddFee) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                bottomMargin = 16.dpToPx() + systemBars.bottom
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            
+            binding.fabAddFee.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                // Increased base margin to 50dp to ensure full visibility above nav bar
+                bottomMargin = 50.dpToPx() + bars.bottom
+                // Handle landscape/cutout
+                rightMargin = 24.dpToPx() + bars.right 
             }
             insets
         }
+        // Force request to ensure listener is called
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     private fun setupFabAnimation() {
@@ -110,14 +122,14 @@ class FeesFragment : Fragment() {
         }
     }
 
+    private var isReadOnly = true // Default to true until role is fetched
+
     private fun setupRecyclerView() {
-        val isStudent = user?.role?.equals("student", ignoreCase = true) == true
-        
         adapter = FeesAdapter(
-            isReadOnly = isStudent,
+            isReadOnly = isReadOnly, // Initial state, update later if needed
             onDeleteClick = { fee ->
-                // Extra check, though button should be hidden
-                if (!isStudent) {
+                // Extra check
+                if (!isReadOnly) {
                     DialogUtils.showConfirmation(
                         requireContext(),
                         title = "Delete Fee Record",
@@ -127,7 +139,7 @@ class FeesFragment : Fragment() {
                 }
             },
             onEditClick = { fee ->
-                if (!isStudent) {
+                if (!isReadOnly) {
                     showAddFeeDialog(fee)
                 }
             }
@@ -138,14 +150,59 @@ class FeesFragment : Fragment() {
             adapter = this@FeesFragment.adapter
         }
         
-        // Hide FAB for students
-        binding.fabAddFee.isVisible = !isStudent
+        // Initial setup - FAB hidden by default until role is confirmed
+        binding.fabAddFee.isVisible = false
+        
+        // Listener uses internal check, we'll update visibility in Observer
+    }
+    
+    private fun updateFabVisibility(role: String?) {
+        val isLoggedInStudent = role?.equals(com.aewsn.alkhair.utils.Roles.STUDENT, ignoreCase = true) == true
+        isReadOnly = isLoggedInStudent
+        binding.fabAddFee.isVisible = !isLoggedInStudent
+        
+        // Re-bind adapter if needed or notify changes to update item visuals (like delete button)
+        // Ideally adapter should observe this or we recreate it. 
+        // For quick fix:
+        // Re-bind adapter if needed or notify changes to update item visuals (like delete button)
+        // Ideally adapter should observe this or we recreate it. 
+        // For quick fix:
+        adapter = FeesAdapter(
+            isReadOnly = isReadOnly,
+            onDeleteClick = { fee ->
+                 if (!isReadOnly) {
+                    DialogUtils.showConfirmation(
+                        requireContext(),
+                        title = "Delete Fee Record",
+                        message = "Are you sure you want to delete this fee record?",
+                        onConfirmed = { feesViewModel.deleteFee(fee.id) }
+                    )
+                 }
+            },
+            onEditClick = { fee ->
+                if (!isReadOnly) {
+                    showAddFeeDialog(fee)
+                }
+            }
+        )
+        binding.recyclerViewFees.adapter = adapter
+        // Re-submit list if data exists
+        val currentList = (adapter as? FeesAdapter)?.currentList ?: emptyList()
+         if (feesViewModel.studentFeesListState.value is UiState.Success) {
+             (binding.recyclerViewFees.adapter as FeesAdapter).submitList((feesViewModel.studentFeesListState.value as UiState.Success).data)
+         }
     }
 
     private fun setupListeners() {
-        if (binding.fabAddFee.isVisible) {
-            binding.fabAddFee.setOnClickListener {
-                showAddFeeDialog()
+        binding.fabAddFee.setOnClickListener {
+            showAddFeeDialog()
+        }
+
+        binding.btnPayNow.setOnClickListener {
+            if (currentDueAmount > 0) {
+                initiateUpiPayment(currentDueAmount.toString())
+            } else {
+                Toast.makeText(requireContext(), "No pending dues to pay!", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -155,6 +212,15 @@ class FeesFragment : Fragment() {
        ============================================================ */
 
     private fun observeViewModel() {
+
+        // 0. Role Observer (For FAB Visibility)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                feesViewModel.currentUserRole.collect { role ->
+                    updateFabVisibility(role)
+                }
+            }
+        }
 
         // 1. List Observer (SSOT: Room -> ViewModel -> UI)
         viewLifecycleOwner.lifecycleScope.launch {
@@ -224,18 +290,43 @@ class FeesFragment : Fragment() {
        ============================================================ */
 
     private fun updateFeeDashboard(feesModels: List<FeesModel>) {
-        val totalFees = feesModels.sumOf { it.baseAmount }.toInt()
-        val totalPaid = feesModels.sumOf { it.paidAmount }.toInt()
-        val totalDisc = feesModels.sumOf { it.discounts }.toInt()
+        val totalFees = feesModels.sumOf { it.baseAmount }
+        val totalPaid = feesModels.sumOf { it.paidAmount }
+        val totalDisc = feesModels.sumOf { it.discounts }
 
         // Logic fix: Ensure due is not negative visually
         val rawDue = totalFees - (totalPaid + totalDisc)
-        val adjustedDue = rawDue.coerceAtLeast(0)
+        val adjustedDue = rawDue.coerceAtLeast(0.0)
+        currentDueAmount = adjustedDue
 
-        binding.tvTotalFeesAmount.text = "₹$totalFees"
-        binding.tvTotalPaidAmount.text = "₹$totalPaid"
-        binding.tvTotalDiscountAmount.text = "₹$totalDisc"
-        binding.tvTotalDueAmount.text = "₹$adjustedDue"
+        // Using standard formatting for currency: ₹1,250.00
+        val format = "₹%,.2f"
+
+        binding.tvTotalFeesAmount.text = String.format(format, totalFees)
+        binding.tvTotalPaidAmount.text = String.format(format, totalPaid)
+        binding.tvTotalDiscountAmount.text = String.format(format, totalDisc)
+        binding.tvTotalDueAmount.text = String.format(format, adjustedDue)
+    }
+
+    private fun initiateUpiPayment(amount: String) {
+        val uri = Uri.parse("upi://pay").buildUpon()
+            .appendQueryParameter("pa", "9028128689@jio") // TODO: Replace with actual Merchant UPI ID
+            .appendQueryParameter("pn", "Al Khair School") // TODO: Replace with Merchant Name
+            .appendQueryParameter("tn", "School Fees Payment") // Transaction Note
+            .appendQueryParameter("am", amount) // Amount
+            .appendQueryParameter("cu", "INR") // Currency
+            .build()
+
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.data = uri
+
+        val chooser = Intent.createChooser(intent, "Pay with")
+
+        try {
+            startActivity(chooser)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "No UPI app found, please install one to continue.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showAddFeeDialog(feesModelToEdit: FeesModel? = null) {

@@ -40,6 +40,7 @@ import com.aewsn.alkhair.utils.Modes
 import com.aewsn.alkhair.utils.Roles
 import com.aewsn.alkhair.utils.UiState
 import com.google.android.material.tabs.TabLayoutMediator
+import androidx.core.view.isVisible
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -183,6 +184,11 @@ class TeacherDashboardActivity : AppCompatActivity() {
         binding.swipeRefreshLayout.setOnRefreshListener {
             // Data refreshes automatically via Flow when DB updates (Background sync)
             binding.swipeRefreshLayout.isRefreshing = false
+        }
+
+        // --- Ask AI ---
+        binding.cardAskAi.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatActivity::class.java))
         }
     }
 

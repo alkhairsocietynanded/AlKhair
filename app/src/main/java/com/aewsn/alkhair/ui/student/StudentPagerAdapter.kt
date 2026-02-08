@@ -13,14 +13,15 @@ class StudentPagerAdapter(
     private val user: User
 ) : FragmentStateAdapter(activity) {
 
-    override fun getItemCount(): Int = 4
+    override fun getItemCount(): Int = 5
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> StudentDashboardFragment()
-            1 -> FeesFragment.newInstance(user)
-            2 -> com.aewsn.alkhair.ui.user.fragments.AttendanceFragment.newInstance(user)
-            3 -> ProfileFragment.newInstance(user)
+            1 -> com.aewsn.alkhair.ui.student.homework.StudentHomeworkFragment.newInstance()
+            2 -> FeesFragment.newInstance(user)
+            3 -> com.aewsn.alkhair.ui.user.fragments.AttendanceFragment.newInstance(user)
+            4 -> ProfileFragment.newInstance(user)
             else -> StudentDashboardFragment()
         }
     }

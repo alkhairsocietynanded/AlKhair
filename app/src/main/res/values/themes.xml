@@ -239,6 +239,7 @@
         <item name="labelVisibilityMode">labeled</item>
     </style>
 
+
     <style name="CustomAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <!-- Rounded corners -->
         <item name="cornerFamily">rounded</item>

@@ -54,6 +54,7 @@ class StudentActivity : AppCompatActivity() {
                         is UiState.Success -> {
                             val user = state.data
                             setupNavigation(user)
+                            setupAskAiFab(user)
                         }
                         is UiState.Error -> {
                             Toast.makeText(this@StudentActivity, state.message, Toast.LENGTH_LONG).show()
@@ -76,7 +77,8 @@ class StudentActivity : AppCompatActivity() {
 
         // Prevent BottomNavigationView from adding system bottom inset as padding
         ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { v, insets ->
-            v.setPadding(0, 0, 0, 0)
+            val horizontalPadding = 16.dpToPx(this)
+            v.setPadding(horizontalPadding, 0, horizontalPadding, 0)
             insets
         }
 
@@ -114,11 +116,39 @@ class StudentActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> binding.viewPager.currentItem = 0
-                R.id.nav_fees -> binding.viewPager.currentItem = 1
-                R.id.nav_attendance -> binding.viewPager.currentItem = 2
-                R.id.nav_profile -> binding.viewPager.currentItem = 3
+                R.id.nav_homework -> binding.viewPager.currentItem = 1
+                R.id.nav_fees -> binding.viewPager.currentItem = 2
+                R.id.nav_attendance -> binding.viewPager.currentItem = 3
+                R.id.nav_profile -> binding.viewPager.currentItem = 4
             }
             true
+        }
+
+        // Fix: Set Active Indicator Color programmatically to ensure it applies
+        binding.bottomNav.itemActiveIndicatorColor = android.content.res.ColorStateList.valueOf(
+            androidx.core.content.ContextCompat.getColor(this, R.color.nav_highlighter)
+        )
+
+        // Custom Back Navigation: Any Fragment -> Dashboard -> Exit
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.viewPager.currentItem != 0) {
+                    binding.viewPager.currentItem = 0
+                } else {
+                    finish()
+                }
+            }
+        })
+    }
+
+    private fun setupAskAiFab(user: User) {
+        if (user.role == com.aewsn.alkhair.utils.Roles.ADMIN || user.role == com.aewsn.alkhair.utils.Roles.TEACHER) {
+            binding.fabAskAi.visibility = android.view.View.VISIBLE
+            binding.fabAskAi.setOnClickListener {
+                startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatActivity::class.java))
+            }
+        } else {
+            binding.fabAskAi.visibility = android.view.View.GONE
         }
     }
 }

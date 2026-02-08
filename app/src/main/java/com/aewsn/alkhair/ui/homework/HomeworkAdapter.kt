@@ -13,8 +13,8 @@ import com.aewsn.alkhair.data.models.Homework
 import com.aewsn.alkhair.databinding.ItemHomeworkBinding
 
 class HomeworkAdapter(
-    private val onEdit: (Homework) -> Unit,
-    private val onDelete: (Homework) -> Unit
+    private val onEdit: ((Homework) -> Unit)? = null,
+    private val onDelete: ((Homework) -> Unit)? = null
 ) : ListAdapter<Homework, HomeworkAdapter.HomeworkViewHolder>(DiffCallback()) {
 
     inner class HomeworkViewHolder(private val binding: ItemHomeworkBinding) :
@@ -33,25 +33,32 @@ class HomeworkAdapter(
                 // Show the attachment icon only if a file URL exists
                 ivAttachment.isVisible = !homework.attachmentUrl.isNullOrBlank()
 
-                btnMore.setOnClickListener { view ->
-                    val popup = PopupMenu(view.context, view)
-                    popup.menuInflater.inflate(R.menu.menu_item_actions, popup.menu)
-                    popup.setOnMenuItemClickListener { item ->
-                        when (item.itemId) {
-                            R.id.action_edit -> {
-                                onEdit(homework)
-                                true
-                            }
+                // Show "More" button only if callbacks are provided (Edit Mode)
+                if (onEdit != null && onDelete != null) {
+                    btnMore.isVisible = true
+                    btnMore.setOnClickListener { view ->
+                        val popup = PopupMenu(view.context, view)
+                        popup.menuInflater.inflate(R.menu.menu_item_actions, popup.menu)
+                        popup.setOnMenuItemClickListener { item ->
+                            when (item.itemId) {
+                                R.id.action_edit -> {
+                                    onEdit.invoke(homework)
+                                    true
+                                }
 
-                            R.id.action_delete -> {
-                                onDelete(homework)
-                                true
-                            }
+                                R.id.action_delete -> {
+                                    onDelete.invoke(homework)
+                                    true
+                                }
 
-                            else -> false
+                                else -> false
+                            }
                         }
+                        popup.show()
                     }
-                    popup.show()
+                } else {
+                    // Read-Only Mode
+                    btnMore.isVisible = false
                 }
 
                 // Toggle description maxLines on click
