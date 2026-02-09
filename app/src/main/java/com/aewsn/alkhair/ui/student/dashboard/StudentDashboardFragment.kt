@@ -43,6 +43,15 @@ class StudentDashboardFragment : Fragment() {
     }
 
     private fun setupListeners() {
+        binding.askAi.setOnClickListener {
+            startActivity(
+                Intent(
+                    requireContext(),
+                    com.aewsn.alkhair.ui.chat.ChatActivity::class.java
+                )
+            )
+        }
+
         binding.btnLogout.setOnClickListener {
             viewModel.logout()
             startActivity(
@@ -63,33 +72,36 @@ class StudentDashboardFragment : Fragment() {
         }
 
         binding.cardSubmitHomework.setOnClickListener {
-            android.widget.Toast.makeText(
-                requireContext(),
-                "Homework submission coming soon!",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+            showPurchasePremiumDialog("Homework Submission")
         }
 
         binding.actionStudyMaterial.setOnClickListener {
-            showComingSoonDialog("Study Material")
+            showPurchasePremiumDialog("Study Material")
         }
 
         binding.actionSyllabus.setOnClickListener {
-            showComingSoonDialog("Syllabus")
+            showPurchasePremiumDialog("Syllabus")
         }
         binding.actionTimetable.setOnClickListener {
-            showComingSoonDialog("Time Table")
+            showPurchasePremiumDialog("Time Table")
         }
         binding.actionResults.setOnClickListener {
-            showComingSoonDialog("Results")
+            showPurchasePremiumDialog("Results")
         }
     }
 
-    private fun showComingSoonDialog(featureName: String) {
+    private fun showPurchasePremiumDialog(featureName: String) {
         com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Coming Soon")
-            .setMessage("$featureName feature is currently under development.")
-            .setPositiveButton("OK", null)
+            .setTitle("Unlock Premium \uD83D\uDC51")
+            .setMessage("Access to $featureName is available for Premium members only. Upgrade now to unlock full potential!")
+            .setPositiveButton("Upgrade Now") { _, _ ->
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    "Contact Headmaster...",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 

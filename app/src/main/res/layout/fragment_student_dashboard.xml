@@ -79,10 +79,11 @@
                     app:strokeWidth="1dp">
 
                     <ImageView
+                        android:id="@+id/askAi"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:padding="8dp"
-                        android:src="@android:drawable/ic_menu_search"
+                        android:src="@drawable/ic_robot"
                         app:tint="#475569" />
                 </androidx.cardview.widget.CardView>
 

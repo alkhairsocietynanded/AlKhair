@@ -72,6 +72,16 @@
             android:layout_height="wrap_content"
             android:text="Login" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLoginQr"
+            style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Login with QR Code"
+            app:icon="@drawable/ic_qr_code"
+            app:iconGravity="textStart" />
+
         <TextView
             android:id="@+id/tvSignupRedirect"
             android:layout_width="wrap_content"

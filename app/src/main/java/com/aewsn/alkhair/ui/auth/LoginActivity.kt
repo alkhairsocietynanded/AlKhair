@@ -57,8 +57,36 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
+        binding.btnLoginQr.setOnClickListener {
+            qrScannerLauncher.launch(
+                Intent(
+                    this,
+                    com.aewsn.alkhair.ui.scanner.QRScannerActivity::class.java
+                )
+            )
+        }
+
         binding.tvSignupRedirect.setOnClickListener {
             DialogUtils.showAlert(this, "Admission", "Please contact headmaster for admission")
+        }
+    }
+
+    private val qrScannerLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val qrValue = result.data?.getStringExtra("scanned_qr_value")
+            if (!qrValue.isNullOrEmpty()) {
+                // Assumption: QR Code format is "email|password"
+                val parts = qrValue.split("|")
+                if (parts.size == 2) {
+                    val email = parts[0]
+                    val password = parts[1]
+                    viewModel.login(email, password)
+                } else {
+                    DialogUtils.showAlert(this, "Error", "Invalid QR Code format")
+                }
+            }
         }
     }
 
@@ -104,7 +132,11 @@ class LoginActivity : AppCompatActivity() {
         if (destination != null) {
             startActivity(Intent(this, destination))
         } else {
-            DialogUtils.showAlert(this, "Access Denied", "Invalid user role assigned. Please contact support.")
+            DialogUtils.showAlert(
+                this,
+                "Access Denied",
+                "Invalid user role assigned. Please contact support."
+            )
         }
     }
 }

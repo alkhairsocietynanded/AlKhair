@@ -4,164 +4,152 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:strokeColor="?attr/colorOutline"
-    app:strokeWidth="1dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@android:color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="16dp">
 
-        <!-- 3-Dot Menu -->
-        <ImageView
-            android:id="@+id/btnMore"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="More options"
-            android:padding="4dp"
-            android:src="@drawable/ic_more_vert_24"
+        <!-- Subject Tag with colorful background -->
+        <TextView
+            android:id="@+id/tvSubject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_rounded_pill"
+            android:backgroundTint="?attr/colorPrimary"
+            android:elevation="2dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="6dp"
+            android:text="Mathematics"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnPrimary"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Date with contrasting color -->
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawablePadding="6dp"
+            android:text="12 Oct 2024"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorSecondary"
+            android:textStyle="bold"
+            app:drawableStartCompat="@drawable/ic_calendar"
+            app:drawableTint="?attr/colorSecondary"
+            app:layout_constraintBottom_toBottomOf="@+id/tvSubject"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="?attr/colorPrimary" />
+            app:layout_constraintTop_toTopOf="@+id/tvSubject" />
 
         <!-- Title -->
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layoutDirection="ltr"
-            android:textAlignment="viewStart"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="?attr/colorPrimary"
-            android:textDirection="ltr"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@+id/tvDate"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="Complete Chapter 5" />
-
-        <!-- Date -->
-        <TextView
-            android:id="@+id/tvDate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:alpha="0.8"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            app:layout_constraintEnd_toStartOf="@+id/btnMore"
-            app:layout_constraintTop_toTopOf="@+id/btnMore"
-            tools:text="30-Jul-2024" />
-
-        <!-- Subject -->
-        <TextView
-            android:id="@+id/tvSubject"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:layoutDirection="ltr"
-            android:textAlignment="viewStart"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:textColor="?attr/colorSecondary"
-            android:textDirection="ltr"
-            app:layout_constraintEnd_toStartOf="@+id/btnMore"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvTitle"
-            tools:text="Mathematics" />
-
-        <!-- Description -->
-        <TextView
-            android:id="@+id/tvDescription"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginVertical="8dp"
-            android:layout_marginEnd="8dp"
-            android:ellipsize="end"
-            android:layoutDirection="ltr"
-            android:maxLines="2"
-            android:minLines="2"
-            android:textAlignment="viewStart"
-            android:textAppearance="?attr/textAppearanceBodyMediumEmphasized"
-            android:textDirection="ltr"
-            app:layout_constraintEnd_toStartOf="@+id/btnMore"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvSubject"
-            tools:text="Complete the exercises from chapter 5 and prepare for the upcoming test on Friday. This description can be quite long." />
-
-        <!-- Divider -->
-        <View
-            android:id="@+id/divider"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginVertical="8dp"
-            android:background="?attr/colorOutline"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvDescription" />
-
-        <!-- Class -->
-        <TextView
-            android:id="@+id/tvClass"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorPrimary"
-            app:layout_constraintEnd_toStartOf="@+id/bullet"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintHorizontal_chainStyle="spread_inside"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider"
-            tools:text="Class 10" />
-
-        <!-- Bullet -->
-        <TextView
-            android:id="@+id/bullet"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:text="•"
-            android:textColor="?attr/colorAccent"
-            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
-            app:layout_constraintEnd_toStartOf="@+id/tvDivision"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/tvClass"
-            app:layout_constraintTop_toTopOf="@+id/tvClass"
-            tools:ignore="HardcodedText" />
-
-        <!-- Division -->
-        <TextView
-            android:id="@+id/tvDivision"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorPrimary"
-            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
+            android:text="Complete Chapter 5 Exercises"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@+id/ivAttachment"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/bullet"
-            app:layout_constraintTop_toTopOf="@+id/tvClass"
-            tools:text="Division A" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvSubject" />
 
         <!-- Attachment Icon -->
         <ImageView
             android:id="@+id/ivAttachment"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginEnd="4dp"
-            android:contentDescription="Attachment available"
+            android:contentDescription="Attachment"
             android:src="@drawable/ic_attachment"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
+            app:layout_constraintBottom_toBottomOf="@+id/tvTitle"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/tvDivision"
+            app:layout_constraintTop_toTopOf="@+id/tvTitle"
+            app:tint="?attr/colorError"
             tools:visibility="visible" />
 
+        <!-- Description -->
+        <TextView
+            android:id="@+id/tvDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:lineSpacingExtra="4dp"
+            android:maxLines="3"
+            android:text="Complete all the exercises from page 120 to 125. Submit by Monday morning explicitly."
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+
+        <!-- Divider -->
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:background="?attr/colorOutlineVariant"
+            app:layout_constraintTop_toBottomOf="@+id/tvDescription" />
+
+        <!-- Footer: Class & More -->
+        <TextView
+            android:id="@+id/tvClass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Class 10"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/divider" />
+
+        <TextView
+            android:id="@+id/bullet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="8dp"
+            android:text="•"
+            android:textColor="?attr/colorTertiary"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
+            app:layout_constraintStart_toEndOf="@+id/tvClass"
+            app:layout_constraintTop_toTopOf="@+id/tvClass" />
+
+        <TextView
+            android:id="@+id/tvDivision"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Div A"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
+            app:layout_constraintStart_toEndOf="@+id/bullet"
+            app:layout_constraintTop_toTopOf="@+id/tvClass" />
+
+        <ImageView
+            android:id="@+id/btnMore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:src="@drawable/ic_more_vert_24"
+            app:layout_constraintBottom_toBottomOf="@+id/tvClass"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/tvClass"
+            app:tint="?attr/colorOutline" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 </com.google.android.material.card.MaterialCardView>

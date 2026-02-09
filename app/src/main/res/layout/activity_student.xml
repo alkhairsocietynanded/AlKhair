@@ -37,8 +37,6 @@
             android:background="@android:color/transparent"
             app:elevation="0dp"
             app:itemIconTint="@color/bottom_nav_item_color"
-            app:labelFontScalingEnabled="true"
-            app:labelMaxLines="1"
             app:labelVisibilityMode="unlabeled"
             app:menu="@menu/menu_student_nav" />
 
