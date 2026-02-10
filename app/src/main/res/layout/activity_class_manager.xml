@@ -5,28 +5,26 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
+    android:background="#F9FAFB"
     tools:context=".ui.classmanager.ClassManagerActivity">
 
-    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        app:liftOnScroll="true"
-        app:liftOnScrollColor="?attr/colorPrimary">
+        android:background="#F9FAFB"
+        app:elevation="0dp"
+        app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:layout_scrollFlags="scroll|enterAlways|snap"
             app:navigationIcon="@drawable/ic_arrow_back"
-            app:navigationIconTint="?attr/colorOnPrimary"
             app:title="Class Manager"
-            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
-            app:titleTextColor="?attr/colorOnPrimary" />
+            app:titleCentered="true"
+            app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
+            app:titleTextColor="#0F172A" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -34,55 +32,47 @@
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:paddingHorizontal="16dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
-                android:layoutDirection="rtl"
-                android:padding="8dp"
-                tools:listitem="@layout/item_class" />
+                android:paddingBottom="88dp"
+                android:paddingTop="8dp"
+                tools:listitem="@layout/item_class"
+                 />
 
-            <!-- Empty View -->
             <TextView
                 android:id="@+id/emptyView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="No classes found"
-                android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                android:textColor="#64748B"
+                android:textSize="16sp"
+                android:visibility="gone" />
 
         </FrameLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Floating Action Button -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddClass"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:contentDescription="@string/add"
+        android:layout_margin="24dp"
         android:text="Add Class"
-        android:textAppearance="?attr/textAppearanceLabelLarge"
-        android:textColor="?attr/colorOnPrimary"
-        app:backgroundTint="?attr/colorPrimary"
-        app:elevation="6dp"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#6366F1"
         app:icon="@drawable/ic_add"
-        app:iconTint="?attr/colorOnPrimary"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:pressedTranslationZ="12dp"
-        app:rippleColor="?attr/colorOnPrimary"
-        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
+        app:iconTint="#FFFFFF"
+        app:elevation="4dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -2,19 +2,26 @@ package com.aewsn.alkhair.ui.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aewsn.alkhair.data.manager.ClassDivisionRepoManager
+import com.aewsn.alkhair.data.manager.UserRepoManager
 import com.aewsn.alkhair.data.repository.ChatRepository
 import com.aewsn.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.util.UUID
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val userRepoManager: UserRepoManager,
+    private val classDivisionRepoManager: ClassDivisionRepoManager
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
@@ -22,6 +29,27 @@ class ChatViewModel @Inject constructor(
 
     private val _chatState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val chatState: StateFlow<UiState<Unit>> = _chatState.asStateFlow()
+
+    // Aggregate Auto-Complete Suggestions
+    val suggestions: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
+        userRepoManager.observeLocal(),
+        classDivisionRepoManager.observeClasses(),
+        classDivisionRepoManager.observeDivisions()
+    ) { users, classes, divisions ->
+        val userNames = users.map { it.name }
+        val userEmails = users.map { it.email }
+        val userPhones = users.map { it.phone }
+        val classNames = classes.map { it.className }
+        val divisionNames = divisions.map { it.name }
+
+        (userNames + userEmails + userPhones + classNames + divisionNames)
+            .filter { !it.isNullOrBlank() }
+            .distinct()
+            .sorted()
+            .also { 
+                android.util.Log.d("ChatViewModel", "Aggregated ${it.size} suggestions") 
+            }
+    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
 
     // Generate a session ID for this chat session
     private val sessionId = UUID.randomUUID().toString()
@@ -41,7 +69,7 @@ class ChatViewModel @Inject constructor(
 
         // 2. Set Loading State
         _chatState.value = UiState.Loading
-        
+
         // 3. Call API
         viewModelScope.launch {
             chatRepository.sendMessage(text, sessionId).collect { result ->

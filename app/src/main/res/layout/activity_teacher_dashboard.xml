@@ -1,292 +1,804 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Enhanced Admin Dashboard with Material Design 3 -->
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
+    android:background="#F9FAFB"
     tools:context=".ui.dashboard.TeacherDashboardActivity">
 
-    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
+    <!-- Keep AppBar to prevent crashes but hide it -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        app:liftOnScroll="true"
-        app:liftOnScrollColor="?attr/colorPrimary">
+        android:layout_height="0dp"
+        app:elevation="0dp"
+        android:visibility="gone">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
-            app:layout_scrollFlags="scroll|enterAlways|snap"
-            app:popupTheme="@style/ThemeOverlay.Material3.Light"
-            app:title="Teacher Dashboard"
-            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall" />
+            android:layout_height="?attr/actionBarSize" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Main Content with SwipeRefreshLayout and NestedScrollView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="match_parent">
 
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true">
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingBottom="80dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp"
-                android:paddingBottom="80dp">
+                android:padding="24dp">
 
+                <!-- Header Section (Student Style) -->
                 <LinearLayout
                     android:id="@+id/welcomeSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:orientation="vertical"
-                    android:paddingStart="4dp">
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/tvWelcomeName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Welcome, Teacher!"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        app:cardCornerRadius="25dp"
+                        app:cardElevation="0dp">
 
-                    <TextView
-                        android:id="@+id/tvTeacherClassInfo"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:alpha="0.8"
-                        android:text="Class: Loading..."
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_profile"
+                            app:tint="#6366f1" />
+                    </androidx.cardview.widget.CardView>
 
-                    <TextView
-                        android:id="@+id/tvTeacherDivisionInfo"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:alpha="0.8"
-                        android:text="Div: Loading..."
-                        android:textSize="12sp" />
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvWelcomeName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hi, Teacher 👋"
+                            android:textColor="#64748B"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Teacher Hub"
+                            android:textColor="#0F172A"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+                        
+                        <!-- Extra Info (Class/Div) -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:id="@+id/tvTeacherClassInfo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Class: Loading..."
+                                android:textColor="#94A3B8"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:layout_marginEnd="8dp"/>
+
+                            <TextView
+                                android:id="@+id/tvTeacherDivisionInfo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Div: Loading..."
+                                android:textColor="#94A3B8"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Logout Button (Student Style) -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardLogout"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        app:cardBackgroundColor="#FEE2E2"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                             android:layout_width="match_parent"
+                             android:layout_height="match_parent"
+                             android:padding="10dp"
+                             android:src="@drawable/ic_logout"
+                             app:tint="#EF4444" />
+                    </androidx.cardview.widget.CardView>
+
                 </LinearLayout>
 
-                <!-- Summary Statistics Card (Teacher Version) -->
+                <TextView
+                    android:id="@+id/tvTodayDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="Today, --/--"
+                    android:textColor="#64748B"
+                    android:textSize="14sp" />
+
+
+                <!-- Summary Statistics Card (Styled like 'Attendance Progress' in Student) -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/summaryCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="?attr/colorSecondaryContainer"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="6dp"
-                    app:strokeWidth="0dp">
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#E2E8F0"
+                    app:strokeWidth="1dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/gradient_green"
                         android:orientation="vertical"
-                        android:padding="8dp">
+                        android:padding="20dp">
 
-                        <!-- Header Row with Date -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="8dp"
-                            android:paddingTop="8dp"
-                            android:paddingBottom="4dp">
+                            android:layout_marginBottom="12dp"
+                            android:orientation="horizontal">
 
-                            <com.google.android.material.textview.MaterialTextView
+                            <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="Today's Overview"
-                                android:textAppearance="?attr/textAppearanceTitleLarge"
-                                android:textColor="?attr/colorOnPrimaryContainer" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:id="@+id/tvTodayDate"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:alpha="0.9"
-                                android:text="--/--"
-                                android:textAppearance="?attr/textAppearanceLabelLarge"
-                                android:textColor="?attr/colorOnPrimaryContainer" />
-
+                                android:textColor="#1E293B"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
-
-                        <LinearLayout
+                        
+                        <!-- Internal Stats Grid -->
+                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:baselineAligned="false"
                             android:orientation="horizontal">
 
-                            <!-- Total Students (My Class) -->
+                            <!-- Total -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="8dp">
-
-                                <com.google.android.material.textview.MaterialTextView
+                                android:orientation="vertical">
+                                <TextView
                                     android:id="@+id/tvMyStudents"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="0"
-                                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                                    android:textColor="?attr/colorPrimary"
+                                    android:textColor="#3B82F6"
+                                    android:textSize="20sp"
                                     android:textStyle="bold" />
-
-                                <com.google.android.material.textview.MaterialTextView
+                                <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:alpha="0.8"
                                     android:text="Total"
-                                    android:textAppearance="?attr/textAppearanceLabelMedium"
-                                    android:textColor="?attr/colorOnSecondaryContainer" />
-
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp" />
                             </LinearLayout>
 
-                            <!-- Divider -->
-                            <View
-                                android:layout_width="1dp"
-                                android:layout_height="match_parent"
-                                android:alpha="0.2"
-                                android:background="?attr/colorOnPrimaryContainer" />
+                            <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#F1F5F9" />
 
-                            <!-- Present Today -->
+                            <!-- Present -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="8dp">
-
-                                <com.google.android.material.textview.MaterialTextView
+                                android:orientation="vertical">
+                                <TextView
                                     android:id="@+id/tvPresentToday"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="0"
-                                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                                    android:textColor="@color/present"
+                                    android:textColor="#22C55E"
+                                    android:textSize="20sp"
                                     android:textStyle="bold" />
-
-                                <com.google.android.material.textview.MaterialTextView
+                                <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:alpha="0.8"
                                     android:text="Present"
-                                    android:textAppearance="?attr/textAppearanceLabelMedium"
-                                    android:textColor="?attr/colorOnSecondaryContainer" />
-
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp" />
                             </LinearLayout>
 
-                            <!-- Divider -->
-                            <View
-                                android:layout_width="1dp"
-                                android:layout_height="match_parent"
-                                android:alpha="0.2"
-                                android:background="?attr/colorOnPrimaryContainer" />
+                            <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#F1F5F9" />
 
-                            <!-- Absent Today -->
+                            <!-- Absent -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="8dp">
-
-                                <com.google.android.material.textview.MaterialTextView
+                                android:orientation="vertical">
+                                <TextView
                                     android:id="@+id/tvAbsentToday"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="0"
-                                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                                    android:textColor="@color/absent"
+                                    android:textColor="#EF4444"
+                                    android:textSize="20sp"
                                     android:textStyle="bold" />
-
-                                <com.google.android.material.textview.MaterialTextView
+                                <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:alpha="0.8"
                                     android:text="Absent"
-                                    android:textAppearance="?attr/textAppearanceLabelMedium"
-                                    android:textColor="?attr/colorOnSecondaryContainer" />
-
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp" />
                             </LinearLayout>
-                            <!-- ✅ NEW: Divider -->
-                            <View
-                                android:layout_width="1dp"
-                                android:layout_height="match_parent"
-                                android:alpha="0.2"
-                                android:background="?attr/colorOnPrimaryContainer" />
+                            
+                            <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#F1F5F9" />
 
-                            <!-- ✅ NEW: Leave Today -->
+                             <!-- Leave -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:gravity="center"
-                                android:orientation="vertical"
-                                android:padding="8dp">
-
-                                <com.google.android.material.textview.MaterialTextView
+                                android:orientation="vertical">
+                                <TextView
                                     android:id="@+id/tvLeaveToday"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="0"
-                                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                                    android:textColor="@color/leave"
+                                    android:textColor="#EAB308"
+                                    android:textSize="20sp"
                                     android:textStyle="bold" />
-
-                                <com.google.android.material.textview.MaterialTextView
+                                <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:alpha="0.8"
                                     android:text="Leave"
-                                    android:textAppearance="?attr/textAppearanceLabelMedium"
-                                    android:textColor="?attr/colorOnSecondaryContainer" />
-
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp" />
                             </LinearLayout>
+
                         </LinearLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+                
+                
+                <!-- Fees Overview (Also styled cleanly) -->
+                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/FeesOverview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#E2E8F0"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Fee Collection"
+                                android:textColor="#1E293B"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvAttendancePercentage"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0%"
+                                android:textColor="#64748B"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <com.google.android.material.progressindicator.LinearProgressIndicator
+                            android:id="@+id/progressAttendance"
+                            android:layout_width="match_parent"
+                            android:layout_height="12dp"
+                            android:layout_marginBottom="8dp"
+                            android:max="100"
+                            android:progress="0"
+                            app:indicatorColor="#10B981"
+                            app:trackColor="#F1F5F9"
+                            app:trackCornerRadius="6dp"
+                            app:trackThickness="12dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvPresentCount"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Collected: 0"
+                                android:textColor="#64748B"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvAbsentCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Pending: 0"
+                                android:textColor="#64748B"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+
                     </LinearLayout>
 
                 </com.google.android.material.card.MaterialCardView>
+                
 
-                <com.google.android.material.textview.MaterialTextView
+                <!-- Actions Section -->
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginTop="10dp"
-                    android:layout_marginBottom="12dp"
-                    android:text="Announcements"
-                    android:textAppearance="?attr/textAppearanceTitleLarge"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="Actions"
+                    android:textColor="#0F172A"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-                <FrameLayout
+                <!-- Grid Layout with New Style -->
+                <GridLayout
+                    android:id="@+id/dashboardGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:alignmentMode="alignMargins"
+                    android:columnCount="3"
+                    android:useDefaultMargins="false"
+                    android:columnOrderPreserved="false">
+
+                    <!-- Students -->
+                    <LinearLayout
+                        android:id="@+id/cardStudents"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#EFF6FF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_students"
+                                app:tint="#3B82F6" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Students"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Attendance -->
+                    <LinearLayout
+                        android:id="@+id/cardStudentAttendance"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#EEF2FF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_attendance"
+                                app:tint="#6366F1" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Attendance"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                     <!-- Homework -->
+                    <LinearLayout
+                        android:id="@+id/cardHomework"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#FFF7ED"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_homework"
+                                app:tint="#F97316" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Homework"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                     <!-- Announcement -->
+                    <LinearLayout
+                        android:id="@+id/cardAnnouncement"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                         android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#FFFBEB"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_announce"
+                                app:tint="#D97706" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Announce"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                     <!-- Fees -->
+                    <LinearLayout
+                        android:id="@+id/cardFees"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                         android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#ECFDF5"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_fees"
+                                app:tint="#10B981" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Fees"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                     <!-- Salary -->
+                    <LinearLayout
+                        android:id="@+id/cardSalary"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                         android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                         <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#F0FDFA"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_salary"
+                                app:tint="#14B8A6" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Salary"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Leave Approval -->
+                    <LinearLayout
+                        android:id="@+id/cardLeaveApproval"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                         android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                         <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#FFF1F2"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_leave"
+                                app:tint="#F43F5E" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Leaves"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                     <!-- Profile -->
+                    <LinearLayout
+                        android:id="@+id/cardProfile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                         android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                         <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#F3E8FF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_profile"
+                                app:tint="#9333EA" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Profile"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                     <!-- Syllabus -->
+                    <LinearLayout
+                        android:id="@+id/cardSyllabus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                         android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                         <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#FEFCE8"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_syllabus"
+                                app:tint="#EAB308" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Syllabus"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+
+                    <!-- Ask AI -->
+                    <LinearLayout
+                        android:id="@+id/cardAskAi"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                         <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#FEFCE8"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_robot"
+                                app:tint="#EAB308" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Ask AI"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </GridLayout>
+
+
+                <!-- Announcements Header -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Announcements"
+                        android:textColor="#0F172A"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center">
@@ -334,544 +846,19 @@
                     app:tabPaddingEnd="10dp"
                     app:tabPaddingStart="10dp" />
 
-                <!-- Overall Attendance Card with Progress Bar -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/FeesOverview"
-                    style="?attr/materialCardViewElevatedStyle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="?attr/colorSurfaceContainer"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/gradient_orange"
-                        android:orientation="vertical"
-                        android:padding="20dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="12dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Fee Collection"
-                                android:textAppearance="?attr/textAppearanceTitleLarge"
-                                android:textColor="?attr/colorOnSurface" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:id="@+id/tvAttendancePercentage"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0%"
-                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                                android:textColor="?attr/colorPrimaryDark"
-                                android:textStyle="bold" />
-
-                        </LinearLayout>
-
-                        <com.google.android.material.progressindicator.LinearProgressIndicator
-                            android:id="@+id/progressAttendance"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:max="100"
-                            android:progress="0"
-                            app:indicatorColor="@color/progress_bar"
-                            app:trackColor="@color/progress_bar_container"
-                            app:trackCornerRadius="6dp"
-                            app:trackThickness="12dp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:orientation="horizontal">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:id="@+id/tvPresentCount"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Collected: 0"
-                                android:textAppearance="?attr/textAppearanceBodyMedium"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:id="@+id/tvAbsentCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Pending: 0"
-                                android:textAppearance="?attr/textAppearanceBodyMedium"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </com.google.android.material.card.MaterialCardView>
-                <!-- Dashboard Grid Section -->
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginBottom="12dp"
-                    android:text="Management"
-                    android:textAppearance="?attr/textAppearanceTitleLarge"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <GridLayout
-                    android:id="@+id/dashboardGrid"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:alignmentMode="alignMargins"
-                    android:columnCount="3"
-                    android:columnOrderPreserved="false">
-
-                    <!-- Students Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardStudents"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#EFF6FF"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#3B82F6">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Students"
-                                android:src="@drawable/ic_students"
-                                app:tint="#3B82F6" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Students"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Attendance (S) Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardStudentAttendance"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#EEF2FF"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#6366F1">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Attendance"
-                                android:src="@drawable/ic_attendance"
-                                app:tint="#6366F1" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Attendance"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Homework Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardHomework"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#FFF7ED"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#F97316">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Homework"
-                                android:src="@drawable/ic_homework"
-                                app:tint="#F97316" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Homework"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Announcement Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardAnnouncement"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#FFFBEB"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#D97706">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Announcement"
-                                android:src="@drawable/ic_announce"
-                                app:tint="#D97706" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Announce"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Fees Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardFees"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#ECFDF5"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#10B981">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Fees"
-                                android:src="@drawable/ic_fees"
-                                app:tint="#10B981" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Fees"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Salary Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardSalary"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#F0FDFA"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#14B8A6">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Salary"
-                                android:src="@drawable/ic_salary"
-                                app:tint="#14B8A6" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Salary"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Leave Approval Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardLeaveApproval"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#FFF1F2"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#F43F5E">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Leaves"
-                                android:src="@drawable/ic_leave"
-                                app:tint="#F43F5E" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Leaves"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Profile Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardProfile"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#F3E8FF"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#9333EA">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Profile"
-                                android:src="@drawable/ic_profile"
-                                app:tint="#9333EA" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Profile"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Syllabus Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardSyllabus"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#FEFCE8"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#EAB308">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Syllabus"
-                                android:src="@drawable/ic_syllabus"
-                                app:tint="#EAB308" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Syllabus"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Ask AI Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardAskAi"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_rowWeight="1"
-                        android:layout_columnWeight="1"
-                        android:layout_margin="6dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        app:cardBackgroundColor="#ECFEFF"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp"
-                        app:rippleColor="#06B6D4">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:minHeight="110dp"
-                            android:orientation="vertical"
-                            android:padding="10dp">
-
-                            <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:contentDescription="Ask AI"
-                                android:src="@drawable/ic_robot"
-                                app:tint="#06B6D4" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:maxLines="1"
-                                android:text="Ask AI"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                </GridLayout>
             </LinearLayout>
-
         </androidx.core.widget.NestedScrollView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabQRCode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:text="Check In"
-        android:textAppearance="?attr/textAppearanceLabelLarge"
-        android:textColor="?attr/colorOnPrimary"
+        android:src="@drawable/ic_qr_code"
         app:backgroundTint="?attr/colorPrimary"
-        app:elevation="6dp"
-        app:icon="@drawable/ic_qr_code"
-        app:iconTint="?attr/colorOnPrimary"
-        app:layout_behavior="com.google.android.material.behavior.HideViewOnScrollBehavior"
-        app:pressedTranslationZ="12dp"
-        app:rippleColor="?attr/colorOnPrimary"
-        app:shapeAppearance="@style/ShapeAppearance.Material3.Corner.Full" />
+        app:tint="?attr/colorOnPrimary"
+        android:contentDescription="Scan QR Code" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

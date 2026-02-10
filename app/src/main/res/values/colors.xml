@@ -108,4 +108,21 @@
     <color name="nav_highlighter">#C084FC</color> <!-- Light Purple -->
     <color name="nav_icon_selected_on_highlight">#FFFFFF</color> <!-- Deep Purple for readability on light highlight -->
 
+    <!-- Modern Shift Chip Colors -->
+    <!-- Subah (Morning) - Fresh Green -->
+    <color name="subah_light">#E0F2F1</color>
+    <color name="subah_dark">#00695C</color>
+    
+    <!-- Dopahar (Afternoon) - Warm Orange/Sun -->
+    <color name="dopahar_light">#FFF3E0</color>
+    <color name="dopahar_dark">#E65100</color>
+    
+    <!-- Shaam (Evening) - Calm Indigo/Twilight -->
+    <color name="shaam_light">#E8EAF6</color>
+    <color name="shaam_dark">#283593</color>
+
+    <!-- All - Neutral -->
+    <color name="all_light">#F1F5F9</color>
+    <color name="all_dark">#334155</color>
+    
 </resources>

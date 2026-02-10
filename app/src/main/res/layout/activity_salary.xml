@@ -5,28 +5,26 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
+    android:background="#F9FAFB"
     tools:context=".ui.salary.SalaryActivity">
 
-    <!-- App Bar with lift-on-scroll for a modern, dynamic effect -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        app:liftOnScroll="true"
-        app:liftOnScrollColor="?attr/colorPrimary">
+        android:background="#F9FAFB"
+        app:elevation="0dp"
+        app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:layout_scrollFlags="scroll|enterAlways|snap"
             app:navigationIcon="@drawable/ic_arrow_back"
-            app:navigationIconTint="?attr/colorOnPrimary"
             app:title="@string/salary"
-            app:titleTextAppearance="?attr/textAppearanceHeadlineSmall"
-            app:titleTextColor="?attr/colorOnPrimary" />
+             app:titleCentered="true"
+             app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
+            app:titleTextColor="#0F172A" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -36,29 +34,29 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- RecyclerView now directly inside SwipeRefreshLayout for proper View Recycling -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvSalaryList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingBottom="96dp"
+            android:paddingHorizontal="16dp"
             tools:listitem="@layout/item_salary" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- FAB for adding salary -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddSalary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
+        android:layout_margin="24dp"
         android:text="@string/add_salary"
-        android:textColor="?attr/colorOnPrimary"
-        app:backgroundTint="?attr/colorPrimary"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#6366F1"
         app:icon="@drawable/ic_add"
-        app:iconTint="?attr/colorOnPrimary"
+        app:iconTint="#FFFFFF"
+        app:elevation="4dp"
         app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
