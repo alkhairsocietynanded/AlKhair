@@ -128,4 +128,8 @@ object AppModule {
             .build()
             .create(com.aewsn.alkhair.data.remote.n8nApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideSyllabusDao(db: AppDatabase) = db.syllabusDao()
 }

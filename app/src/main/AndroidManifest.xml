@@ -5,6 +5,7 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
     <!-- ✅ UPI Apps Visibility for Android 11+ (API 30) -->
     <queries>
@@ -72,6 +73,9 @@
             android:exported="false" />
         <activity
             android:name=".ui.dashboard.AdminDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.syllabus.SyllabusActivity"
             android:exported="false" />
         <activity
             android:name=".ui.auth.LoginActivity"

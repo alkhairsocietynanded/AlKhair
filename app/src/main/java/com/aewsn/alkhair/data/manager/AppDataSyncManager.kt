@@ -24,6 +24,7 @@ class AppDataSyncManager @Inject constructor(
     private val homeworkRepoManager: HomeworkRepoManager,
     private val announcementRepoManager: AnnouncementRepoManager,
     private val leaveRepoManager: LeaveRepoManager,
+    private val syllabusRepoManager: SyllabusRepoManager,
     private val deletionRepository: SupabaseDeletionRepository,
     private val sharedPreferences: android.content.SharedPreferences
 ) {
@@ -126,6 +127,8 @@ class AppDataSyncManager @Inject constructor(
                         syncJobs.add(async { announcementRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { attendanceRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { leaveRepoManager.sync(queryTime).map { it as Any } })
+                        // Syllabus (Global sync for admin - optional, or just class based)
+                         syncJobs.add(async { syllabusRepoManager.sync(queryTime).map { it as Any } })
                     }
 
                     // ====================================================
@@ -150,6 +153,8 @@ class AppDataSyncManager @Inject constructor(
                             syncJobs.add(async { attendanceRepoManager.syncClassAttendance(teacherClassId, teacherShift, queryTime).map { it as Any } })
                             syncJobs.add(async { feesRepoManager.syncClassFees(teacherClassId, teacherShift,queryTime).map { it as Any }  })
                             syncJobs.add(async { leaveRepoManager.syncLeavesForClass(teacherClassId, queryTime).map { it as Any } })
+                            // Syllabus for Teacher's Class
+                            syncJobs.add(async { syllabusRepoManager.syncClassSyllabus(teacherClassId, queryTime).map { it as Any } })
                         } else {
                             Log.d(TAG, "Teacher has no class, syncing profile only.")
                             // Fallback: Sync self profile only
@@ -192,6 +197,11 @@ class AppDataSyncManager @Inject constructor(
 
                         // 6. My Leaves (New!)
                         syncJobs.add(async { leaveRepoManager.syncLeavesForStudent(currentUid, queryTime).map { it as Any } })
+
+                        // 7. My Class Syllabus
+                        if (!userClassId.isNullOrBlank()) {
+                            syncJobs.add(async { syllabusRepoManager.syncClassSyllabus(userClassId, queryTime).map { it as Any } })
+                        }
                     }
 
                     // ====================================================
@@ -263,8 +273,10 @@ class AppDataSyncManager @Inject constructor(
                             "salary" -> salaryRepoManager.deleteLocally(record.recordId)
                             "homework" -> homeworkRepoManager.deleteLocally(record.recordId)
                             "announcements" -> announcementRepoManager.deleteLocally(record.recordId)
+                            "announcements" -> announcementRepoManager.deleteLocally(record.recordId)
                             "leaves" -> leaveRepoManager.deleteLocally(record.recordId)
                             "attendance" -> attendanceRepoManager.deleteLocally(record.recordId)
+                            "syllabus" -> syllabusRepoManager.deleteLocally(record.recordId)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed deleting ${record.type} : ${record.recordId}", e)
@@ -293,6 +305,7 @@ class AppDataSyncManager @Inject constructor(
 //        classDivisionRepoManager.clearLocal()
         announcementRepoManager.clearLocal()
         leaveRepoManager.clearLocal()
+        syllabusRepoManager.clearLocal()
 
         // 2. Clear Sync Timestamp (Important!)
         // Taaki naya user login kare to full sync ho

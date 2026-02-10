@@ -168,6 +168,10 @@ class TeacherDashboardActivity : AppCompatActivity() {
             }
             startActivity(intent)
         }
+
+        binding.cardSyllabus.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.syllabus.SyllabusActivity::class.java))
+        }
         
         binding.cardProfile.setOnClickListener {
             val intent = Intent(this, UserDetailActivity::class.java).apply {

@@ -436,43 +436,44 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:alignmentMode="alignMargins"
-                    android:columnCount="2"
+                    android:columnCount="3"
                     android:columnOrderPreserved="false">
 
                     <!-- Students Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardStudents"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#EFF6FF"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#3B82F6">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Students"
                                 android:src="@drawable/ic_students"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#3B82F6" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
                                 android:text="Students"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
@@ -482,38 +483,39 @@
                     <!-- Attendance (S) Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardStudentAttendance"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#EEF2FF"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#6366F1">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Attendance"
                                 android:src="@drawable/ic_attendance"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#6366F1" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:text="Attendance (S)"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
+                                android:text="Attendance"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
                         </LinearLayout>
@@ -522,37 +524,38 @@
                     <!-- Homework Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardHomework"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#FFF7ED"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#F97316">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Homework"
                                 android:src="@drawable/ic_homework"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#F97316" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
                                 android:text="Homework"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
@@ -562,38 +565,39 @@
                     <!-- Announcement Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardAnnouncement"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#FFFBEB"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#D97706">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Announcement"
                                 android:src="@drawable/ic_announce"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#D97706" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:text="Announcement"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
+                                android:text="Announce"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
                         </LinearLayout>
@@ -602,37 +606,38 @@
                     <!-- Fees Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardFees"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#ECFDF5"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#10B981">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Fees"
                                 android:src="@drawable/ic_fees"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#10B981" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
                                 android:text="Fees"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
@@ -642,37 +647,38 @@
                     <!-- Salary Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardSalary"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#F0FDFA"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#14B8A6">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Salary"
                                 android:src="@drawable/ic_salary"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#14B8A6" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
                                 android:text="Salary"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
@@ -682,37 +688,38 @@
                     <!-- Leave Approval Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardLeaveApproval"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#FFF1F2"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#F43F5E">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Leaves"
                                 android:src="@drawable/ic_leave"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#F43F5E" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
                                 android:text="Leaves"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
@@ -722,38 +729,80 @@
                     <!-- Profile Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardProfile"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#F3E8FF"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#9333EA">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Profile"
                                 android:src="@drawable/ic_profile"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#9333EA" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
                                 android:text="Profile"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textColor="?attr/colorOnSurface" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Syllabus Card -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardSyllabus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_rowWeight="1"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="6dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardBackgroundColor="#FEFCE8"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:rippleColor="#EAB308">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:minHeight="110dp"
+                            android:orientation="vertical"
+                            android:padding="10dp">
+
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:contentDescription="Syllabus"
+                                android:src="@drawable/ic_syllabus"
+                                app:tint="#EAB308" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
+                                android:text="Syllabus"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />
                         </LinearLayout>
@@ -762,37 +811,38 @@
                     <!-- Ask AI Card -->
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/cardAskAi"
-                        style="?attr/materialCardViewElevatedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_rowWeight="1"
                         android:layout_columnWeight="1"
-                        android:layout_margin="8dp"
+                        android:layout_margin="6dp"
                         android:clickable="true"
                         android:focusable="true"
+                        app:cardBackgroundColor="#ECFEFF"
                         app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:rippleColor="?attr/colorPrimary">
+                        app:cardElevation="0dp"
+                        app:rippleColor="#06B6D4">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:minHeight="140dp"
+                            android:minHeight="110dp"
                             android:orientation="vertical"
-                            android:padding="20dp">
+                            android:padding="10dp">
 
                             <ImageView
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:contentDescription="Ask AI"
                                 android:src="@drawable/ic_robot"
-                                app:tint="?attr/colorPrimary" />
+                                app:tint="#06B6D4" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="1"
                                 android:text="Ask AI"
                                 android:textAppearance="?attr/textAppearanceTitleMedium"
                                 android:textColor="?attr/colorOnSurface" />

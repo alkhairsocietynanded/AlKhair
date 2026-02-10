@@ -142,6 +142,10 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        binding.cardSyllabus.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.syllabus.SyllabusActivity::class.java))
+        }
+
         // --- Actions ---
         // --- Actions ---
         binding.cardLogout.setOnClickListener {

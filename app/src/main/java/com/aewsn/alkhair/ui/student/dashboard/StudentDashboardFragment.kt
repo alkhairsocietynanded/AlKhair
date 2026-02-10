@@ -43,13 +43,8 @@ class StudentDashboardFragment : Fragment() {
     }
 
     private fun setupListeners() {
-        binding.askAi.setOnClickListener {
-            startActivity(
-                Intent(
-                    requireContext(),
-                    com.aewsn.alkhair.ui.chat.ChatActivity::class.java
-                )
-            )
+        binding.devInfo.setOnClickListener {
+
         }
 
         binding.btnLogout.setOnClickListener {
@@ -71,8 +66,13 @@ class StudentDashboardFragment : Fragment() {
             )
         }
 
-        binding.cardSubmitHomework.setOnClickListener {
-            showPurchasePremiumDialog("Homework Submission")
+        binding.cardAskAi.setOnClickListener {
+            startActivity(
+                Intent(
+                    requireContext(),
+                    com.aewsn.alkhair.ui.chat.ChatActivity::class.java
+                )
+            )
         }
 
         binding.actionStudyMaterial.setOnClickListener {
@@ -80,7 +80,12 @@ class StudentDashboardFragment : Fragment() {
         }
 
         binding.actionSyllabus.setOnClickListener {
-            showPurchasePremiumDialog("Syllabus")
+            startActivity(
+                Intent(
+                    requireContext(),
+                    com.aewsn.alkhair.ui.syllabus.SyllabusActivity::class.java
+                )
+            )
         }
         binding.actionTimetable.setOnClickListener {
             showPurchasePremiumDialog("Time Table")

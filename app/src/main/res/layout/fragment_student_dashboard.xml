@@ -79,12 +79,12 @@
                     app:strokeWidth="1dp">
 
                     <ImageView
-                        android:id="@+id/askAi"
+                        android:id="@+id/devInfo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:padding="8dp"
-                        android:src="@drawable/ic_robot"
-                        app:tint="#475569" />
+                        android:src="@drawable/ic_info"
+                        app:tint="#60A5FA" />
                 </androidx.cardview.widget.CardView>
 
                 <!--<androidx.cardview.widget.CardView
@@ -183,8 +183,8 @@
                         <FrameLayout
                             android:layout_width="40dp"
                             android:layout_height="40dp"
-                            android:background="#4DFFFFFF"
-                            android:alpha="0.8">
+                            android:alpha="0.8"
+                            android:background="#4DFFFFFF">
 
                             <ImageView
                                 android:layout_width="24dp"
@@ -219,7 +219,7 @@
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardSubmitHomework"
+                    android:id="@+id/cardAskAi"
                     android:layout_width="0dp"
                     android:layout_height="160dp"
                     android:layout_marginStart="8dp"
@@ -253,7 +253,7 @@
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_gravity="center"
-                                android:src="@drawable/ic_upload"
+                                android:src="@drawable/ic_robot"
                                 app:tint="#FFFFFF" />
                         </FrameLayout>
 
@@ -266,14 +266,14 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Submit"
+                                android:text="Ask Ai"
                                 android:textColor="#CCFFFFFF"
                                 android:textSize="14sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Homework"
+                                android:text="Assistant"
                                 android:textColor="#FFFFFF"
                                 android:textSize="20sp"
                                 android:textStyle="bold" />
@@ -362,6 +362,39 @@
                 android:orientation="horizontal"
                 android:weightSum="4">
 
+                <!-- Action: Syllabus -->
+                <LinearLayout
+                    android:id="@+id/actionSyllabus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        app:cardBackgroundColor="#FEFCE8"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_syllabus"
+                            app:tint="#EAB308" />
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Syllabus"
+                        android:textColor="#334155"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
                 <!-- Action: Timetable -->
                 <LinearLayout
                     android:id="@+id/actionTimetable"
@@ -458,46 +491,13 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Study\nMaterial"
                         android:gravity="center"
+                        android:text="Study\nMaterial"
                         android:textColor="#334155"
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Action: Syllabus -->
-                <LinearLayout
-                    android:id="@+id/actionSyllabus"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        app:cardBackgroundColor="#FEFCE8"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_syllabus"
-                            app:tint="#EAB308" />
-                    </androidx.cardview.widget.CardView>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Syllabus"
-                        android:textColor="#334155"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
             </LinearLayout>
 
             <!-- Announcements Header -->
@@ -535,8 +535,8 @@
                 android:clipToPadding="false"
                 android:orientation="horizontal"
                 android:paddingEnd="24dp"
-                tools:listitem="@layout/item_dashboard_announcement"
-                tools:itemCount="2" />
+                tools:itemCount="2"
+                tools:listitem="@layout/item_dashboard_announcement" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
