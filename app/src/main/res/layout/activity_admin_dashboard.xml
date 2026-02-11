@@ -88,6 +88,25 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
+                    <!-- Developer Info Card -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardDevInfo"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="#F1F5F9"
+                        app:strokeWidth="1dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_info"
+                            app:tint="#60A5FA" />
+                    </androidx.cardview.widget.CardView>
+
                     <!-- Logout Button (Hub Style) -->
                     <androidx.cardview.widget.CardView
                         android:id="@+id/cardLogout"

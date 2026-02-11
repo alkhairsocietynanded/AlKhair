@@ -122,6 +122,11 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         // --- Navigation ---
+        binding.cardDevInfo.setOnClickListener {
+            val bottomSheet = com.aewsn.alkhair.ui.common.AppInfoBottomSheet()
+            bottomSheet.show(supportFragmentManager, com.aewsn.alkhair.ui.common.AppInfoBottomSheet.TAG)
+        }
+
         binding.cardStudents.setOnClickListener {
             startActivity(
                 Intent(this, UserListActivity::class.java)
@@ -194,6 +199,46 @@ class TeacherDashboardActivity : AppCompatActivity() {
         binding.cardAskAi.setOnClickListener {
             startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatActivity::class.java))
         }
+
+        binding.cardApplyLeave.setOnClickListener {
+             com.aewsn.alkhair.ui.dashboard.leave.TeacherApplyLeaveBottomSheet().show(supportFragmentManager, com.aewsn.alkhair.ui.dashboard.leave.TeacherApplyLeaveBottomSheet.TAG)
+        }
+
+        binding.cardLeaveApproval.setOnClickListener {
+             val intent = Intent(this, com.aewsn.alkhair.ui.approval.LeaveApprovalActivity::class.java).apply {
+                putExtra("user", loggedInUser)
+            }
+            startActivity(intent)
+        }
+
+        binding.cardSyllabus.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.syllabus.SyllabusActivity::class.java))
+        }
+        
+        binding.cardProfile.setOnClickListener {
+            val intent = Intent(this, UserDetailActivity::class.java).apply {
+                putExtra("userId", loggedInUser?.uid)
+                putExtra("user", loggedInUser)
+            }
+            startActivity(intent)
+        }
+
+        binding.fabQRCode.setOnClickListener {
+            startQrScanner()
+        }
+
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            dashboardViewModel.refreshData()
+        }
+
+        binding.cardLogout.setOnClickListener {
+            DialogUtils.showConfirmation(
+                this,
+                "Logout",
+                "Are you sure you want to logout?",
+                onConfirmed = { logoutManager.logout(this) }
+            )
+        }
     }
 
     // ✅ 2. Update startQrScanner to launch Activity
@@ -243,9 +288,10 @@ class TeacherDashboardActivity : AppCompatActivity() {
                 combine(
                     dashboardViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
-                    announcementViewModel.mutationState // Updated here
-                ) { dashboardState, announcementListState, mutationState ->
-                    dashboardState is UiState.Loading ||
+                    announcementViewModel.mutationState,
+                    dashboardViewModel.isSyncing // Added isSyncing observer
+                ) { dashboardState, announcementListState, mutationState, isSyncing ->
+                    isSyncing || dashboardState is UiState.Loading ||
                             announcementListState is UiState.Loading ||
                             mutationState is UiState.Loading
                 }.collectLatest { isLoading ->
@@ -396,7 +442,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
     private fun updateUserHeader(user: User?) {
         if (user != null) {
-            binding.tvWelcomeName.text = "Welcome, ${user.name}"
+            binding.tvWelcomeName.text = "Hi, ${user.name}"
             binding.tvTeacherClassInfo.text = user.className.ifBlank { "Loading..." }
             binding.tvTeacherDivisionInfo.text = user.divisionName.ifBlank { "" }
         }
@@ -404,7 +450,12 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
     private fun updateDashboardUI(stats: DashboardStats) {
         // --- Top Card (Attendance & Strength) ---
-        binding.tvTodayDate.text = com.aewsn.alkhair.utils.DateUtils.today()
+        // --- Top Card (Attendance & Strength) ---
+        val dateFormat = java.text.SimpleDateFormat(
+            "EEEE, MMMM d, yyyy",
+            java.util.Locale.getDefault()
+        )
+        binding.tvTodayDate.text = dateFormat.format(java.util.Date())
         binding.tvMyStudents.text = stats.studentsCount.toString()
         binding.tvPresentToday.text = stats.presentCount.toString()
         binding.tvAbsentToday.text = stats.absentCount.toString()

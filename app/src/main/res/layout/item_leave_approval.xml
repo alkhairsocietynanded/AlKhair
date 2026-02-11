@@ -4,99 +4,136 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    android:layout_marginHorizontal="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="3dp"
-    app:cardBackgroundColor="@android:color/white">
+    android:layout_marginBottom="8dp"
+    android:layout_marginHorizontal="0dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeColor="#E2E8F0"
+    app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="20dp">
 
+        <!-- Header: Name + Status -->
         <TextView
             android:id="@+id/tvStudentName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            tools:text="Ammar Ahmed"
-            android:textSize="18sp"
+            android:layout_marginEnd="8dp"
+            android:textColor="#1E293B"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#111827"
+            android:gravity="start"
+            android:textAlignment="viewStart"
+            app:layout_constraintEnd_toStartOf="@+id/chipStatus"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/chipStatus" />
-            
+            tools:text="Ammar Ahmed" />
+
         <com.google.android.material.chip.Chip
             android:id="@+id/chipStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            tools:text="Pending"
+            android:minHeight="32dp"
             android:textColor="@android:color/white"
-            app:chipBackgroundColor="@color/design_default_color_secondary"
-            app:chipMinHeight="24dp"
             android:textSize="12sp"
+            android:textStyle="bold"
+            app:chipBackgroundColor="#F59E0B"
+            app:chipCornerRadius="16dp"
+            app:chipMinHeight="28dp"
+            app:ensureMinTouchTargetSize="false"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" 
-            app:layout_constraintBottom_toBottomOf="@+id/tvStudentName"/>
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Pending" />
 
-        <TextView
-            android:id="@+id/tvDateRange"
+        <!-- Date Range -->
+        <LinearLayout
+            android:id="@+id/dateLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            tools:text="Feb 12 - Feb 14"
-            android:textSize="14sp"
-            android:textColor="#4B5563"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvStudentName"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent">
 
+            <ImageView
+                android:id="@+id/ivDate"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_calendar"
+                app:tint="#64748B" />
+
+            <TextView
+                android:id="@+id/tvDateRange"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textColor="#64748B"
+                android:textSize="14sp"
+                tools:text="Feb 12 - Feb 14" />
+        </LinearLayout>
+
+
+        <!-- Reason -->
         <TextView
             android:id="@+id/tvReason"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            tools:text="Reason: Going to village for urgent work."
-            android:textSize="14sp"
-            android:textColor="#6B7280"
-            android:maxLines="3"
+            android:layout_marginTop="12dp"
             android:ellipsize="end"
-            android:layout_marginTop="8dp"
+            android:lineSpacingExtra="4dp"
+            android:maxLines="3"
+            android:textColor="#334155"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvDateRange"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintTop_toBottomOf="@+id/dateLayout"
+            tools:text="Reason: Going to village for urgent family work. Please approve my leave request." />
 
+        <!-- Actions -->
         <LinearLayout
             android:id="@+id/actionLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
             android:orientation="horizontal"
-            android:layout_marginTop="12dp"
             android:weightSum="2"
-            app:layout_constraintTop_toBottomOf="@+id/tvReason"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            app:layout_constraintTop_toBottomOf="@+id/tvReason">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReject"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="Reject"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:textColor="#DC2626"
-                app:strokeColor="#DC2626" />
+                android:textColor="#EF4444"
+                android:paddingVertical="10dp"
+                app:cornerRadius="12dp"
+                app:strokeColor="#EF4444"
+                app:strokeWidth="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnApprove"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="Approve"
-                android:layout_marginStart="8dp"
-                android:backgroundTint="#059669"
-                android:textColor="@android:color/white" />
+                android:textColor="@android:color/white"
+                android:paddingVertical="10dp"
+                app:backgroundTint="#22C55E"
+                app:cornerRadius="12dp"
+                app:elevation="0dp" />
 
         </LinearLayout>
 

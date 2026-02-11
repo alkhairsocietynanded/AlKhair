@@ -8,16 +8,18 @@
     android:background="#F9FAFB"
     tools:context=".ui.student.dashboard.StudentDashboardFragment">
 
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingBottom="140dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:paddingBottom="140dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -71,6 +73,7 @@
                 </LinearLayout>
 
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/cardDevInfo"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     app:cardCornerRadius="20dp"
@@ -79,7 +82,6 @@
                     app:strokeWidth="1dp">
 
                     <ImageView
-                        android:id="@+id/devInfo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:padding="8dp"
@@ -120,7 +122,7 @@
 
                 <!-- Logout Button -->
                 <androidx.cardview.widget.CardView
-                    android:id="@+id/btnLogout"
+                    android:id="@+id/cardLogout"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginStart="8dp"
@@ -540,5 +542,7 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

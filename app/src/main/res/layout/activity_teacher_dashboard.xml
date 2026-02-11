@@ -113,6 +113,25 @@
 
                     </LinearLayout>
 
+                    <!-- Developer Info Card -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardDevInfo"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="#F1F5F9"
+                        app:strokeWidth="1dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_info"
+                            app:tint="#60A5FA" />
+                    </androidx.cardview.widget.CardView>
+
                     <!-- Logout Button (Student Style) -->
                     <androidx.cardview.widget.CardView
                         android:id="@+id/cardLogout"
@@ -133,6 +152,7 @@
 
                 </LinearLayout>
 
+
                 <TextView
                     android:id="@+id/tvTodayDate"
                     android:layout_width="wrap_content"
@@ -143,6 +163,141 @@
                     android:textColor="#64748B"
                     android:textSize="14sp" />
 
+            <!-- Stats/Action Cards -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardApplyLeave"
+                    android:layout_width="0dp"
+                    android:layout_height="160dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#60A5FA"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="4dp"
+                    app:strokeWidth="0dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="20dp">
+
+                        <View
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:layout_alignParentTop="true"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginTop="-20dp"
+                            android:layout_marginEnd="-20dp"
+                            android:background="#33FFFFFF"
+                            android:rotation="45" />
+
+                        <FrameLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:alpha="0.8"
+                            android:background="#4DFFFFFF">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_calendar"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Apply"
+                                android:textColor="#CCFFFFFF"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Leave"
+                                android:textColor="#FFFFFF"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAskAi"
+                    android:layout_width="0dp"
+                    android:layout_height="160dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#FDC840"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="4dp"
+                    app:strokeWidth="0dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="20dp">
+
+                        <View
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:layout_alignParentTop="true"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginTop="-20dp"
+                            android:layout_marginEnd="-20dp"
+                            android:background="#33FFFFFF"
+                            android:rotation="45" />
+
+                        <FrameLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="#4DFFFFFF">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_robot"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ask Ai"
+                                android:textColor="#CCFFFFFF"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Assistant"
+                                android:textColor="#FFFFFF"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
 
                 <!-- Summary Statistics Card (Styled like 'Attendance Progress' in Student) -->
                 <com.google.android.material.card.MaterialCardView
@@ -152,6 +307,7 @@
                     app:cardBackgroundColor="#FFFFFF"
                     app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
+                    android:layout_marginTop="16dp"
                     app:strokeColor="#E2E8F0"
                     app:strokeWidth="1dp">
 
@@ -739,8 +895,11 @@
 
 
                     <!-- Ask AI -->
+
+                    <!-- Ask AI (Removed as it is now a main card at the top) -->
+                    <!--
                     <LinearLayout
-                        android:id="@+id/cardAskAi"
+                        android:id="@+id/cardAskAiGrid"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
@@ -775,6 +934,7 @@
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
+                    -->
 
                 </GridLayout>
 

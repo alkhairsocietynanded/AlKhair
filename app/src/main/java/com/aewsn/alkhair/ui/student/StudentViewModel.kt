@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aewsn.alkhair.data.manager.AnnouncementRepoManager
 import com.aewsn.alkhair.data.manager.AttendanceRepoManager
-import com.aewsn.alkhair.data.manager.AuthRepoManager
 import com.aewsn.alkhair.data.manager.UserRepoManager
 import com.aewsn.alkhair.data.models.User
 import com.aewsn.alkhair.utils.UiState
@@ -17,7 +16,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StudentViewModel @Inject constructor(
-    private val authRepoManager: AuthRepoManager,
     private val userRepoManager: UserRepoManager,
     private val attendanceRepoManager: AttendanceRepoManager,
     private val announcementRepoManager: AnnouncementRepoManager,
@@ -39,6 +37,9 @@ class StudentViewModel @Inject constructor(
     val announcements: StateFlow<UiState<List<com.aewsn.alkhair.data.models.Announcement>>> =
         _announcements.asStateFlow()
 
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
     init {
         fetchCurrentUser()
         fetchAnnouncements()
@@ -47,7 +48,29 @@ class StudentViewModel @Inject constructor(
 
     private fun triggerSync() {
         viewModelScope.launch {
-            appDataSyncManager.syncAllData()
+            _isSyncing.value = true
+            try {
+                appDataSyncManager.syncAllData()
+            } catch (_: Exception) {
+                // Log.e("StudentViewModel", "Sync failed", e)
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
+    fun refreshData() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            try {
+                fetchCurrentUser()
+                fetchAnnouncements()
+                appDataSyncManager.syncAllData()
+            } catch (_: Exception) {
+               // Log.e("StudentViewModel", "Sync failed", e)
+            } finally {
+                _isSyncing.value = false
+            }
         }
     }
 
@@ -74,7 +97,7 @@ class StudentViewModel @Inject constructor(
                 if (list.isNotEmpty()) {
                     val totalDays = list.size
                     val presentDays = list.count { it.status.equals("Present", ignoreCase = true) }
-                    val percent = if (totalDays > 0) (presentDays * 100) / totalDays else 0
+                    val percent = (presentDays * 100) / totalDays
                     _attendancePercent.value = UiState.Success(percent)
                 } else {
                     _attendancePercent.value = UiState.Success(0)
@@ -96,11 +119,7 @@ class StudentViewModel @Inject constructor(
         }
     }
 
-    fun logout() {
-        viewModelScope.launch {
-            authRepoManager.logout()
-        }
-    }
+
 
     fun applyLeave(startDate: String, endDate: String, reason: String) {
         viewModelScope.launch {

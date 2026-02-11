@@ -34,9 +34,9 @@ interface LeaveDao {
     @Query("DELETE FROM leaves")
     suspend fun clearLeaves()
 
-    // Admin: Get all leaves with student names
+    // Admin: Get all leaves with student names and roles
     @Query("""
-        SELECT leaves.*, users.name as student_name 
+        SELECT leaves.*, users.name as student_name, users.role as student_role 
         FROM leaves 
         INNER JOIN users ON leaves.student_id = users.uid 
         ORDER BY leaves.start_date DESC
@@ -45,10 +45,10 @@ interface LeaveDao {
 
     // Teacher: Get leaves for specific class (Join with Users)
     @Query("""
-        SELECT leaves.*, users.name as student_name 
+        SELECT leaves.*, users.name as student_name, users.role as student_role 
         FROM leaves 
         INNER JOIN users ON leaves.student_id = users.uid 
-        WHERE users.classId = :classId 
+        WHERE users.classId = :classId AND users.role = 'student'
         ORDER BY leaves.start_date DESC
     """)
     fun getLeavesByClass(classId: String): Flow<List<com.aewsn.alkhair.data.models.LeaveWithStudent>>

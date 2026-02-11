@@ -62,9 +62,18 @@ class LeaveApprovalFragment : Fragment() {
             Toast.makeText(requireContext(), "Error: User not found", Toast.LENGTH_SHORT).show()
         }
         
+        setupToolbar()
+
         binding.swipeRefresh.setOnRefreshListener {
             currentUser?.let { viewModel.loadLeaves(it) }
             binding.swipeRefresh.isRefreshing = false
+        }
+    }
+
+    private fun setupToolbar() {
+        binding.toolbar.setNavigationOnClickListener {
+             // Check if parent activity can handle back press, otherwise pop stack
+             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
     }
 

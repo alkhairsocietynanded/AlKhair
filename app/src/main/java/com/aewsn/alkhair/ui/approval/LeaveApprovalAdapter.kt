@@ -34,6 +34,18 @@ class LeaveApprovalAdapter(
             val leave = item.leave
             
             binding.tvStudentName.text = item.studentName
+            
+            // Differentiate Teacher vs Student
+            if (item.studentRole.equals("teacher", true)) {
+                binding.tvStudentName.setTextColor(Color.parseColor("#4F46E5")) // Indigo for Teacher
+                binding.root.setStrokeColor(Color.parseColor("#818CF8")) // Light Indigo Stroke
+                binding.root.strokeWidth = 3 // Thicker stroke
+            } else {
+                binding.tvStudentName.setTextColor(Color.parseColor("#1E293B")) // Default Slate
+                binding.root.setStrokeColor(Color.parseColor("#E2E8F0")) // Default Stroke
+                binding.root.strokeWidth = 2 // Normal stroke
+            }
+            
             binding.tvDateRange.text = "${leave.startDate} - ${leave.endDate}"
             binding.tvReason.text = leave.reason
             

@@ -26,6 +26,9 @@ class StudentDashboardFragment : Fragment() {
     // Shared ViewModel from Activity (StudentViewModel)
     private val viewModel: StudentViewModel by activityViewModels()
 
+    @javax.inject.Inject
+    lateinit var logoutManager: com.aewsn.alkhair.utils.LogoutManager
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -43,19 +46,20 @@ class StudentDashboardFragment : Fragment() {
     }
 
     private fun setupListeners() {
-        binding.devInfo.setOnClickListener {
-
+        binding.cardDevInfo.setOnClickListener {
+            val bottomSheet = com.aewsn.alkhair.ui.common.AppInfoBottomSheet()
+            bottomSheet.show(parentFragmentManager, com.aewsn.alkhair.ui.common.AppInfoBottomSheet.TAG)
         }
 
-        binding.btnLogout.setOnClickListener {
-            viewModel.logout()
-            startActivity(
-                Intent(
-                    requireContext(),
-                    com.aewsn.alkhair.ui.auth.LoginActivity::class.java
-                )
+        binding.cardLogout.setOnClickListener {
+            com.aewsn.alkhair.utils.DialogUtils.showConfirmation(
+                requireContext(),
+                "Logout",
+                "Are you sure you want to logout?",
+                onConfirmed = {
+                    logoutManager.logout(requireContext())
+                }
             )
-            requireActivity().finishAffinity()
         }
 
         binding.cardApplyLeave.setOnClickListener {
@@ -92,6 +96,17 @@ class StudentDashboardFragment : Fragment() {
         }
         binding.actionResults.setOnClickListener {
             showPurchasePremiumDialog("Results")
+        }
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.refreshData()
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.isSyncing.collectLatest { isSyncing ->
+                    binding.swipeRefreshLayout.isRefreshing = isSyncing
+                }
+            }
         }
     }
 

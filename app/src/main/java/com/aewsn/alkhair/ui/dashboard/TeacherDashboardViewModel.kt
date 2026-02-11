@@ -17,8 +17,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
@@ -32,9 +34,10 @@ import javax.inject.Inject
 @HiltViewModel
 class TeacherDashboardViewModel @Inject constructor(
     private val appDataSyncManager: AppDataSyncManager,
-    userRepoManager: UserRepoManager,
+    private val userRepoManager: UserRepoManager,
     attendanceRepoManager: AttendanceRepoManager,
     feesRepoManager: FeesRepoManager,
+    private val leaveRepoManager: com.aewsn.alkhair.data.manager.LeaveRepoManager,
     @param:ApplicationScope private val externalScope: CoroutineScope
 ) : ViewModel() {
 
@@ -42,6 +45,54 @@ class TeacherDashboardViewModel @Inject constructor(
         triggerBackgroundSync()
     }
 
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
+    fun refreshData() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            try {
+                appDataSyncManager.syncAllData()
+            } catch (e: Exception) {
+                Log.e("TeacherDashVM", "Sync failed", e)
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
+    // --- LEAVE SUBMISSION STATE ---
+    private val _leaveSubmissionState = MutableStateFlow<UiState<Boolean>>(UiState.Idle)
+    val leaveSubmissionState = _leaveSubmissionState
+
+    fun applyLeave(startDate: String, endDate: String, reason: String) {
+        viewModelScope.launch {
+            _leaveSubmissionState.value = UiState.Loading
+            try {
+                val currentUser = userRepoManager.getCurrentUser()
+                if (currentUser != null) {
+                    val leave = com.aewsn.alkhair.data.models.Leave(
+                        id = java.util.UUID.randomUUID().toString(),
+                        studentId = currentUser.uid,
+                        startDate = startDate,
+                        endDate = endDate,
+                        reason = reason,
+                        status = "Pending"
+                    )
+                    leaveRepoManager.applyLeave(leave)
+                    _leaveSubmissionState.value = UiState.Success(true)
+                } else {
+                    _leaveSubmissionState.value = UiState.Error("User not found")
+                }
+            } catch (e: Exception) {
+                _leaveSubmissionState.value = UiState.Error(e.message ?: "Failed to apply leave")
+            }
+        }
+    }
+
+    fun resetLeaveState() {
+        _leaveSubmissionState.value = UiState.Idle
+    }
 
 
     private fun triggerBackgroundSync() {
@@ -91,7 +142,8 @@ class TeacherDashboardViewModel @Inject constructor(
             // --- FEES LOGIC (Current Month Only) ---
             // Note: myStudentIds variable reused here
 
-            val currentMonthFilter = DateUtils.formatDate(java.util.Calendar.getInstance(), "yyyy-MM")
+            val currentMonthFilter =
+                DateUtils.formatDate(Calendar.getInstance(), "yyyy-MM")
 
             val currentMonthFees = allFees.filter {
                 it.studentId in myStudentIds && it.feeDate.startsWith(currentMonthFilter)

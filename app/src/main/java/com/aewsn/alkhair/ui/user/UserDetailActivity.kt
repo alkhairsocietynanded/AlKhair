@@ -31,33 +31,38 @@ class UserDetailActivity : AppCompatActivity() {
         // ✅ Handle Insets globally for the Activity
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            
+
             // Only apply top padding to the AppBar, leave other sides alone for children
             binding.appBarLayout.setPadding(0, systemBars.top, 0, 0)
-            
+
             // Return insets so ViewPager/Fragment can consume bottom inset
             insets
         }
 
-        // Fix Status Bar Icon Color (Make them white)
-        val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
-        windowInsetsController.isAppearanceLightStatusBars = false
+        // Fix Status Bar Icon Color (Make them dark for light background)
+        val windowInsetsController =
+            androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.isAppearanceLightStatusBars = true
 
 
         val user = intent.extras?.getParcelableCompat("user", User::class.java)
-        // Get user details from intent
 
-        val fragments = if (user?.role == Roles.STUDENT) {
+        if (user == null) {
+            finish()
+            return
+        }
+
+        val fragments = if (user.role == Roles.STUDENT) {
             listOf(
-                "Profile" to ProfileFragment.newInstance(user!!),
-                "Attendance" to AttendanceFragment.newInstance(user!!),
-                "Fees" to FeesFragment.newInstance(user!!)
+                "Profile" to ProfileFragment.newInstance(user),
+                "Attendance" to AttendanceFragment.newInstance(user),
+                "Fees" to FeesFragment.newInstance(user)
             )
         } else {
             listOf(
-                "Profile" to ProfileFragment.newInstance(user!!),
-                "Attendance" to AttendanceFragment.newInstance(user!!),
-//                "Salary" to FeesFragment.newInstance(user!!)
+                "Profile" to ProfileFragment.newInstance(user),
+                "Attendance" to AttendanceFragment.newInstance(user),
+//                "Salary" to FeesFragment.newInstance(user)
             )
         }
 
@@ -68,6 +73,7 @@ class UserDetailActivity : AppCompatActivity() {
             tab.text = pagerAdapter.getTitle(position)
         }.attach()
     }
+
 
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()

@@ -15,8 +15,10 @@ import com.aewsn.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -42,6 +44,9 @@ class AdminDashboardViewModel @Inject constructor(
 
 
 
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
+
     private fun triggerBackgroundSync() {
         // ✅ 2. Use externalScope to run sync
         // This coroutine will NOT be cancelled when MainActivity finishes.
@@ -50,6 +55,20 @@ class AdminDashboardViewModel @Inject constructor(
                 appDataSyncManager.syncAllData()
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Background sync failed", e)
+            }
+        }
+    }
+    
+    fun refreshData() {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            try {
+                appDataSyncManager.syncAllData()
+            } catch (e: Exception) {
+                Log.e("AdminDashVM", "Sync failed", e)
+                // Optionally emit an error state used by UI
+            } finally {
+                _isSyncing.value = false
             }
         }
     }

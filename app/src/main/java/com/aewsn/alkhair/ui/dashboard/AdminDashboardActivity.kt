@@ -82,6 +82,11 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         // --- Navigation ---
+        binding.cardDevInfo.setOnClickListener {
+            val bottomSheet = com.aewsn.alkhair.ui.common.AppInfoBottomSheet()
+            bottomSheet.show(supportFragmentManager, com.aewsn.alkhair.ui.common.AppInfoBottomSheet.TAG)
+        }
+
         binding.cardTeachers.setOnClickListener {
             startActivity(
                 Intent(this, UserListActivity::class.java)
@@ -149,7 +154,12 @@ class AdminDashboardActivity : AppCompatActivity() {
         // --- Actions ---
         // --- Actions ---
         binding.cardLogout.setOnClickListener {
-            logoutManager.logout(this)
+            DialogUtils.showConfirmation(
+                this,
+                "Logout",
+                "Are you sure you want to logout?",
+                onConfirmed = { logoutManager.logout(this) }
+            )
         }
 
         binding.cardAnnounce.setOnClickListener {
@@ -158,9 +168,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
-            // In SSOT, swipe refresh triggers a Sync. The UI updates via Flow automatically.
-            // mainViewModel.syncData() // If exposed. For now, just reset the loader.
-            binding.swipeRefreshLayout.isRefreshing = false
+            adminDashboardViewModel.refreshData()
         }
         
         binding.fabAskAi.isVisible = true
@@ -209,11 +217,13 @@ class AdminDashboardActivity : AppCompatActivity() {
                 combine(
                     adminDashboardViewModel.dashboardState,
                     announcementViewModel.latestAnnouncementsState,
-                    announcementViewModel.mutationState // Updated here
-                ) { dashboardState, announcementListState, mutationState ->
+                    announcementViewModel.mutationState,
+                    adminDashboardViewModel.isSyncing
+                ) { dashboardState, announcementListState, mutationState, isSyncing ->
                     dashboardState is UiState.Loading ||
                             announcementListState is UiState.Loading ||
-                            mutationState is UiState.Loading
+                            mutationState is UiState.Loading ||
+                            isSyncing
                 }.collectLatest { isLoading ->
                     binding.swipeRefreshLayout.isRefreshing = isLoading
                 }

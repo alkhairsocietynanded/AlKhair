@@ -88,7 +88,7 @@
                     style="@style/Widget.Material3.Chip.Assist.Elevated"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="مدرسہ عائشہ صدیقہہ "
+                    android:text="مدرسہ عائشہ صدیقہ"
                     android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                     android:textColor="#2b1800"
                     android:textStyle="bold"
