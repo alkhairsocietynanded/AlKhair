@@ -70,6 +70,8 @@ class StudentDashboardFragment : Fragment() {
             )
         }
 
+
+
         binding.cardAskAi.setOnClickListener {
             startActivity(
                 Intent(
@@ -92,7 +94,12 @@ class StudentDashboardFragment : Fragment() {
             )
         }
         binding.actionTimetable.setOnClickListener {
-            showPurchasePremiumDialog("Time Table")
+            // showPurchasePremiumDialog("Time Table")
+             startActivity(
+                Intent(requireContext(), com.aewsn.alkhair.ui.timetable.TimetableManagementActivity::class.java).apply {
+                    putExtra("IS_ADMIN", false)
+                }
+            )
         }
         binding.actionResults.setOnClickListener {
             showPurchasePremiumDialog("Results")

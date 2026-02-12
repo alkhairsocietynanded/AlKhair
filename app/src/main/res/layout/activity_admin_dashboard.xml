@@ -745,8 +745,10 @@
                     </LinearLayout>
                    
                      <!-- Syllabus -->
+
+                     <!-- Subjects -->
                     <LinearLayout
-                        android:id="@+id/cardSyllabus"
+                        android:id="@+id/cardSubjects"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
@@ -760,7 +762,7 @@
                          <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
                             android:layout_height="56dp"
-                            app:cardBackgroundColor="#FEFCE8"
+                            app:cardBackgroundColor="#F3E8FF"
                             app:cardCornerRadius="16dp"
                             app:cardElevation="0dp">
 
@@ -768,15 +770,53 @@
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_gravity="center"
-                                android:src="@drawable/ic_syllabus"
-                                app:tint="#EAB308" />
+                                android:src="@drawable/ic_book"
+                                app:tint="#9333EA" />
                         </androidx.cardview.widget.CardView>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="Syllabus"
+                            android:text="Subjects"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                     <!-- Timetable -->
+                    <LinearLayout
+                        android:id="@+id/cardTimetable"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                         android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                         <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#E0F2FE"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_calendar"
+                                app:tint="#0284C7" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Timetable"
                             android:textColor="#334155"
                             android:textSize="12sp"
                             android:textStyle="bold" />

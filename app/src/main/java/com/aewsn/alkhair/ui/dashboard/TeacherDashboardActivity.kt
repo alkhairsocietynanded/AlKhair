@@ -223,6 +223,14 @@ class TeacherDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        binding.cardTimetable.setOnClickListener {
+            startActivity(
+                Intent(this, com.aewsn.alkhair.ui.timetable.TimetableManagementActivity::class.java).apply {
+                    putExtra("IS_ADMIN", false)
+                }
+            )
+        }
+
         binding.fabQRCode.setOnClickListener {
             startQrScanner()
         }

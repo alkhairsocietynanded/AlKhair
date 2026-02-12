@@ -189,18 +189,20 @@
                         <View
                             android:layout_width="80dp"
                             android:layout_height="80dp"
-                            android:layout_alignParentTop="true"
                             android:layout_alignParentEnd="true"
                             android:layout_marginTop="-20dp"
                             android:layout_marginEnd="-20dp"
-                            android:background="#33FFFFFF"
-                            android:rotation="45" />
+                            android:background="@drawable/circle_shape"
+                            android:backgroundTint="#FFFFFF"
+                            android:alpha="0.2" />
 
                         <FrameLayout
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:alpha="0.8"
-                            android:background="#4DFFFFFF">
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/circle_shape"
+                            android:backgroundTint="#FFFFFF"
+                            android:backgroundTintMode="src_in"
+                            android:alpha="0.3">
 
                             <ImageView
                                 android:layout_width="24dp"
@@ -220,7 +222,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Apply"
-                                android:textColor="#CCFFFFFF"
+                                android:textColor="#E2E8F0"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -233,6 +235,74 @@
                         </LinearLayout>
                     </RelativeLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- Timetable Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardTimetable"
+                    android:layout_width="0dp"
+                    android:layout_height="160dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="#A78BFA"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="4dp"
+                    app:strokeWidth="0dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="20dp">
+
+                        <View
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginTop="-20dp"
+                            android:layout_marginEnd="-20dp"
+                            android:background="@drawable/circle_shape"
+                            android:backgroundTint="#FFFFFF"
+                            android:alpha="0.2" />
+
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/circle_shape"
+                            android:backgroundTint="#FFFFFF"
+                            android:backgroundTintMode="src_in"
+                            android:alpha="0.3">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_attendance"
+                                app:tint="#FFFFFF" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentBottom="true"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="View"
+                                android:textColor="#E2E8F0"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Timetable"
+                                android:textColor="#FFFFFF"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </RelativeLayout>
+                </com.google.android.material.card.MaterialCardView>
+
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardAskAi"

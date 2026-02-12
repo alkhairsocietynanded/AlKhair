@@ -147,8 +147,16 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        binding.cardSyllabus.setOnClickListener {
-            startActivity(Intent(this, com.aewsn.alkhair.ui.syllabus.SyllabusActivity::class.java))
+
+
+        binding.cardSubjects.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.timetable.SubjectManagementActivity::class.java))
+        }
+
+        binding.cardTimetable.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.timetable.TimetableManagementActivity::class.java).apply {
+                putExtra("IS_ADMIN", true)
+            })
         }
 
         // --- Actions ---

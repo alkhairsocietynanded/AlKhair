@@ -25,6 +25,8 @@ class AppDataSyncManager @Inject constructor(
     private val announcementRepoManager: AnnouncementRepoManager,
     private val leaveRepoManager: LeaveRepoManager,
     private val syllabusRepoManager: SyllabusRepoManager,
+    private val subjectRepoManager: SubjectRepoManager,
+    private val timetableRepoManager: TimetableRepoManager,
     private val deletionRepository: SupabaseDeletionRepository,
     private val sharedPreferences: android.content.SharedPreferences
 ) {
@@ -99,6 +101,9 @@ class AppDataSyncManager @Inject constructor(
                     // Important for hydration (User names, Homework division names etc).
                     // We sync these sequentially and await result before proceeding.
                     Log.d(TAG, "Step 1: Syncing Metadata (Classes/Divisions)")
+
+                    // List to hold remaining sync jobs.
+                    val syncJobs = mutableListOf<Deferred<Result<Any>>>()
                     
                     val classJob = async { classDivisionRepoManager.syncClasses(queryTime).map { it as Any } }
                     val divJob = async { classDivisionRepoManager.syncDivisions(queryTime).map { it as Any } }
@@ -107,13 +112,22 @@ class AppDataSyncManager @Inject constructor(
                     val metadataResults = listOf(classJob, divJob).awaitAll()
                     Log.d(TAG, "Step 1 Finished: Metadata Synced.")
 
+                    // Sync Subjects (Metadata) - Globally for everyone
+                    val subjectJob = async { subjectRepoManager.sync(queryTime).map { it as Any } }
+                    val timetableJob = async { timetableRepoManager.sync(queryTime).map { it as Any } }
+                    // We can await these or let them run in parallel with others if they don't block dependent data.
+                    // Subjects are needed for Timetable display.
+                    // Let's add them to syncJobs or await them if needed immediately.
+                    // Since Timetable depends on Subjects (for names), we should arguably sync Subjects first or just let Flow update UI.
+                    // Since we use Room, UI will update when data arrives.
+                    syncJobs.add(subjectJob)
+                    syncJobs.add(timetableJob)
+
 
                     // ====================================================
                     // 🚀 2. SYNC DEPENDENT DATA (Parallel)
                     // ====================================================
                     Log.d(TAG, "Step 2: Syncing Dependent Entities")
-                    // List to hold remaining sync jobs.
-                    val syncJobs = mutableListOf<Deferred<Result<Any>>>()
 
                     // ====================================================
                     // 👑 ADMIN STRATEGY (Global Sync)
@@ -277,6 +291,8 @@ class AppDataSyncManager @Inject constructor(
                             "leaves" -> leaveRepoManager.deleteLocally(record.recordId)
                             "attendance" -> attendanceRepoManager.deleteLocally(record.recordId)
                             "syllabus" -> syllabusRepoManager.deleteLocally(record.recordId)
+                            "subjects" -> subjectRepoManager.deleteLocally(record.recordId)
+                            "timetable" -> timetableRepoManager.deleteLocally(record.recordId)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed deleting ${record.type} : ${record.recordId}", e)
@@ -306,6 +322,8 @@ class AppDataSyncManager @Inject constructor(
         announcementRepoManager.clearLocal()
         leaveRepoManager.clearLocal()
         syllabusRepoManager.clearLocal()
+        subjectRepoManager.clearLocal()
+        timetableRepoManager.clearLocal()
 
         // 2. Clear Sync Timestamp (Important!)
         // Taaki naya user login kare to full sync ho

@@ -132,4 +132,12 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSyllabusDao(db: AppDatabase) = db.syllabusDao()
+
+    @Provides
+    @Singleton
+    fun provideSubjectDao(db: AppDatabase) = db.subjectDao()
+
+    @Provides
+    @Singleton
+    fun provideTimetableDao(db: AppDatabase) = db.timetableDao()
 }

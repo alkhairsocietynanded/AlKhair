@@ -33,9 +33,11 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         DivisionModel::class,
         PendingDeletion::class,
         com.aewsn.alkhair.data.models.Leave::class,
-        com.aewsn.alkhair.data.models.Syllabus::class
+        com.aewsn.alkhair.data.models.Syllabus::class,
+        com.aewsn.alkhair.data.models.Subject::class,
+        com.aewsn.alkhair.data.models.Timetable::class
     ],
-    version = 7, // Incremented version
+    version = 8, // Incremented for Timetable
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,5 +52,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pendingDeletionDao(): PendingDeletionDao
     abstract fun leaveDao(): com.aewsn.alkhair.data.local.dao.LeaveDao
     abstract fun syllabusDao(): com.aewsn.alkhair.data.local.dao.SyllabusDao
+    abstract fun subjectDao(): com.aewsn.alkhair.data.local.dao.SubjectDao
+    abstract fun timetableDao(): com.aewsn.alkhair.data.local.dao.TimetableDao
+
 
 }
