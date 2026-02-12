@@ -32,6 +32,14 @@ interface ResultDao {
     @Query("DELETE FROM exams WHERE id = :examId")
     suspend fun deleteExam(examId: String)
 
+    // Teacher: all exams for their class
+    @Query("SELECT * FROM exams WHERE class_id = :classId ORDER BY start_date DESC")
+    fun getExamsByClassId(classId: String): Flow<List<Exam>>
+
+    // Student: only published exams for their class
+    @Query("SELECT * FROM exams WHERE class_id = :classId AND is_published = 1 ORDER BY start_date DESC")
+    fun getPublishedExamsByClassId(classId: String): Flow<List<Exam>>
+
     // ================== RESULTS ==================
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

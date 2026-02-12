@@ -25,8 +25,16 @@ class ExamAdapter(
             val end = dateFormat.format(Date(exam.endDate))
             binding.tvExamDate.text = "$start - $end"
             
-            binding.chipStatus.text = if (exam.isPublished) "Published" else "Draft"
-            binding.chipStatus.visible() // Always visible if in list, usually
+            if (exam.isPublished) {
+                binding.chipStatus.text = "Published"
+                binding.chipStatus.setTextColor(android.graphics.Color.parseColor("#059669"))
+                binding.chipStatus.setBackgroundResource(com.aewsn.alkhair.R.drawable.bg_status_badge)
+            } else {
+                binding.chipStatus.text = "Draft"
+                binding.chipStatus.setTextColor(android.graphics.Color.parseColor("#D97706"))
+                binding.chipStatus.setBackgroundResource(com.aewsn.alkhair.R.drawable.bg_status_badge_draft)
+            }
+            binding.chipStatus.visible()
             
             binding.root.setOnClickListener { onClick(exam) }
         }

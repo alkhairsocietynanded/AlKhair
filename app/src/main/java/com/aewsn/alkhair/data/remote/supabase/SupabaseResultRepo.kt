@@ -112,6 +112,18 @@ class SupabaseResultRepo @Inject constructor(
         }
     }
 
+    /**
+     * Batch upsert results — for adding marks of entire class at once
+     */
+    suspend fun upsertResults(results: List<Result>): kotlin.Result<Unit> {
+        return try {
+            supabase.postgrest["results"].upsert(results)
+            kotlin.Result.success(Unit)
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
+        }
+    }
+
     suspend fun deleteResult(id: String): kotlin.Result<Unit> {
         return try {
             supabase.postgrest["results"].delete {

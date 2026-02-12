@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -11,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.aewsn.alkhair.databinding.FragmentResultDetailBinding
+import com.aewsn.alkhair.utils.Roles
 import com.aewsn.alkhair.utils.UiState
 import com.aewsn.alkhair.utils.gone
 import com.aewsn.alkhair.utils.visible
@@ -24,21 +26,25 @@ class ResultDetailFragment : Fragment() {
     private var _binding: FragmentResultDetailBinding? = null
     private val binding get() = _binding!!
     private val viewModel: ResultViewModel by activityViewModels()
-    
+
     // Args
     private var examId: String = ""
     private var examTitle: String = ""
+    private var examClassId: String? = null
 
     companion object {
         private const val ARG_EXAM_ID = "arg_exam_id"
         private const val ARG_EXAM_TITLE = "arg_exam_title"
+        private const val ARG_EXAM_CLASS_ID = "arg_exam_class_id"
 
-        fun newInstance(examId: String, examTitle: String) = ResultDetailFragment().apply {
-            arguments = Bundle().apply {
-                putString(ARG_EXAM_ID, examId)
-                putString(ARG_EXAM_TITLE, examTitle)
+        fun newInstance(examId: String, examTitle: String, classId: String? = null) =
+            ResultDetailFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_EXAM_ID, examId)
+                    putString(ARG_EXAM_TITLE, examTitle)
+                    putString(ARG_EXAM_CLASS_ID, classId)
+                }
             }
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +52,7 @@ class ResultDetailFragment : Fragment() {
         arguments?.let {
             examId = it.getString(ARG_EXAM_ID, "")
             examTitle = it.getString(ARG_EXAM_TITLE, "")
+            examClassId = it.getString(ARG_EXAM_CLASS_ID)
         }
     }
 
@@ -60,24 +67,41 @@ class ResultDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        // Set Title in Toolbar (if activity logic allows, but simpler to just show it in layout if needed)
-        // Since we are in a Fragment, accessing Activity toolbar is a bit coupled. 
-        // We added BackStack in ListFragment, so Activity title changes might be needed.
-        (requireActivity() as? androidx.appcompat.app.AppCompatActivity)?.supportActionBar?.title = examTitle
-        
+
+        (requireActivity() as? androidx.appcompat.app.AppCompatActivity)?.supportActionBar?.title =
+            examTitle
+
         setupRecyclerView()
-        
-        // Trigger fetch
+        setupFab()
+
         if (examId.isNotEmpty()) {
             viewModel.fetchResultsForExam(examId)
         }
-        
+
         observeData()
     }
 
     private fun setupRecyclerView() {
         binding.rvResults.layoutManager = LinearLayoutManager(requireContext())
+    }
+
+    private fun setupFab() {
+        binding.fabAddResult.isVisible = false
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val user = viewModel.fetchCurrentUser()
+            if (user != null) {
+                val role = user.role.trim()
+                val canManage = role.equals(Roles.TEACHER, ignoreCase = true) ||
+                        role.equals(Roles.ADMIN, ignoreCase = true)
+                binding.fabAddResult.isVisible = canManage
+            }
+        }
+
+        binding.fabAddResult.setOnClickListener {
+            val dialog = AddResultDialog.newInstance(examId, examClassId)
+            dialog.show(childFragmentManager, "AddResultDialog")
+        }
     }
 
     private fun observeData() {
@@ -91,6 +115,7 @@ class ResultDetailFragment : Fragment() {
                             binding.rvResults.gone()
                             binding.tvEmpty.gone()
                         }
+
                         is UiState.Error -> {
                             binding.progressBar.gone()
                             binding.cardSummary.gone()
@@ -98,6 +123,7 @@ class ResultDetailFragment : Fragment() {
                             binding.tvEmpty.text = state.message
                             binding.tvEmpty.visible()
                         }
+
                         is UiState.Success -> {
                             binding.progressBar.gone()
                             val results = state.data
@@ -109,19 +135,22 @@ class ResultDetailFragment : Fragment() {
                                 binding.tvEmpty.gone()
                                 binding.cardSummary.visible()
                                 binding.rvResults.visible()
-                                
+
                                 val adapter = ResultDetailAdapter(results)
                                 binding.rvResults.adapter = adapter
-                                
+
                                 // Calculate Totals
-                                val totalMarksObtained = results.sumOf { it.result.marksObtained }
+                                val totalMarksObtained =
+                                    results.sumOf { it.result.marksObtained }
                                 val totalMaxMarks = results.sumOf { it.result.totalMarks }
-                                val percentage = if (totalMaxMarks > 0) (totalMarksObtained / totalMaxMarks) * 100 else 0.0
-                                
-                                binding.tvTotalPercentage.text = String.format("%.1f%%", percentage)
-                                binding.tvTotalMarks.text = "Total: ${totalMarksObtained.toInt()} / ${totalMaxMarks.toInt()}"
-                                
-                                // Grade Logic (Simple)
+                                val percentage: Double =
+                                    if (totalMaxMarks > 0) (totalMarksObtained / totalMaxMarks * 100) else 0.0
+
+                                binding.tvTotalPercentage.text =
+                                    String.format("%.1f%%", percentage)
+                                binding.tvTotalMarks.text =
+                                    "$totalMarksObtained / $totalMaxMarks"
+
                                 val grade = when {
                                     percentage >= 90 -> "A+"
                                     percentage >= 80 -> "A"
@@ -130,9 +159,10 @@ class ResultDetailFragment : Fragment() {
                                     percentage >= 50 -> "D"
                                     else -> "F"
                                 }
-                                binding.tvGrade.text = "Grade: $grade"
+                                binding.tvGrade.text = grade
                             }
                         }
+
                         else -> {}
                     }
                 }

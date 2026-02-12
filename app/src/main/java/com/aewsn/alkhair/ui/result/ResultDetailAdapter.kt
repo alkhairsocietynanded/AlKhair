@@ -14,10 +14,12 @@ class ResultDetailAdapter(
         RecyclerView.ViewHolder(binding.root) {
         fun bind(item: ResultUiModel) {
             if (item.studentName.isNotEmpty()) {
-                binding.tvSubjectName.text = "${item.studentName}\n${item.subjectName}"
+                binding.tvStudentName.text = item.studentName
+                binding.tvStudentName.visibility = android.view.View.VISIBLE
             } else {
-                binding.tvSubjectName.text = item.subjectName
+                binding.tvStudentName.visibility = android.view.View.GONE
             }
+            binding.tvSubjectName.text = item.subjectName
             
             // Format marks: 85.0 -> 85 if whole number
             val marks = if (item.result.marksObtained % 1 == 0.0) {

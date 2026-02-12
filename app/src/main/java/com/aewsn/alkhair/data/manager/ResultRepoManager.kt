@@ -33,6 +33,14 @@ class ResultRepoManager @Inject constructor(
 
     fun observeAllExams(): Flow<List<Exam>> = localRepo.getAllExams()
 
+    // Teacher: all exams for their class
+    fun observeExamsByClassId(classId: String): Flow<List<Exam>> =
+        localRepo.getExamsByClassId(classId)
+
+    // Student: only published exams for their class
+    fun observePublishedExamsByClassId(classId: String): Flow<List<Exam>> =
+        localRepo.getPublishedExamsByClassId(classId)
+
     fun observeResultsForStudent(examId: String, studentId: String): Flow<List<Result>> =
         localRepo.getResultsForStudentRef(examId, studentId)
         

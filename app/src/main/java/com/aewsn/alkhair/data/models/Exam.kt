@@ -29,6 +29,10 @@ data class Exam(
     @SerialName("session")
     var session: String? = null,
 
+    @SerialName("class_id")
+    @ColumnInfo(name = "class_id")
+    var classId: String? = null,
+
     @SerialName("is_published")
     @ColumnInfo(name = "is_published")
     var isPublished: Boolean = false,

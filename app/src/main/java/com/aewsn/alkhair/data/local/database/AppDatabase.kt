@@ -39,7 +39,7 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         com.aewsn.alkhair.data.models.Exam::class,
         com.aewsn.alkhair.data.models.Result::class
     ],
-    version = 13, // v13: Paginated attendance sync to fetch all records beyond 1000 limit
+    version = 14, // v14: Added class_id to Exam for role-based exam management
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
