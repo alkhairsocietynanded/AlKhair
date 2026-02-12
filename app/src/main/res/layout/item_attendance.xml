@@ -83,6 +83,25 @@
             app:layout_constraintStart_toStartOf="@+id/tvEmail"
             app:layout_constraintTop_toBottomOf="@+id/tvEmail" />
 
+        <!-- Time Chip/Text -->
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_rounded_pill" 
+            android:backgroundTint="?attr/colorSurfaceVariant"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:text="10:30 AM"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone" 
+            app:layout_constraintBottom_toBottomOf="@+id/chipShift"
+            app:layout_constraintStart_toEndOf="@+id/chipShift"
+            app:layout_constraintTop_toTopOf="@+id/chipShift"
+            tools:visibility="visible" />
+
         <com.google.android.material.divider.MaterialDivider
             android:id="@+id/divider"
             android:layout_width="0dp"

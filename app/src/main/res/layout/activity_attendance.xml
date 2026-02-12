@@ -67,9 +67,9 @@
 
                         <ImageButton
                             android:id="@+id/btnPrevDate"
-                            style="?attr/borderlessButtonStyle"
                             android:layout_width="48dp"
                             android:layout_height="48dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="Previous Date"
                             android:src="@drawable/ic_prev"
                             app:tint="#64748B" />
@@ -87,9 +87,9 @@
 
                         <ImageButton
                             android:id="@+id/btnNextDate"
-                            style="?attr/borderlessButtonStyle"
                             android:layout_width="48dp"
                             android:layout_height="48dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="Next Date"
                             android:src="@drawable/ic_next"
                             app:tint="#64748B" />

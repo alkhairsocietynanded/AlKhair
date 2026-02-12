@@ -132,6 +132,12 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, FeesActivity::class.java))
         }
 
+        binding.cardResults.setOnClickListener {
+            // For Admin/Teacher, we might need a different Activity or pass a "MANAGE" mode
+            // For now, enabling viewing.
+            startActivity(Intent(this, com.aewsn.alkhair.ui.result.ResultActivity::class.java))
+        }
+
         binding.cardSalary.setOnClickListener {
             startActivity(Intent(this, SalaryActivity::class.java))
         }

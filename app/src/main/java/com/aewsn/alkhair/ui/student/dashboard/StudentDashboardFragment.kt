@@ -102,7 +102,8 @@ class StudentDashboardFragment : Fragment() {
             )
         }
         binding.actionResults.setOnClickListener {
-            showPurchasePremiumDialog("Results")
+            // showPurchasePremiumDialog("Results")
+            com.aewsn.alkhair.ui.result.ResultActivity.start(requireContext())
         }
         binding.swipeRefreshLayout.setOnRefreshListener {
             viewModel.refreshData()

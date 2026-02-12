@@ -64,12 +64,27 @@ class SupabaseAttendanceRepository @Inject constructor(
 
     suspend fun getAttendanceUpdatedAfter(timestamp: Long): Result<List<Attendance>> {
         return try {
-            val list = supabase.from("attendance").select {
-                filter {
-                    Attendance::updatedAt gt timestamp
-                }
-            }.decodeList<Attendance>()
-            Result.success(list)
+            val allRecords = mutableListOf<Attendance>()
+            val pageSize = 1000L
+            var offset = 0L
+            
+            while (true) {
+                val batch = supabase.from("attendance").select {
+                    filter {
+                        Attendance::updatedAt gt timestamp
+                    }
+                    range(offset, offset + pageSize - 1)
+                }.decodeList<Attendance>()
+                
+                allRecords.addAll(batch)
+                Log.d("SupabaseAttendanceRepo", "Fetched batch: ${batch.size} records (offset=$offset)")
+                
+                if (batch.size < pageSize) break // Last page
+                offset += pageSize
+            }
+            
+            Log.d("SupabaseAttendanceRepo", "Total attendance fetched: ${allRecords.size}")
+            Result.success(allRecords)
         } catch (e: Exception) {
             Log.e("SupabaseAttendanceRepo", "Error fetching updated attendance (Global)", e)
             Result.failure(e)

@@ -140,4 +140,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideTimetableDao(db: AppDatabase) = db.timetableDao()
+
+    @Provides
+    @Singleton
+    fun provideResultDao(db: AppDatabase) = db.resultDao()
 }

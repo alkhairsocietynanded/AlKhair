@@ -38,6 +38,15 @@ class AttendanceAdapter(
                 ContextCompat.getColor(root.context, shiftColorRes)
             )
 
+            // 2.1 Bind Time
+            if (!item.time.isNullOrBlank()) {
+                tvTime.text = item.time
+                tvTime.visibility = View.VISIBLE
+            } else {
+                tvTime.visibility = View.GONE
+            }
+
+
             // 3. Handle Button State
             // IMPORTANT: Clear listeners before setting state to avoid infinite loops or wrong callbacks
             toggleButtonGroup.clearOnButtonCheckedListeners()

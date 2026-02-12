@@ -158,6 +158,11 @@ class TeacherDashboardActivity : AppCompatActivity() {
                 putExtra("role", Roles.TEACHER) // ✅ Pass Role
             })
         }
+
+        binding.cardResults.setOnClickListener {
+             startActivity(Intent(this, com.aewsn.alkhair.ui.result.ResultActivity::class.java))
+        }
+
         binding.cardAnnouncement.setOnClickListener {
             val addAnnouncementSheet = AddAnnouncementSheet()
             addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)

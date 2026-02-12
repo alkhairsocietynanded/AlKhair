@@ -27,6 +27,7 @@ class AppDataSyncManager @Inject constructor(
     private val syllabusRepoManager: SyllabusRepoManager,
     private val subjectRepoManager: SubjectRepoManager,
     private val timetableRepoManager: TimetableRepoManager,
+    private val resultRepoManager: ResultRepoManager, // ✅ New
     private val deletionRepository: SupabaseDeletionRepository,
     private val sharedPreferences: android.content.SharedPreferences
 ) {
@@ -80,8 +81,15 @@ class AppDataSyncManager @Inject constructor(
                 Log.d(TAG, "Current user role: $role")
 
                 // 2. Check Timestamps
-                val lastSync = appDataStore.getString(KEY_LAST_SYNC).toLongOrNull() ?: 0L
+                var lastSync = appDataStore.getString(KEY_LAST_SYNC).toLongOrNull() ?: 0L
                 val deviceTime = System.currentTimeMillis()
+
+                // ⚠️ Detect post-destructive-migration: DB wiped but DataStore still has old timestamp
+                if (lastSync != 0L && currentUser == null) {
+                    Log.w(TAG, "⚠️ DB appears wiped (no local user) but lastSync=$lastSync. Resetting to 0 for full re-sync.")
+                    appDataStore.saveString(KEY_LAST_SYNC, "0")
+                    lastSync = 0L
+                }
 
                 if (!forceRefresh && lastSync != 0L && (deviceTime - lastSync) < SYNC_THRESHOLD_MS) {
                     Log.d(TAG, "Sync skipped → Data is fresh. Last sync: $lastSync")
@@ -115,6 +123,8 @@ class AppDataSyncManager @Inject constructor(
                     // Sync Subjects (Metadata) - Globally for everyone
                     val subjectJob = async { subjectRepoManager.sync(queryTime).map { it as Any } }
                     val timetableJob = async { timetableRepoManager.sync(queryTime).map { it as Any } }
+                    val examJob = async { resultRepoManager.syncExams(queryTime).map { it as Any } } // ✅ Sync Exams
+
                     // We can await these or let them run in parallel with others if they don't block dependent data.
                     // Subjects are needed for Timetable display.
                     // Let's add them to syncJobs or await them if needed immediately.
@@ -122,6 +132,7 @@ class AppDataSyncManager @Inject constructor(
                     // Since we use Room, UI will update when data arrives.
                     syncJobs.add(subjectJob)
                     syncJobs.add(timetableJob)
+                    syncJobs.add(examJob)
 
 
                     // ====================================================
@@ -134,15 +145,31 @@ class AppDataSyncManager @Inject constructor(
                     // ====================================================
                     if (role.equals(Roles.ADMIN, true)) {
                         Log.d(TAG, "Syncing for ADMIN")
-                        syncJobs.add(async { userRepoManager.sync(queryTime).map { it as Any } })
+                        // 1. Core Dependencies (Users is CRITICAL for Results/Attendance)
+                        val userJob = async { userRepoManager.sync(queryTime).map { it as Any } }
+                        
+                        // 2. Parallel jobs that don't depend on Users immediately or handle missing users gracefully
                         syncJobs.add(async { feesRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { salaryRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { homeworkRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { announcementRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { attendanceRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { leaveRepoManager.sync(queryTime).map { it as Any } })
-                        // Syllabus (Global sync for admin - optional, or just class based)
-                         syncJobs.add(async { syllabusRepoManager.sync(queryTime).map { it as Any } })
+                        syncJobs.add(async { syllabusRepoManager.sync(queryTime).map { it as Any } })
+                        
+                        // 3. Await Users BEFORE Results
+                        // Results depend on Users, Exams and Subjects. 
+                        // Subjects & Exams are already started in Step 1.
+                        // We must ensure they are done.
+                        syncJobs.add(userJob)
+                        
+                        // Add a separate job for Results that starts AFTER dependencies
+                        // But since we are in async block, we can't easily chain without blocking everything.
+                        // Alternative: Add Result sync to the END of the process or use a separate coroutine scope that waits.
+                        // Simplest fix: Launch Result sync independently but `await` it at the end? 
+                        // No, if we fire it now, it runs now.
+                        // BETTER: Add it to a lazy job or just run it last?
+                        // We will wait for `syncJobs` (including Users) to finish, THEN sync Results.
                     }
 
                     // ====================================================
@@ -248,6 +275,40 @@ class AppDataSyncManager @Inject constructor(
                         }
                     }
 
+                    // ... (existing timestamp calculation)
+
+                    // ====================================================
+                    // 🏁 3. SYNC RESULTS (Must be LAST to ensure FK Integrity)
+                    // ====================================================
+                    // Only run if dependencies (Users, Exams, Subjects) are likely synced.
+                    // We rely on the fact that previous jobs finished (even if failed, we try).
+                    // In strict mode, we should check compliance, but for now, late sync is better than crash.
+                    
+                    Log.d(TAG, "Step 3: Syncing Results (Dependent on all above)")
+                    try {
+                        val resultSyncResult = if (role.equals(Roles.ADMIN, true)) {
+                             resultRepoManager.syncAllResults(queryTime)
+                        } else if (role.equals(Roles.TEACHER, true)) {
+                             resultRepoManager.syncAllResults(queryTime) // Teachers see all for now
+                        } else {
+                             val uid = authRepoManager.getCurrentUserUid() ?: ""
+                             resultRepoManager.syncStudentResults(uid, queryTime)
+                        }
+                        
+                        // Update timestamp with Result sync
+                        resultSyncResult.onSuccess { data ->
+                             if (data > maxDataTimestamp) {
+                                 maxDataTimestamp = data
+                                 Log.d(TAG, "Results synced with new max timestamp: $maxDataTimestamp")
+                             }
+                        }
+                        resultSyncResult.onFailure { e ->
+                            Log.e(TAG, "Results sync failed (non-fatal)", e)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Results sync crashed (non-fatal, skipping)", e)
+                    }
+
                     // Save Timestamp (Greater of Device Time vs Max Data Time)
                     val newSyncTime = max(deviceTime, maxDataTimestamp)
                     appDataStore.saveString(KEY_LAST_SYNC, newSyncTime.toString())
@@ -287,12 +348,13 @@ class AppDataSyncManager @Inject constructor(
                             "salary" -> salaryRepoManager.deleteLocally(record.recordId)
                             "homework" -> homeworkRepoManager.deleteLocally(record.recordId)
                             "announcements" -> announcementRepoManager.deleteLocally(record.recordId)
-                            "announcements" -> announcementRepoManager.deleteLocally(record.recordId)
                             "leaves" -> leaveRepoManager.deleteLocally(record.recordId)
                             "attendance" -> attendanceRepoManager.deleteLocally(record.recordId)
                             "syllabus" -> syllabusRepoManager.deleteLocally(record.recordId)
                             "subjects" -> subjectRepoManager.deleteLocally(record.recordId)
                             "timetable" -> timetableRepoManager.deleteLocally(record.recordId)
+                            "exams" -> resultRepoManager.deleteExamLocally(record.recordId)
+                            "results" -> resultRepoManager.deleteResultLocally(record.recordId)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed deleting ${record.type} : ${record.recordId}", e)
@@ -324,6 +386,7 @@ class AppDataSyncManager @Inject constructor(
         syllabusRepoManager.clearLocal()
         subjectRepoManager.clearLocal()
         timetableRepoManager.clearLocal()
+        resultRepoManager.clearLocal()
 
         // 2. Clear Sync Timestamp (Important!)
         // Taaki naya user login kare to full sync ho

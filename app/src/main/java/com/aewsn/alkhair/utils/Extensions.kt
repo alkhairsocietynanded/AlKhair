@@ -1,6 +1,6 @@
-// In a new file, e.g., Extensions.kt
 package com.aewsn.alkhair.utils
 
+import android.view.View
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -12,4 +12,13 @@ inline fun <reified T : Parcelable> Bundle.getParcelableCompat(key: String, claz
         @Suppress("DEPRECATION")
         getParcelable(key) as? T
     }
+}
+
+
+fun View.visible() {
+    visibility = View.VISIBLE
+}
+
+fun View.gone() {
+    visibility = View.GONE
 }

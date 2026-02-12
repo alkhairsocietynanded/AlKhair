@@ -35,9 +35,11 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         com.aewsn.alkhair.data.models.Leave::class,
         com.aewsn.alkhair.data.models.Syllabus::class,
         com.aewsn.alkhair.data.models.Subject::class,
-        com.aewsn.alkhair.data.models.Timetable::class
+        com.aewsn.alkhair.data.models.Timetable::class,
+        com.aewsn.alkhair.data.models.Exam::class,
+        com.aewsn.alkhair.data.models.Result::class
     ],
-    version = 8, // Incremented for Timetable
+    version = 13, // v13: Paginated attendance sync to fetch all records beyond 1000 limit
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -54,6 +56,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun syllabusDao(): com.aewsn.alkhair.data.local.dao.SyllabusDao
     abstract fun subjectDao(): com.aewsn.alkhair.data.local.dao.SubjectDao
     abstract fun timetableDao(): com.aewsn.alkhair.data.local.dao.TimetableDao
+    abstract fun resultDao(): com.aewsn.alkhair.data.local.dao.ResultDao
 
 
 }

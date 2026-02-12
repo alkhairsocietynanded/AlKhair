@@ -17,6 +17,10 @@ data class Attendance(
     
     @kotlinx.serialization.Transient
     val shift: String = "", // Not needed in Supabase as we use ClassID
+    
+    @SerialName("time")
+    val time: String? = null, // ✅ Added Time Field
+
     @SerialName("updated_at")
     override val updatedAt: Long = System.currentTimeMillis(),
     

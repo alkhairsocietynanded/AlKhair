@@ -20,7 +20,8 @@ import javax.inject.Inject
 
 data class AttendanceUiModel(
     val user: User,
-    val status: String? = null
+    val status: String? = null,
+    val time: String? = null // ✅ Added Time
 )
 
 @HiltViewModel
@@ -79,7 +80,11 @@ class AttendanceViewModel @Inject constructor(
                 val uiList = filteredUsers.map { user ->
                     val dbRecord = attendanceRecords.find { it.studentId == user.uid }
                     val localStatus = params.edits[user.uid]
-                    AttendanceUiModel(user = user, status = localStatus ?: dbRecord?.status)
+                    AttendanceUiModel(
+                        user = user, 
+                        status = localStatus ?: dbRecord?.status,
+                        time = dbRecord?.time // ✅ Map Time
+                    )
                 }
                 UiState.Success(uiList) as UiState<List<AttendanceUiModel>>
             }
@@ -120,6 +125,7 @@ class AttendanceViewModel @Inject constructor(
                         date = date,
                         status = uiModel.status!!,
                         shift = shift, // ✅ Add Shift to Model
+                        // time = null, // Manual attendance doesn't have specific time usually, or we can add it if needed
                         updatedAt = System.currentTimeMillis()
                     )
                 }
@@ -149,7 +155,9 @@ class AttendanceViewModel @Inject constructor(
             val currentUser = userRepoManager.getUserById(currentUid)
             val todayDate = DateUtils.formatDate(Calendar.getInstance())
 
-            // Teacher details fetch karein
+            // ✅ Capture Current Time
+            val currentTime = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+
             // Teacher details fetch karein
             val targetClassId = currentUser?.classId?.takeIf { it.isNotBlank() } ?: Constants.STAFF_CLASS_ID
             val targetShift = currentUser?.shift ?: "General" // ✅ Get Teacher's Shift
@@ -160,6 +168,7 @@ class AttendanceViewModel @Inject constructor(
                 date = todayDate,
                 status = "Present",
                 shift = targetShift, // ✅ Save Teacher's Shift
+                time = currentTime, // ✅ Save Time
                 updatedAt = System.currentTimeMillis()
             )
 
