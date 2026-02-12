@@ -40,7 +40,7 @@ class TimetableFragment : Fragment() {
     private lateinit var timetableAdapter: TimetableAdapter
 
     private var selectedDay = "Monday"
-    private val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+    private val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     
     // Data for dialogs
     private var classList: List<ClassModel> = emptyList()

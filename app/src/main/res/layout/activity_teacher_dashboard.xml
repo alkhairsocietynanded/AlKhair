@@ -13,8 +13,8 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:elevation="0dp"
-        android:visibility="gone">
+        android:visibility="gone"
+        app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -86,21 +86,22 @@
                             android:textColor="#0F172A"
                             android:textSize="24sp"
                             android:textStyle="bold" />
-                        
+
                         <!-- Extra Info (Class/Div) -->
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal">
+
                             <TextView
                                 android:id="@+id/tvTeacherClassInfo"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
                                 android:text="Class: Loading..."
                                 android:textColor="#94A3B8"
                                 android:textSize="12sp"
-                                android:textStyle="bold"
-                                android:layout_marginEnd="8dp"/>
+                                android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/tvTeacherDivisionInfo"
@@ -143,11 +144,11 @@
                         app:cardElevation="0dp">
 
                         <ImageView
-                             android:layout_width="match_parent"
-                             android:layout_height="match_parent"
-                             android:padding="10dp"
-                             android:src="@drawable/ic_logout"
-                             app:tint="#EF4444" />
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_logout"
+                            app:tint="#EF4444" />
                     </androidx.cardview.widget.CardView>
 
                 </LinearLayout>
@@ -163,210 +164,144 @@
                     android:textColor="#64748B"
                     android:textSize="14sp" />
 
-            <!-- Stats/Action Cards -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:baselineAligned="false"
-                android:orientation="horizontal">
+                <!-- Stats/Action Cards -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardApplyLeave"
-                    android:layout_width="0dp"
-                    android:layout_height="160dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#60A5FA"
-                    app:cardCornerRadius="24dp"
-                    app:cardElevation="4dp"
-                    app:strokeWidth="0dp">
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardApplyLeave"
+                        android:layout_width="0dp"
+                        android:layout_height="160dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#60A5FA"
+                        app:cardCornerRadius="24dp"
+                        app:cardElevation="4dp"
+                        app:strokeWidth="0dp">
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="20dp">
-
-                        <View
-                            android:layout_width="80dp"
-                            android:layout_height="80dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_marginTop="-20dp"
-                            android:layout_marginEnd="-20dp"
-                            android:background="@drawable/circle_shape"
-                            android:backgroundTint="#FFFFFF"
-                            android:alpha="0.2" />
-
-                        <FrameLayout
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@drawable/circle_shape"
-                            android:backgroundTint="#FFFFFF"
-                            android:backgroundTintMode="src_in"
-                            android:alpha="0.3">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_calendar"
-                                app:tint="#FFFFFF" />
-                        </FrameLayout>
-
-                        <LinearLayout
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentBottom="true"
-                            android:orientation="vertical">
+                            android:layout_height="match_parent"
+                            android:padding="20dp">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <View
+                                android:layout_width="80dp"
+                                android:layout_height="80dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginTop="-20dp"
+                                android:layout_marginEnd="-20dp"
+                                android:alpha="0.2"
+                                android:background="@drawable/circle_shape"
+                                android:backgroundTint="#FFFFFF" />
+
+                            <FrameLayout
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:alpha="0.3"
+                                android:background="@drawable/circle_shape"
+                                android:backgroundTint="#FFFFFF"
+                                android:backgroundTintMode="src_in">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_calendar"
+                                    app:tint="#FFFFFF" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Apply"
-                                android:textColor="#E2E8F0"
-                                android:textSize="14sp" />
+                                android:layout_alignParentBottom="true"
+                                android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Leave"
-                                android:textColor="#FFFFFF"
-                                android:textSize="20sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                </com.google.android.material.card.MaterialCardView>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Apply"
+                                    android:textColor="#E2E8F0"
+                                    android:textSize="14sp" />
 
-                <!-- Timetable Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardTimetable"
-                    android:layout_width="0dp"
-                    android:layout_height="160dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#A78BFA"
-                    app:cardCornerRadius="24dp"
-                    app:cardElevation="4dp"
-                    app:strokeWidth="0dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Leave"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </RelativeLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="20dp">
+                    <!-- Timetable Card REMOVED -->
 
-                        <View
-                            android:layout_width="80dp"
-                            android:layout_height="80dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_marginTop="-20dp"
-                            android:layout_marginEnd="-20dp"
-                            android:background="@drawable/circle_shape"
-                            android:backgroundTint="#FFFFFF"
-                            android:alpha="0.2" />
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardAskAi"
+                        android:layout_width="0dp"
+                        android:layout_height="160dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="#FDC840"
+                        app:cardCornerRadius="24dp"
+                        app:cardElevation="4dp"
+                        app:strokeWidth="0dp">
 
-                        <FrameLayout
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="@drawable/circle_shape"
-                            android:backgroundTint="#FFFFFF"
-                            android:backgroundTintMode="src_in"
-                            android:alpha="0.3">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_attendance"
-                                app:tint="#FFFFFF" />
-                        </FrameLayout>
-
-                        <LinearLayout
+                        <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentBottom="true"
-                            android:orientation="vertical">
+                            android:layout_height="match_parent"
+                            android:padding="20dp">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <View
+                                android:layout_width="80dp"
+                                android:layout_height="80dp"
+                                android:layout_alignParentTop="true"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginTop="-20dp"
+                                android:layout_marginEnd="-20dp"
+                                android:background="#33FFFFFF"
+                                android:rotation="45" />
+
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="#4DFFFFFF">
+
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_robot"
+                                    app:tint="#FFFFFF" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="View"
-                                android:textColor="#E2E8F0"
-                                android:textSize="14sp" />
+                                android:layout_alignParentBottom="true"
+                                android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Timetable"
-                                android:textColor="#FFFFFF"
-                                android:textSize="20sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                </com.google.android.material.card.MaterialCardView>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Ask Ai"
+                                    android:textColor="#CCFFFFFF"
+                                    android:textSize="14sp" />
 
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardAskAi"
-                    android:layout_width="0dp"
-                    android:layout_height="160dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    app:cardBackgroundColor="#FDC840"
-                    app:cardCornerRadius="24dp"
-                    app:cardElevation="4dp"
-                    app:strokeWidth="0dp">
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="20dp">
-
-                        <View
-                            android:layout_width="80dp"
-                            android:layout_height="80dp"
-                            android:layout_alignParentTop="true"
-                            android:layout_alignParentEnd="true"
-                            android:layout_marginTop="-20dp"
-                            android:layout_marginEnd="-20dp"
-                            android:background="#33FFFFFF"
-                            android:rotation="45" />
-
-                        <FrameLayout
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:background="#4DFFFFFF">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_robot"
-                                app:tint="#FFFFFF" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentBottom="true"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Ask Ai"
-                                android:textColor="#CCFFFFFF"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Assistant"
-                                android:textColor="#FFFFFF"
-                                android:textSize="20sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </RelativeLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Assistant"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </RelativeLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
 
 
                 <!-- Summary Statistics Card (Styled like 'Attendance Progress' in Student) -->
@@ -374,10 +309,10 @@
                     android:id="@+id/summaryCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
                     app:cardBackgroundColor="#FFFFFF"
                     app:cardCornerRadius="24dp"
                     app:cardElevation="0dp"
-                    android:layout_marginTop="16dp"
                     app:strokeColor="#E2E8F0"
                     app:strokeWidth="1dp">
 
@@ -402,9 +337,9 @@
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
-                        
+
                         <!-- Internal Stats Grid -->
-                         <LinearLayout
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:baselineAligned="false"
@@ -417,6 +352,7 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:id="@+id/tvMyStudents"
                                     android:layout_width="wrap_content"
@@ -425,6 +361,7 @@
                                     android:textColor="#3B82F6"
                                     android:textSize="20sp"
                                     android:textStyle="bold" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -433,7 +370,10 @@
                                     android:textSize="12sp" />
                             </LinearLayout>
 
-                            <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#F1F5F9" />
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="match_parent"
+                                android:background="#F1F5F9" />
 
                             <!-- Present -->
                             <LinearLayout
@@ -442,6 +382,7 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:id="@+id/tvPresentToday"
                                     android:layout_width="wrap_content"
@@ -450,6 +391,7 @@
                                     android:textColor="#22C55E"
                                     android:textSize="20sp"
                                     android:textStyle="bold" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -458,7 +400,10 @@
                                     android:textSize="12sp" />
                             </LinearLayout>
 
-                            <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#F1F5F9" />
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="match_parent"
+                                android:background="#F1F5F9" />
 
                             <!-- Absent -->
                             <LinearLayout
@@ -467,6 +412,7 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:id="@+id/tvAbsentToday"
                                     android:layout_width="wrap_content"
@@ -475,6 +421,7 @@
                                     android:textColor="#EF4444"
                                     android:textSize="20sp"
                                     android:textStyle="bold" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -482,16 +429,20 @@
                                     android:textColor="#64748B"
                                     android:textSize="12sp" />
                             </LinearLayout>
-                            
-                            <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#F1F5F9" />
 
-                             <!-- Leave -->
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="match_parent"
+                                android:background="#F1F5F9" />
+
+                            <!-- Leave -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
+
                                 <TextView
                                     android:id="@+id/tvLeaveToday"
                                     android:layout_width="wrap_content"
@@ -500,6 +451,7 @@
                                     android:textColor="#EAB308"
                                     android:textSize="20sp"
                                     android:textStyle="bold" />
+
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -512,10 +464,10 @@
 
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-                
-                
+
+
                 <!-- Fees Overview (Also styled cleanly) -->
-                 <com.google.android.material.card.MaterialCardView
+                <com.google.android.material.card.MaterialCardView
                     android:id="@+id/FeesOverview"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -597,7 +549,7 @@
                     </LinearLayout>
 
                 </com.google.android.material.card.MaterialCardView>
-                
+
 
                 <!-- Actions Section -->
                 <TextView
@@ -618,8 +570,8 @@
                     android:layout_marginBottom="16dp"
                     android:alignmentMode="alignMargins"
                     android:columnCount="3"
-                    android:useDefaultMargins="false"
-                    android:columnOrderPreserved="false">
+                    android:columnOrderPreserved="false"
+                    android:useDefaultMargins="false">
 
                     <!-- Students -->
                     <LinearLayout
@@ -629,10 +581,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
@@ -667,10 +619,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
@@ -697,7 +649,7 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                     <!-- Homework -->
+                    <!-- Homework -->
                     <LinearLayout
                         android:id="@+id/cardHomework"
                         android:layout_width="0dp"
@@ -705,10 +657,10 @@
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
@@ -735,18 +687,18 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                     <!-- Announcement -->
+                    <!-- Announcement -->
                     <LinearLayout
                         android:id="@+id/cardAnnouncement"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
-                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:layout_marginBottom="8dp"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
@@ -773,18 +725,18 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                     <!-- Fees -->
+                    <!-- Fees -->
                     <LinearLayout
                         android:id="@+id/cardFees"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
-                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:layout_marginBottom="8dp"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
                         <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
@@ -811,20 +763,20 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                     <!-- Salary -->
+                    <!-- Salary -->
                     <LinearLayout
                         android:id="@+id/cardSalary"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
-                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:layout_marginBottom="8dp"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
-                         <androidx.cardview.widget.CardView
+                        <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
                             android:layout_height="56dp"
                             app:cardBackgroundColor="#F0FDFA"
@@ -856,13 +808,13 @@
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
-                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:layout_marginBottom="8dp"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
-                         <androidx.cardview.widget.CardView
+                        <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
                             android:layout_height="56dp"
                             app:cardBackgroundColor="#FFF1F2"
@@ -887,20 +839,20 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                     <!-- Profile -->
+                    <!-- Profile -->
                     <LinearLayout
                         android:id="@+id/cardProfile"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
-                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:layout_marginBottom="8dp"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
-                         <androidx.cardview.widget.CardView
+                        <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
                             android:layout_height="56dp"
                             app:cardBackgroundColor="#F3E8FF"
@@ -925,20 +877,20 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                     <!-- Syllabus -->
+                    <!-- Syllabus -->
                     <LinearLayout
                         android:id="@+id/cardSyllabus"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
                         android:layout_marginTop="8dp"
-                         android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:layout_marginBottom="8dp"
                         android:clickable="true"
-                        android:focusable="true">
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
-                         <androidx.cardview.widget.CardView
+                        <androidx.cardview.widget.CardView
                             android:layout_width="56dp"
                             android:layout_height="56dp"
                             app:cardBackgroundColor="#FEFCE8"
@@ -958,6 +910,44 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="Syllabus"
+                            android:textColor="#334155"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Timetable -->
+                    <LinearLayout
+                        android:id="@+id/cardTimetable"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardBackgroundColor="#F3E8FF"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="0dp">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@android:drawable/ic_menu_my_calendar"
+                                app:tint="#A78BFA" />
+                        </androidx.cardview.widget.CardView>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Timetable"
                             android:textColor="#334155"
                             android:textSize="12sp"
                             android:textStyle="bold" />
@@ -1028,7 +1018,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                 <FrameLayout
+                <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center">
@@ -1086,9 +1076,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
+        android:contentDescription="Scan QR Code"
         android:src="@drawable/ic_qr_code"
         app:backgroundTint="?attr/colorPrimary"
-        app:tint="?attr/colorOnPrimary"
-        android:contentDescription="Scan QR Code" />
+        app:tint="?attr/colorOnPrimary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
