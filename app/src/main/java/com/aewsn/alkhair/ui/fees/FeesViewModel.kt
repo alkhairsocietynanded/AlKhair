@@ -19,7 +19,8 @@ import javax.inject.Inject
 class FeesViewModel @Inject constructor(
     private val feesRepoManager: FeesRepoManager,
     private val userRepoManager: UserRepoManager,
-    private val appDataSyncManager: com.aewsn.alkhair.data.manager.AppDataSyncManager
+    private val appDataSyncManager: com.aewsn.alkhair.data.manager.AppDataSyncManager,
+    private val appConfigRepoManager: com.aewsn.alkhair.data.manager.AppConfigRepoManager
 ) : ViewModel() {
 
     /* ============================================================
@@ -42,6 +43,14 @@ class FeesViewModel @Inject constructor(
     val currentUserRole: StateFlow<String?> = userRepoManager.getCurrentUserFlow()
         .map { it?.role }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val upiId: StateFlow<String> = appConfigRepoManager.observeConfigValue("upi_id")
+        .map { it ?: com.aewsn.alkhair.utils.Constants.UPI_ID }
+        .stateIn(viewModelScope, SharingStarted.Lazily, com.aewsn.alkhair.utils.Constants.UPI_ID)
+
+    val upiName: StateFlow<String> = appConfigRepoManager.observeConfigValue("upi_name")
+        .map { it ?: com.aewsn.alkhair.utils.Constants.UPI_NAME }
+        .stateIn(viewModelScope, SharingStarted.Lazily, com.aewsn.alkhair.utils.Constants.UPI_NAME)
 
 
 

@@ -10,11 +10,20 @@ import retrofit2.Response
 
 @Singleton
 class ChatRepository @Inject constructor(
-    private val apiService: n8nApiService
+    private val apiService: n8nApiService,
+    private val appConfigRepoManager: com.aewsn.alkhair.data.manager.AppConfigRepoManager
 ) {
+    // Default URL if DB is empty (Same as before)
+    private val DEFAULT_N8N_URL = "https://revlum4e5b.app.n8n.cloud/webhook/bc32af76-83ae-4b76-aef1-4f87dd376dd1"
+
     fun sendMessage(message: String, sessionId: String): Flow<Result<String>> = flow {
         try {
-            val response = apiService.sendMessage(ChatRequest(chatInput = message, sessionId = sessionId))
+            // 1. Fetch dynamic URL
+            val dynamicUrl = appConfigRepoManager.getConfigValue("n8n_url") ?: DEFAULT_N8N_URL
+            
+            // 2. Call API with dynamic URL
+            val response = apiService.sendMessage(dynamicUrl, ChatRequest(chatInput = message, sessionId = sessionId))
+            
             if (response.isSuccessful && response.body() != null) {
                 // n8n now returns a single object { "output": "...", "text": "..." }
                 val body = response.body()!!

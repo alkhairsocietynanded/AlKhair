@@ -20,17 +20,17 @@ import com.aewsn.alkhair.data.models.FeesModel
 import com.aewsn.alkhair.data.models.User
 import com.aewsn.alkhair.databinding.FragmentFeesBinding
 import android.content.Intent
-import android.net.Uri
-import androidx.core.view.doOnLayout
 import com.aewsn.alkhair.ui.fees.AddEditFeesDialog
 import com.aewsn.alkhair.ui.fees.FeesViewModel
 import com.aewsn.alkhair.ui.user.adapters.FeesAdapter
+import com.aewsn.alkhair.utils.Constants
 import com.aewsn.alkhair.utils.DialogUtils
 import com.aewsn.alkhair.utils.UiState
 import com.aewsn.alkhair.utils.getParcelableCompat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class FeesFragment : Fragment() {
@@ -91,12 +91,12 @@ class FeesFragment : Fragment() {
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout()
             )
-            
+
             binding.fabAddFee.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 // Increased base margin to 50dp to ensure full visibility above nav bar
                 bottomMargin = 50.dpToPx() + bars.bottom
                 // Handle landscape/cutout
-                rightMargin = 24.dpToPx() + bars.right 
+                rightMargin = 24.dpToPx() + bars.right
             }
             insets
         }
@@ -149,18 +149,18 @@ class FeesFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@FeesFragment.adapter
         }
-        
+
         // Initial setup - FAB hidden by default until role is confirmed
         binding.fabAddFee.isVisible = false
-        
+
         // Listener uses internal check, we'll update visibility in Observer
     }
-    
+
     private fun updateFabVisibility(role: String?) {
         val isLoggedInStudent = role?.equals(com.aewsn.alkhair.utils.Roles.STUDENT, ignoreCase = true) == true
         isReadOnly = isLoggedInStudent
         binding.fabAddFee.isVisible = !isLoggedInStudent
-        
+
         // Re-bind adapter if needed or notify changes to update item visuals (like delete button)
         // Ideally adapter should observe this or we recreate it. 
         // For quick fix:
@@ -309,9 +309,17 @@ class FeesFragment : Fragment() {
     }
 
     private fun initiateUpiPayment(amount: String) {
-        val uri = Uri.parse("upi://pay").buildUpon()
-            .appendQueryParameter("pa", "9028128689@jio") // TODO: Replace with actual Merchant UPI ID
-            .appendQueryParameter("pn", "Al Khair School") // TODO: Replace with Merchant Name
+        val upiId = feesViewModel.upiId.value
+        val upiName = feesViewModel.upiName.value
+
+        if (upiId.isNullOrBlank() || upiName.isNullOrBlank()) {
+             Toast.makeText(requireContext(), "UPI details syncing. Please try again in 5 seconds.", Toast.LENGTH_SHORT).show()
+             return
+        }
+
+        val uri = "upi://pay".toUri().buildUpon()
+            .appendQueryParameter("pa", upiId)  // UPI Id
+            .appendQueryParameter("pn", upiName)  // UPI Name
             .appendQueryParameter("tn", "School Fees Payment") // Transaction Note
             .appendQueryParameter("am", amount) // Amount
             .appendQueryParameter("cu", "INR") // Currency
@@ -324,7 +332,7 @@ class FeesFragment : Fragment() {
 
         try {
             startActivity(chooser)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(requireContext(), "No UPI app found, please install one to continue.", Toast.LENGTH_SHORT).show()
         }
     }

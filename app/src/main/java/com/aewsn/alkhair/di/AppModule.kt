@@ -113,7 +113,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideN8nApiService(): com.aewsn.alkhair.data.remote.n8nApiService {
-        val n8nBaseUrl = "https://revlum4e5b.app.n8n.cloud/"
+        val n8nBaseUrl = "https://placeholder.com/"
         
         val client = okhttp3.OkHttpClient.Builder()
             .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
@@ -148,4 +148,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideStudyMaterialDao(db: AppDatabase) = db.studyMaterialDao()
+
+    @Provides
+    @Singleton
+    fun provideAppConfigDao(db: AppDatabase) = db.appConfigDao()
 }

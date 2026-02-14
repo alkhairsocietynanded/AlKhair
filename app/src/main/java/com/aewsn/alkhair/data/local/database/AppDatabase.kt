@@ -38,9 +38,10 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         com.aewsn.alkhair.data.models.Timetable::class,
         com.aewsn.alkhair.data.models.Exam::class,
         com.aewsn.alkhair.data.models.Result::class,
-        com.aewsn.alkhair.data.models.StudyMaterial::class
+        com.aewsn.alkhair.data.models.StudyMaterial::class,
+        com.aewsn.alkhair.data.models.AppConfig::class
     ],
-    version = 15, // v15: Added StudyMaterial entity
+    version = 16, // v16: Added AppConfig entity
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -59,6 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun timetableDao(): com.aewsn.alkhair.data.local.dao.TimetableDao
     abstract fun resultDao(): com.aewsn.alkhair.data.local.dao.ResultDao
     abstract fun studyMaterialDao(): com.aewsn.alkhair.data.local.dao.StudyMaterialDao
+    abstract fun appConfigDao(): com.aewsn.alkhair.data.local.dao.AppConfigDao
 
 
 }

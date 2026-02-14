@@ -4,9 +4,11 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
 
+import retrofit2.http.Url
+
 interface n8nApiService {
-    @POST("webhook/bc32af76-83ae-4b76-aef1-4f87dd376dd1")
-    suspend fun sendMessage(@Body request: ChatRequest): Response<ChatResponse>
+    @POST
+    suspend fun sendMessage(@Url url: String, @Body request: ChatRequest): Response<ChatResponse>
 }
 data class ChatRequest(
     val chatInput: String,

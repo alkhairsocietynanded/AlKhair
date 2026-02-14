@@ -29,6 +29,7 @@ class AppDataSyncManager @Inject constructor(
     private val timetableRepoManager: TimetableRepoManager,
     private val resultRepoManager: ResultRepoManager,
     private val studyMaterialRepoManager: StudyMaterialRepoManager,
+    private val appConfigRepoManager: AppConfigRepoManager,
     private val deletionRepository: SupabaseDeletionRepository,
     private val sharedPreferences: android.content.SharedPreferences
 ) {
@@ -125,6 +126,7 @@ class AppDataSyncManager @Inject constructor(
                     val subjectJob = async { subjectRepoManager.sync(queryTime).map { it as Any } }
                     val timetableJob = async { timetableRepoManager.sync(queryTime).map { it as Any } }
                     val examJob = async { resultRepoManager.syncExams(queryTime).map { it as Any } } // ✅ Sync Exams
+                    val configJob = async { appConfigRepoManager.sync(queryTime).map { it as Any } } // ✅ Sync App Config
 
                     // We can await these or let them run in parallel with others if they don't block dependent data.
                     // Subjects are needed for Timetable display.
@@ -134,6 +136,7 @@ class AppDataSyncManager @Inject constructor(
                     syncJobs.add(subjectJob)
                     syncJobs.add(timetableJob)
                     syncJobs.add(examJob)
+                    syncJobs.add(configJob)
 
 
                     // ====================================================
@@ -295,16 +298,16 @@ class AppDataSyncManager @Inject constructor(
                     // We rely on the fact that previous jobs finished (even if failed, we try).
                     // In strict mode, we should check compliance, but for now, late sync is better than crash.
                     
-                    Log.d(TAG, "Step 3: Syncing Results (Dependent on all above)")
-                    try {
-                        val resultSyncResult = if (role.equals(Roles.ADMIN, true)) {
-                             resultRepoManager.syncAllResults(queryTime)
-                        } else if (role.equals(Roles.TEACHER, true)) {
-                             resultRepoManager.syncAllResults(queryTime) // Teachers see all for now
-                        } else {
-                             val uid = authRepoManager.getCurrentUserUid() ?: ""
-                             resultRepoManager.syncStudentResults(uid, queryTime)
-                        }
+                        Log.d(TAG, "Step 3: Syncing Results (Dependent on all above)")
+                        try {
+                            val resultSyncResult = if (role.equals(Roles.ADMIN, true)) {
+                                 resultRepoManager.syncAllResults(queryTime)
+                            } else if (role.equals(Roles.TEACHER, true)) {
+                                 resultRepoManager.syncAllResults(queryTime) // Teachers see all for now
+                            } else {
+                                 // ✅ Use already verified currentUid instead of re-fetching
+                                 resultRepoManager.syncStudentResults(currentUid, queryTime)
+                            }
                         
                         // Update timestamp with Result sync
                         resultSyncResult.onSuccess { data ->
@@ -400,6 +403,7 @@ class AppDataSyncManager @Inject constructor(
         subjectRepoManager.clearLocal()
         timetableRepoManager.clearLocal()
         resultRepoManager.clearLocal()
+        appConfigRepoManager.clearLocal()
 
         // 2. Clear Sync Timestamp (Important!)
         // Taaki naya user login kare to full sync ho
