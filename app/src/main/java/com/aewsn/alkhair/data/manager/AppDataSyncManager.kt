@@ -194,15 +194,23 @@ class AppDataSyncManager @Inject constructor(
                         val teacherShift = currentUser?.shift
                         if (!teacherClassId.isNullOrBlank() && !teacherShift.isNullOrBlank()) {
                             Log.d(TAG, "Teacher class: $teacherClassId")
-                            syncJobs.add(async { userRepoManager.syncClassStudents(teacherClassId, teacherShift,queryTime).map { it as Any } })
+                            // 1. Sync students FIRST (Leave sync depends on students being in local DB)
+                            val studentSyncJob = async { userRepoManager.syncClassStudents(teacherClassId, teacherShift,queryTime).map { it as Any } }
+                            syncJobs.add(studentSyncJob)
+
+                            // 2. Independent jobs (run in parallel, don't depend on students)
                             syncJobs.add(async { homeworkRepoManager.syncClassHomework(teacherClassId, teacherShift, queryTime).map { it as Any } })
                             syncJobs.add(async { attendanceRepoManager.syncClassAttendance(teacherClassId, teacherShift, queryTime).map { it as Any } })
                             syncJobs.add(async { feesRepoManager.syncClassFees(teacherClassId, teacherShift,queryTime).map { it as Any }  })
-                            syncJobs.add(async { leaveRepoManager.syncLeavesForClass(teacherClassId, queryTime).map { it as Any } })
-                            // Syllabus for Teacher's Class
                             syncJobs.add(async { syllabusRepoManager.syncClassSyllabus(teacherClassId, queryTime).map { it as Any } })
-                            // Study Materials for Teacher's Class
                             syncJobs.add(async { studyMaterialRepoManager.syncClassMaterials(teacherClassId, queryTime).map { it as Any } })
+
+                            // 3. Teacher ki apni leave (independent, no dependency)
+                            syncJobs.add(async { leaveRepoManager.syncLeavesForStudent(currentUid, queryTime).map { it as Any } })
+
+                            // 4. Await students BEFORE syncing class leaves (syncLeavesForClass reads student IDs from local DB)
+                            studentSyncJob.await()
+                            syncJobs.add(async { leaveRepoManager.syncLeavesForClass(teacherClassId, queryTime).map { it as Any } })
                         } else {
                             Log.d(TAG, "Teacher has no class, syncing profile only.")
                             // Fallback: Sync self profile only

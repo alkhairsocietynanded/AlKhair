@@ -52,8 +52,6 @@ class FeesViewModel @Inject constructor(
         .map { it ?: com.aewsn.alkhair.utils.Constants.UPI_NAME }
         .stateIn(viewModelScope, SharingStarted.Lazily, com.aewsn.alkhair.utils.Constants.UPI_NAME)
 
-
-
     /* ============================================================
        📊 FEES OVERVIEW — REACTIVE PIPELINE (Admin Dashboard)
        ============================================================ */
