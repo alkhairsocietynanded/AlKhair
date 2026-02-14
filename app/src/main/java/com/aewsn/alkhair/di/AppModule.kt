@@ -144,4 +144,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideResultDao(db: AppDatabase) = db.resultDao()
+
+    @Provides
+    @Singleton
+    fun provideStudyMaterialDao(db: AppDatabase) = db.studyMaterialDao()
 }

@@ -154,6 +154,9 @@ class AdminDashboardActivity : AppCompatActivity() {
         }
 
 
+        binding.cardSyllabus.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.syllabus.SyllabusActivity::class.java))
+        }
 
         binding.cardSubjects.setOnClickListener {
             startActivity(Intent(this, com.aewsn.alkhair.ui.timetable.SubjectManagementActivity::class.java))
@@ -163,6 +166,10 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, com.aewsn.alkhair.ui.timetable.TimetableManagementActivity::class.java).apply {
                 putExtra("IS_ADMIN", true)
             })
+        }
+
+        binding.cardStudyMaterial.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.studymaterial.StudyMaterialActivity::class.java))
         }
 
         // --- Actions ---

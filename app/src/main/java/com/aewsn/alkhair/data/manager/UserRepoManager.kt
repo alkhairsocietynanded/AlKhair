@@ -109,6 +109,15 @@ class UserRepoManager @Inject constructor(
             .map { }
     }
 
+    // 4. Teacher Sync (for Students/Teachers to resolve timetable names)
+    suspend fun syncTeachers(lastSync: Long): Result<Unit> {
+        return supabaseUserRepository.getTeachersUpdatedAfter(lastSync)
+            .onSuccess { list ->
+                if (list.isNotEmpty()) insertLocal(list)
+            }
+            .map { }
+    }
+
     /* ============================================================
        ✍️ WRITE — (Local First -> Background Sync)
        ============================================================ */

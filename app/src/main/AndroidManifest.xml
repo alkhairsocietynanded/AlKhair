@@ -121,6 +121,10 @@
             android:name=".ui.result.ResultActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.studymaterial.StudyMaterialActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

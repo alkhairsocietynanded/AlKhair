@@ -92,6 +92,22 @@ class SupabaseUserRepository @Inject constructor(
         }
     }
 
+    // ✅ SYNC: Get Teachers Updated After Timestamp
+    suspend fun getTeachersUpdatedAfter(timestamp: Long): Result<List<User>> {
+        return try {
+            val list = supabase.from("users").select {
+                filter {
+                    User::role eq "teacher"
+                    User::updatedAt gt timestamp
+                }
+            }.decodeList<User>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Log.e("SupabaseUserRepo", "Error fetching teachers", e)
+            Result.failure(e)
+        }
+    }
+
     // ✅ GET SINGLE USER
     suspend fun getUserById(uid: String): Result<User?> {
         return try {

@@ -27,7 +27,8 @@ class AppDataSyncManager @Inject constructor(
     private val syllabusRepoManager: SyllabusRepoManager,
     private val subjectRepoManager: SubjectRepoManager,
     private val timetableRepoManager: TimetableRepoManager,
-    private val resultRepoManager: ResultRepoManager, // ✅ New
+    private val resultRepoManager: ResultRepoManager,
+    private val studyMaterialRepoManager: StudyMaterialRepoManager,
     private val deletionRepository: SupabaseDeletionRepository,
     private val sharedPreferences: android.content.SharedPreferences
 ) {
@@ -156,6 +157,7 @@ class AppDataSyncManager @Inject constructor(
                         syncJobs.add(async { attendanceRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { leaveRepoManager.sync(queryTime).map { it as Any } })
                         syncJobs.add(async { syllabusRepoManager.sync(queryTime).map { it as Any } })
+                        syncJobs.add(async { studyMaterialRepoManager.sync(queryTime).map { it as Any } })
                         
                         // 3. Await Users BEFORE Results
                         // Results depend on Users, Exams and Subjects. 
@@ -196,11 +198,15 @@ class AppDataSyncManager @Inject constructor(
                             syncJobs.add(async { leaveRepoManager.syncLeavesForClass(teacherClassId, queryTime).map { it as Any } })
                             // Syllabus for Teacher's Class
                             syncJobs.add(async { syllabusRepoManager.syncClassSyllabus(teacherClassId, queryTime).map { it as Any } })
+                            // Study Materials for Teacher's Class
+                            syncJobs.add(async { studyMaterialRepoManager.syncClassMaterials(teacherClassId, queryTime).map { it as Any } })
                         } else {
                             Log.d(TAG, "Teacher has no class, syncing profile only.")
                             // Fallback: Sync self profile only
                             syncJobs.add(async { userRepoManager.syncUserProfile(currentUid).map { it as Any } })
                         }
+                        // 4. Sync Other Teachers (For Timetable name resolution)
+                        syncJobs.add(async { userRepoManager.syncTeachers(queryTime).map { it as Any } })
                     }
 
                     // ====================================================
@@ -240,9 +246,14 @@ class AppDataSyncManager @Inject constructor(
                         syncJobs.add(async { leaveRepoManager.syncLeavesForStudent(currentUid, queryTime).map { it as Any } })
 
                         // 7. My Class Syllabus
+                        // 7. My Class Syllabus & 8. My Class Study Materials
                         if (!userClassId.isNullOrBlank()) {
                             syncJobs.add(async { syllabusRepoManager.syncClassSyllabus(userClassId, queryTime).map { it as Any } })
+                            syncJobs.add(async { studyMaterialRepoManager.syncClassMaterials(userClassId, queryTime).map { it as Any } })
                         }
+                        
+                        // 9. Sync Teachers (For Timetable name resolution)
+                        syncJobs.add(async { userRepoManager.syncTeachers(queryTime).map { it as Any } })
                     }
 
                     // ====================================================
@@ -351,6 +362,7 @@ class AppDataSyncManager @Inject constructor(
                             "leaves" -> leaveRepoManager.deleteLocally(record.recordId)
                             "attendance" -> attendanceRepoManager.deleteLocally(record.recordId)
                             "syllabus" -> syllabusRepoManager.deleteLocally(record.recordId)
+                            "study_materials" -> studyMaterialRepoManager.deleteLocally(record.recordId)
                             "subjects" -> subjectRepoManager.deleteLocally(record.recordId)
                             "timetable" -> timetableRepoManager.deleteLocally(record.recordId)
                             "exams" -> resultRepoManager.deleteExamLocally(record.recordId)
@@ -384,6 +396,7 @@ class AppDataSyncManager @Inject constructor(
         announcementRepoManager.clearLocal()
         leaveRepoManager.clearLocal()
         syllabusRepoManager.clearLocal()
+        studyMaterialRepoManager.clearLocal()
         subjectRepoManager.clearLocal()
         timetableRepoManager.clearLocal()
         resultRepoManager.clearLocal()

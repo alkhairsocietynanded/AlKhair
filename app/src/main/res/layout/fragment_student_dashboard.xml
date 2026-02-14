@@ -378,7 +378,7 @@
                     <androidx.cardview.widget.CardView
                         android:layout_width="56dp"
                         android:layout_height="56dp"
-                        app:cardBackgroundColor="#FEFCE8"
+                        app:cardBackgroundColor="#FDFBE1"
                         app:cardCornerRadius="16dp"
                         app:cardElevation="0dp">
 
@@ -399,6 +399,43 @@
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+
+                <!-- Action: Study Material -->
+                <LinearLayout
+                    android:id="@+id/actionStudyMaterial"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        app:cardBackgroundColor="#E6FDED"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_study_material"
+                            app:tint="#22C55E" />
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="Study\nMaterial"
+                        android:textColor="#334155"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
                 <!-- Action: Timetable -->
                 <LinearLayout
                     android:id="@+id/actionTimetable"
@@ -462,41 +499,6 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="Results"
-                        android:textColor="#334155"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Action: Study Material -->
-                <LinearLayout
-                    android:id="@+id/actionStudyMaterial"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        app:cardBackgroundColor="#F0FDF4"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_study_material"
-                            app:tint="#22C55E" />
-                    </androidx.cardview.widget.CardView>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:text="Study\nMaterial"
                         android:textColor="#334155"
                         android:textSize="12sp"
                         android:textStyle="bold" />

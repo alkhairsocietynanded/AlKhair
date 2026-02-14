@@ -82,7 +82,12 @@ class StudentDashboardFragment : Fragment() {
         }
 
         binding.actionStudyMaterial.setOnClickListener {
-            showPurchasePremiumDialog("Study Material")
+            startActivity(
+                Intent(
+                    requireContext(),
+                    com.aewsn.alkhair.ui.studymaterial.StudyMaterialActivity::class.java
+                )
+            )
         }
 
         binding.actionSyllabus.setOnClickListener {
