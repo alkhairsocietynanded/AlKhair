@@ -26,7 +26,6 @@
             app:titleCentered="true" 
             app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
             app:titleTextColor="#0F172A"
-            app:menu="@menu/user_list_menu" 
             android:theme="@style/ThemeOverlay.AppCompat.Light" 
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
