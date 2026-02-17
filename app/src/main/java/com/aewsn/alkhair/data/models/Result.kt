@@ -19,9 +19,9 @@ import kotlinx.serialization.Serializable
     // Data integrity is maintained by Supabase (server-side).
     indices = [
         Index(value = ["exam_id"]),
-        Index(value = ["student_id"]),
+        Index(value = ["user_id"]),
         Index(value = ["subject_id"]),
-        Index(value = ["exam_id", "student_id", "subject_id"], unique = true)
+        Index(value = ["exam_id", "user_id", "subject_id"], unique = true)
     ]
 )
 data class Result(
@@ -32,8 +32,8 @@ data class Result(
     @ColumnInfo(name = "exam_id")
     var examId: String = "",
 
-    @SerialName("student_id")
-    @ColumnInfo(name = "student_id")
+    @SerialName("user_id")
+    @ColumnInfo(name = "user_id")
     var studentId: String = "",
 
     @SerialName("subject_id")
@@ -54,8 +54,7 @@ data class Result(
     @SerialName("remarks")
     var remarks: String? = null,
 
-    @SerialName("updated_at")
-    @ColumnInfo(name = "updated_at")
+    @ColumnInfo(name = "updated_at_ms")
     override var updatedAt: Long = System.currentTimeMillis(),
 
     @kotlinx.serialization.Transient

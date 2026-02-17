@@ -26,22 +26,22 @@ interface HomeworkDao {
     // ✅ READ OPERATIONS
 
     // 1. Admin View (No Filter)
-    @Query("SELECT * FROM homework ORDER BY date DESC")
+    @Query("SELECT * FROM homework ORDER BY due_date DESC")
     fun getAllHomework(): Flow<List<Homework>>
 
     // 2. Student View (Specific Class + Division)
     // Example: Class 10, Section A
-    @Query("SELECT * FROM homework WHERE className = :className AND divisionName = :division ORDER BY date DESC")
+    @Query("SELECT * FROM homework WHERE className = :className AND divisionName = :division ORDER BY due_date DESC")
     fun getHomeworkByClassAndDivision(className: String, division: String): Flow<List<Homework>>
 
     // 3. Teacher View (Broad Class Filter)
     // Example: Class 10 (All Sections)
-    @Query("SELECT * FROM homework WHERE className = :className ORDER BY date DESC")
+    @Query("SELECT * FROM homework WHERE className = :className ORDER BY due_date DESC")
     fun getHomeworkByClassName(className: String): Flow<List<Homework>>
 
-    @Query("SELECT * FROM homework WHERE isSynced = 0")
+    @Query("SELECT * FROM homework WHERE is_synced = 0")
     suspend fun getUnsyncedHomework(): List<Homework>
 
-    @Query("UPDATE homework SET isSynced = 1 WHERE id IN (:ids)")
+    @Query("UPDATE homework SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markHomeworkAsSynced(ids: List<String>)
 }

@@ -25,7 +25,7 @@ class SupabaseDeletionRepository @Inject constructor(
                 val records = supabaseClient.from(TABLE_NAME)
                     .select {
                         filter {
-                            gt("timestamp", afterTimestamp)
+                            gt("updated_at_ms", afterTimestamp)
                         }
                     }.decodeList<DeletedRecord>()
                 

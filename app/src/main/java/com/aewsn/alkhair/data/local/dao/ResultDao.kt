@@ -45,7 +45,7 @@ interface ResultDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertResults(results: List<Result>)
 
-    @Query("SELECT * FROM results WHERE exam_id = :examId AND student_id = :studentId")
+    @Query("SELECT * FROM results WHERE exam_id = :examId AND user_id = :studentId")
     fun getResultsForStudentRef(examId: String, studentId: String): Flow<List<Result>>
     
     // For joining with Subject names, we might need a POJO or just fetch results and map manually. 

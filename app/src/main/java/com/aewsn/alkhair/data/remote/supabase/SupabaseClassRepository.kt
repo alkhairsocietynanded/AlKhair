@@ -38,7 +38,7 @@ class SupabaseClassRepository @Inject constructor(
         return try {
             supabase.from("classes").delete {
                 filter {
-                    ClassModel::id eq classId
+                    eq("id", classId)
                 }
             }
             Result.success(Unit)
@@ -63,7 +63,9 @@ class SupabaseClassRepository @Inject constructor(
         return try {
             val list = supabase.from("classes").select {
                 filter {
-                    ClassModel::divisionName eq divisionName
+                    // Note: divisionName is transient, assuming the column in DB is division_id
+                    // or division_name if it was added. Reverting to string literal.
+                    eq("division_name", divisionName)
                 }
             }.decodeList<ClassModel>()
             Result.success(list)
@@ -76,7 +78,7 @@ class SupabaseClassRepository @Inject constructor(
         return try {
             val list = supabase.from("classes").select {
                 filter {
-                    ClassModel::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<ClassModel>()
             Result.success(list)
@@ -96,12 +98,12 @@ class SupabaseClassRepository @Inject constructor(
             Result.failure(e)
         }
     }
-    
+
     suspend fun deleteClassBatch(ids: List<String>): Result<Unit> {
         return try {
             supabase.from("classes").delete {
                 filter {
-                    ClassModel::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

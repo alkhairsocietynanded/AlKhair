@@ -74,7 +74,7 @@ class AnnouncementRepoManager @Inject constructor(
         
         val newAnnouncement = announcement.copy(
             id = newId,
-            timeStamp = if (announcement.timeStamp == 0L) currentTime else announcement.timeStamp,
+            timestamp = if (announcement.timestamp == 0L) currentTime else announcement.timestamp,
             updatedAt = currentTime,
             isSynced = false
         )

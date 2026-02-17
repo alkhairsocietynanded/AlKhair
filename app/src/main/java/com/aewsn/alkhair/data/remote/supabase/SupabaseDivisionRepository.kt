@@ -38,7 +38,7 @@ class SupabaseDivisionRepository @Inject constructor(
         return try {
             supabase.from("divisions").delete {
                  filter {
-                    DivisionModel::id eq divisionId
+                    eq("id", divisionId)
                 }
             }
             Result.success(Unit)
@@ -63,7 +63,7 @@ class SupabaseDivisionRepository @Inject constructor(
             val count = supabase.from("divisions").select {
                 count(io.github.jan.supabase.postgrest.query.Count.EXACT)
                 filter {
-                    DivisionModel::name eq divisionName
+                    eq("name", divisionName)
                 }
             }.countOrNull() ?: 0
             Result.success(count > 0)
@@ -77,7 +77,7 @@ class SupabaseDivisionRepository @Inject constructor(
         return try {
             val list = supabase.from("divisions").select {
                 filter {
-                    DivisionModel::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<DivisionModel>()
             Result.success(list)
@@ -102,7 +102,7 @@ class SupabaseDivisionRepository @Inject constructor(
         return try {
             supabase.from("divisions").delete {
                 filter {
-                    DivisionModel::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

@@ -39,8 +39,8 @@ class SupabaseSalaryRepository @Inject constructor(
         return try {
             val list = supabase.from("salary").select {
                 filter {
-                    SalaryModel::staffId eq staffId
-                    SalaryModel::updatedAt gt timestamp
+                    eq("user_id", staffId)
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<SalaryModel>()
             Result.success(list)
@@ -55,7 +55,7 @@ class SupabaseSalaryRepository @Inject constructor(
         return try {
             val list = supabase.from("salary").select {
                 filter {
-                    SalaryModel::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<SalaryModel>()
             Result.success(list)
@@ -69,7 +69,7 @@ class SupabaseSalaryRepository @Inject constructor(
         return try {
             val salary = supabase.from("salary").select {
                 filter {
-                    SalaryModel::id eq salaryId
+                    eq("id", salaryId)
                 }
             }.decodeSingleOrNull<SalaryModel>()
             
@@ -84,7 +84,7 @@ class SupabaseSalaryRepository @Inject constructor(
         return try {
             supabase.from("salary").delete {
                  filter {
-                    SalaryModel::id eq salaryId
+                    eq("id", salaryId)
                 }
             }
             Result.success(Unit)
@@ -108,7 +108,7 @@ class SupabaseSalaryRepository @Inject constructor(
         return try {
             supabase.from("salary").delete {
                 filter {
-                    SalaryModel::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

@@ -15,13 +15,17 @@ data class Announcement(
     val content: String = "",
     // timestamp is BigInt in SQL
     @SerialName("timestamp")
-    val timeStamp: Long = 0, 
+    @androidx.room.ColumnInfo(name = "timestamp")
+    val timestamp: Long = System.currentTimeMillis(),
     @SerialName("target_id")
+    @androidx.room.ColumnInfo(name = "target_id")
     val target: String = "ALL", // Mapped to target_id
-    @SerialName("updated_at")
+    @SerialName("updated_at_ms")
+    @androidx.room.ColumnInfo(name = "updated_at_ms")
     override val updatedAt: Long = System.currentTimeMillis(),
     
     @kotlinx.serialization.Transient
     @SerialName("is_synced")
+    @androidx.room.ColumnInfo(name = "is_synced")
     override val isSynced: Boolean = true
 ) : Syncable

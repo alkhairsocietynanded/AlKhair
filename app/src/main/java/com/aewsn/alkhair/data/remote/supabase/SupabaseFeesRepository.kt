@@ -44,9 +44,8 @@ class SupabaseFeesRepository @Inject constructor(
             val safeShift = shift.ifBlank { "General" }
             val list = supabase.from("fees").select {
                 filter {
-                    FeesModel::classId eq classId
-                    FeesModel::updatedAt gt timestamp
-
+                    eq("class_id", classId)
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<FeesModel>()
             Result.success(list)
@@ -63,8 +62,8 @@ class SupabaseFeesRepository @Inject constructor(
         return try {
             val list = supabase.from("fees").select {
                 filter {
-                    FeesModel::studentId eq studentId
-                    FeesModel::updatedAt gt timestamp
+                    eq("user_id", studentId)
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<FeesModel>()
             Result.success(list)
@@ -79,7 +78,7 @@ class SupabaseFeesRepository @Inject constructor(
         return try {
             val list = supabase.from("fees").select {
                 filter {
-                    FeesModel::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<FeesModel>()
             Result.success(list)
@@ -97,7 +96,7 @@ class SupabaseFeesRepository @Inject constructor(
         return try {
             val fee = supabase.from("fees").select {
                 filter {
-                    FeesModel::id eq feeId
+                    eq("id", feeId)
                 }
             }.decodeSingleOrNull<FeesModel>()
 
@@ -112,7 +111,7 @@ class SupabaseFeesRepository @Inject constructor(
         return try {
             supabase.from("fees").delete {
                 filter {
-                    FeesModel::id eq feeId
+                    eq("id", feeId)
                 }
             }
             Result.success(Unit)
@@ -136,7 +135,7 @@ class SupabaseFeesRepository @Inject constructor(
         return try {
             supabase.from("fees").delete {
                 filter {
-                    FeesModel::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

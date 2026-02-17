@@ -58,7 +58,7 @@ class SupabaseUserRepository @Inject constructor(
         return try {
             val list = supabase.from("users").select {
                 filter {
-                    User::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<User>()
             Result.success(list)
@@ -77,11 +77,11 @@ class SupabaseUserRepository @Inject constructor(
         return try {
             val list = supabase.from("users").select {
                 filter {
-                     User::classId eq classId
-                     User::updatedAt gt timestamp
+                     eq("class_id", classId)
+                     gt("updated_at_ms", timestamp)
                      // If we want to filter by shift too:
                      if (shift.isNotBlank() && shift != "General" && shift != "All") {
-                         User::shift eq shift
+                         eq("shift", shift)
                      }
                 }
             }.decodeList<User>()
@@ -97,8 +97,8 @@ class SupabaseUserRepository @Inject constructor(
         return try {
             val list = supabase.from("users").select {
                 filter {
-                    User::role eq "teacher"
-                    User::updatedAt gt timestamp
+                    eq("role", "teacher")
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<User>()
             Result.success(list)
@@ -113,7 +113,7 @@ class SupabaseUserRepository @Inject constructor(
         return try {
             val user = supabase.from("users").select {
                 filter {
-                    User::uid eq uid
+                    eq("id", uid)
                 }
             }.decodeSingleOrNull<User>()
             Result.success(user)
@@ -128,7 +128,7 @@ class SupabaseUserRepository @Inject constructor(
         return try {
             supabase.from("users").delete {
                 filter {
-                    User::uid eq uid
+                    eq("id", uid)
                 }
             }
             Result.success(Unit)
@@ -142,7 +142,7 @@ class SupabaseUserRepository @Inject constructor(
         return try {
              supabase.from("users").delete {
                 filter {
-                    User::uid isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

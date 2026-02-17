@@ -38,7 +38,7 @@ class SupabaseAnnouncementRepository @Inject constructor(
         return try {
             supabase.from("announcements").delete {
                 filter {
-                    Announcement::id eq announcementId
+                    eq("id", announcementId)
                 }
             }
             Result.success(Unit)
@@ -52,7 +52,7 @@ class SupabaseAnnouncementRepository @Inject constructor(
         return try {
             val list = supabase.from("announcements").select {
                 filter {
-                    Announcement::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<Announcement>()
             Result.success(list)
@@ -67,7 +67,7 @@ class SupabaseAnnouncementRepository @Inject constructor(
             val list = supabase.from("announcements").select {
                 filter {
                     eq("target_id", target)
-                    Announcement::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<Announcement>()
             Log.d("SupabaseAnnouncementRepo", "Fetched ${list.size} announcements for target: $target")
@@ -93,7 +93,7 @@ class SupabaseAnnouncementRepository @Inject constructor(
         return try {
              supabase.from("announcements").delete {
                 filter {
-                    Announcement::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

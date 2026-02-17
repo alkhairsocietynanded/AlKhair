@@ -22,8 +22,8 @@ data class Timetable(
     @androidx.room.ColumnInfo(name = "subject_id")
     var subjectId: String = "",
     
-    @SerialName("teacher_id")
-    @androidx.room.ColumnInfo(name = "teacher_id")
+    @SerialName("user_id")
+    @androidx.room.ColumnInfo(name = "user_id")
     var teacherId: String = "",
     
     @SerialName("day_of_week")
@@ -53,11 +53,10 @@ data class Timetable(
     @kotlinx.serialization.Transient
     var teacherName: String = "",
     
-    @SerialName("updated_at")
-    @androidx.room.ColumnInfo(name = "updated_at")
+    @SerialName("updated_at_ms")
+    @androidx.room.ColumnInfo(name = "updated_at_ms")
     override var updatedAt: Long = System.currentTimeMillis(),
     
-    @kotlinx.serialization.Transient
     @SerialName("is_synced")
     @androidx.room.ColumnInfo(name = "is_synced")
     override var isSynced: Boolean = true

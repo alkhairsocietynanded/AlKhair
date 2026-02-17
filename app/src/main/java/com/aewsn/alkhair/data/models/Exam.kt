@@ -37,12 +37,12 @@ data class Exam(
     @ColumnInfo(name = "is_published")
     var isPublished: Boolean = false,
 
-    @SerialName("updated_at")
-    @ColumnInfo(name = "updated_at")
+    @SerialName("updated_at_ms")
+    @ColumnInfo(name = "updated_at_ms")
     override var updatedAt: Long = System.currentTimeMillis(),
 
     @kotlinx.serialization.Transient
     @SerialName("is_synced")
     @ColumnInfo(name = "is_synced")
-    override var isSynced: Boolean = true
+    override val isSynced: Boolean = true
 ) : Parcelable, Syncable

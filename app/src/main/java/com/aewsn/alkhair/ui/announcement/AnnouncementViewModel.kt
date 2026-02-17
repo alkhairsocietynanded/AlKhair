@@ -61,7 +61,7 @@ class AnnouncementViewModel @Inject constructor(
                 title = title,
                 content = content,
                 target = target,
-                timeStamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis()
             )
 
             announcementRepoManager.createAnnouncement(newAnnouncement).fold(

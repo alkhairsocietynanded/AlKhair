@@ -16,7 +16,7 @@ class SupabaseTimetableRepo @Inject constructor(
             val timetables = supabase.postgrest["timetable"]
                 .select(columns = Columns.ALL) {
                     filter {
-                        gt("updated_at", timestamp)
+                        gt("updated_at_ms", timestamp)
                     }
                 }.decodeList<Timetable>()
             Result.success(timetables)

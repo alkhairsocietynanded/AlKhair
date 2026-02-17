@@ -16,7 +16,7 @@ class SupabaseSubjectRepo @Inject constructor(
             val subjects = supabase.postgrest["subjects"]
                 .select(columns = Columns.ALL) {
                     filter {
-                        gt("updated_at", timestamp)
+                        gt("updated_at_ms", timestamp)
                     }
                 }.decodeList<Subject>()
             Result.success(subjects)

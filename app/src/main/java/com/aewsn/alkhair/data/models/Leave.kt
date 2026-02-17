@@ -12,8 +12,8 @@ import kotlinx.serialization.Serializable
 data class Leave(
     @PrimaryKey
     val id: String = java.util.UUID.randomUUID().toString(),
-    @ColumnInfo(name = "student_id")
-    @SerialName("student_id")
+    @SerialName("user_id")
+    @ColumnInfo(name = "user_id")
     val studentId: String = "",
     @ColumnInfo(name = "start_date")
     @SerialName("start_date")
@@ -25,8 +25,8 @@ data class Leave(
     val reason: String = "",
     @ColumnInfo(name = "status")
     val status: String = "Pending",
-    @ColumnInfo(name = "updated_at")
-    @SerialName("updated_at")
+    @SerialName("updated_at_ms")
+    @ColumnInfo(name = "updated_at_ms")
     override val updatedAt: Long = System.currentTimeMillis(),
     
     @kotlinx.serialization.Transient

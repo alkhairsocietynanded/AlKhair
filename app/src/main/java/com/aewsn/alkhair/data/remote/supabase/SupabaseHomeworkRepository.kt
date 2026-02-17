@@ -31,7 +31,7 @@ class SupabaseHomeworkRepository @Inject constructor(
              // We'll update specific columns.
              supabase.from("homework").update(updatedData) {
                  filter {
-                     Homework::id eq homeworkId
+                     eq("id", homeworkId)
                  }
              }
             Result.success(Unit)
@@ -50,10 +50,10 @@ class SupabaseHomeworkRepository @Inject constructor(
             val safeShift = shift.ifBlank { "General" }
             val list = supabase.from("homework").select {
                 filter {
-                    Homework::classId eq classId
-                    Homework::updatedAt gt timestamp
+                    eq("class_id", classId)
+                    gt("updated_at_ms", timestamp)
                     if (safeShift != "All") {
-                        Homework::shift eq safeShift
+                        eq("shift", safeShift)
                     }
                 }
             }.decodeList<Homework>()
@@ -67,7 +67,7 @@ class SupabaseHomeworkRepository @Inject constructor(
         return try {
             val list = supabase.from("homework").select {
                 filter {
-                    Homework::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<Homework>()
             Result.success(list)
@@ -92,7 +92,7 @@ class SupabaseHomeworkRepository @Inject constructor(
         return try {
             supabase.from("homework").delete {
                 filter {
-                    Homework::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

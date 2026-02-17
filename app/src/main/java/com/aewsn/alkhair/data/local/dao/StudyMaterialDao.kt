@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface StudyMaterialDao {
 
-    @Query("SELECT * FROM study_materials ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM study_materials ORDER BY updated_at_ms DESC")
     fun getAllStudyMaterials(): Flow<List<StudyMaterial>>
 
-    @Query("SELECT * FROM study_materials WHERE classId = :classId ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM study_materials WHERE class_id = :classId ORDER BY updated_at_ms DESC")
     fun getStudyMaterialsByClass(classId: String): Flow<List<StudyMaterial>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -28,9 +28,9 @@ interface StudyMaterialDao {
     @Query("DELETE FROM study_materials")
     suspend fun clearAllStudyMaterials()
 
-    @Query("SELECT * FROM study_materials WHERE isSynced = 0")
+    @Query("SELECT * FROM study_materials WHERE is_synced = 0")
     suspend fun getUnsyncedStudyMaterials(): List<StudyMaterial>
 
-    @Query("UPDATE study_materials SET isSynced = 1 WHERE id IN (:ids)")
+    @Query("UPDATE study_materials SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markStudyMaterialsAsSynced(ids: List<String>)
 }

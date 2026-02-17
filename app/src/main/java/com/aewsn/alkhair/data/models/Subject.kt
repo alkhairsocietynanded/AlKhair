@@ -20,8 +20,8 @@ data class Subject(
     @SerialName("code")
     var code: String = "", // Optional subject code (e.g., MATH101)
     
-    @SerialName("updated_at")
-    @androidx.room.ColumnInfo(name = "updated_at")
+    @SerialName("updated_at_ms")
+    @androidx.room.ColumnInfo(name = "updated_at_ms")
     override var updatedAt: Long = System.currentTimeMillis(),
     
     @kotlinx.serialization.Transient

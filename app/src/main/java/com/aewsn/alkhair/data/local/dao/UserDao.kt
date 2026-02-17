@@ -15,13 +15,13 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUsers(users: List<User>)
 
-    @Query("SELECT * FROM users WHERE uid = :uid" )
+    @Query("SELECT * FROM users WHERE id = :uid" )
     fun getUserById(uid: String): Flow<User?>
 
-    @Query("SELECT * FROM users WHERE uid = :uid")
+    @Query("SELECT * FROM users WHERE id = :uid")
     suspend fun getUserByIdOneShot(uid: String): User?
 
-    @Query("SELECT * FROM users WHERE uid IN (:uids)")
+    @Query("SELECT * FROM users WHERE id IN (:uids)")
     suspend fun getUsersByIds(uids: List<String>): List<User>
 
     @Query("SELECT * FROM users ORDER BY name ASC")
@@ -30,18 +30,18 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE role = :role ORDER BY name ASC")
     fun getUsersByRole(role: String): Flow<List<User>>
 
-    @Query("SELECT * FROM users WHERE classId = :classId AND role = 'student'")
+    @Query("SELECT * FROM users WHERE class_id = :classId AND role = 'student'")
     suspend fun getUsersByClass(classId: String): List<User>
 
-    @Query("DELETE FROM users WHERE uid = :uid")
+    @Query("DELETE FROM users WHERE id = :uid")
     suspend fun deleteUser(uid: String)
 
     @Query("DELETE FROM users")
     suspend fun clearAllUsers()
 
-    @Query("SELECT * FROM users WHERE isSynced = 0")
+    @Query("SELECT * FROM users WHERE is_synced = 0")
     suspend fun getUnsyncedUsers(): List<User>
 
-    @Query("UPDATE users SET isSynced = 1 WHERE uid IN (:ids)")
+    @Query("UPDATE users SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markUsersAsSynced(ids: List<String>)
 }

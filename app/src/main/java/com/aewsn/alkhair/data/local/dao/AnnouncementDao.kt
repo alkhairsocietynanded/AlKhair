@@ -16,7 +16,7 @@ interface AnnouncementDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAnnouncements(announcements: List<Announcement>)
 
-    @Query("SELECT * FROM announcements ORDER BY timeStamp DESC")
+    @Query("SELECT * FROM announcements ORDER BY timestamp DESC")
     fun getAllAnnouncements(): Flow<List<Announcement>>
 
     @Query("DELETE FROM announcements")
@@ -24,7 +24,7 @@ interface AnnouncementDao {
 
     // New methods added to support LocalAnnouncementRepository
 
-    @Query("SELECT * FROM announcements ORDER BY timeStamp DESC LIMIT 5")
+    @Query("SELECT * FROM announcements ORDER BY timestamp DESC LIMIT 5")
     fun getFiveLatestAnnouncements(): Flow<List<Announcement>>
 
     @Query("SELECT * FROM announcements WHERE id = :announcementId")
@@ -36,9 +36,9 @@ interface AnnouncementDao {
     @Query("DELETE FROM announcements WHERE id = :announcementId")
     suspend fun deleteAnnouncementById(announcementId: String)
 
-    @Query("SELECT * FROM announcements WHERE isSynced = 0")
+    @Query("SELECT * FROM announcements WHERE is_synced = 0")
     suspend fun getUnsyncedAnnouncements(): List<Announcement>
 
-    @Query("UPDATE announcements SET isSynced = 1 WHERE id IN (:ids)")
+    @Query("UPDATE announcements SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markAnnouncementsAsSynced(ids: List<String>)
 }

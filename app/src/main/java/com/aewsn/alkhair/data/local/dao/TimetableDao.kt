@@ -13,7 +13,7 @@ interface TimetableDao {
     @Query("SELECT * FROM timetable WHERE class_id = :classId ORDER BY day_of_week, period_index ASC")
     fun getTimetableForClass(classId: String): Flow<List<Timetable>>
 
-    @Query("SELECT * FROM timetable WHERE teacher_id = :teacherId ORDER BY day_of_week, period_index ASC")
+    @Query("SELECT * FROM timetable WHERE user_id = :teacherId ORDER BY day_of_week, period_index ASC")
     fun getTimetableForTeacher(teacherId: String): Flow<List<Timetable>>
     
     @Query("SELECT * FROM timetable ORDER BY day_of_week, period_index ASC")

@@ -43,8 +43,8 @@ class SupabaseSyllabusRepository @Inject constructor(
         return try {
             val list = supabase.from("syllabus").select {
                 filter {
-                    Syllabus::classId eq classId
-                    Syllabus::updatedAt gt timestamp
+                    eq("class_id", classId)
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<Syllabus>()
             Result.success(list)
@@ -59,7 +59,7 @@ class SupabaseSyllabusRepository @Inject constructor(
         return try {
             val list = supabase.from("syllabus").select {
                 filter {
-                    Syllabus::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<Syllabus>()
             Result.success(list)
@@ -73,7 +73,7 @@ class SupabaseSyllabusRepository @Inject constructor(
         return try {
             supabase.from("syllabus").delete {
                 filter {
-                    Syllabus::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

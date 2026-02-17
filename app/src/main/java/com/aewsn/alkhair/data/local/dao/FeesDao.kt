@@ -20,11 +20,11 @@ interface FeesDao {
 
     // ✅ UPDATE: Sorted by updatedAt DESC (Latest fee transaction first)
     // 'monthYear' string sorting is not reliable (Apr < Jan), so we use timestamp.
-    @Query("SELECT * FROM fees WHERE studentId = :studentId ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM fees WHERE user_id = :studentId ORDER BY updated_at_ms DESC")
     fun getFeesByStudentId(studentId: String): Flow<List<FeesModel>>
 
     // ✅ UPDATE: Sorted by updatedAt DESC (Latest entries on top)
-    @Query("SELECT * FROM fees ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM fees ORDER BY updated_at_ms DESC")
     fun getAllFees(): Flow<List<FeesModel>>
 
     @Query("DELETE FROM fees WHERE id = :id")
@@ -33,9 +33,9 @@ interface FeesDao {
     @Query("DELETE FROM fees")
     suspend fun clearAllFees()
 
-    @Query("SELECT * FROM fees WHERE isSynced = 0")
+    @Query("SELECT * FROM fees WHERE is_synced = 0")
     suspend fun getUnsyncedFees(): List<FeesModel>
 
-    @Query("UPDATE fees SET isSynced = 1 WHERE id IN (:ids)")
+    @Query("UPDATE fees SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markFeesAsSynced(ids: List<String>)
 }

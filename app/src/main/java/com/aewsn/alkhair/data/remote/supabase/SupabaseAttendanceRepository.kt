@@ -51,8 +51,8 @@ class SupabaseAttendanceRepository @Inject constructor(
         return try {
             val list = supabase.from("attendance").select {
                 filter {
-                    Attendance::studentId eq studentId
-                    Attendance::updatedAt gt timestamp
+                    eq("user_id", studentId)
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<Attendance>()
             Result.success(list)
@@ -71,7 +71,7 @@ class SupabaseAttendanceRepository @Inject constructor(
             while (true) {
                 val batch = supabase.from("attendance").select {
                     filter {
-                        Attendance::updatedAt gt timestamp
+                        gt("updated_at_ms", timestamp)
                     }
                     range(offset, offset + pageSize - 1)
                 }.decodeList<Attendance>()
@@ -99,8 +99,8 @@ class SupabaseAttendanceRepository @Inject constructor(
         return try {
             val list = supabase.from("attendance").select {
                 filter {
-                    Attendance::classId eq classId
-                    Attendance::updatedAt gt timestamp
+                    eq("class_id", classId)
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<Attendance>()
             Result.success(list)

@@ -22,8 +22,8 @@ data class AppConfig(
     @ColumnInfo(name = "description")
     val description: String? = null,
 
-    @SerialName("updated_at")
-    @ColumnInfo(name = "updated_at")
+    @SerialName("updated_at_ms")
+    @ColumnInfo(name = "updated_at_ms")
     override var updatedAt: Long = System.currentTimeMillis(),
 
     @kotlinx.serialization.Transient

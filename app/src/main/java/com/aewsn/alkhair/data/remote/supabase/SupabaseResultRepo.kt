@@ -19,7 +19,7 @@ class SupabaseResultRepo @Inject constructor(
             val exams = supabase.postgrest["exams"]
                 .select(columns = Columns.ALL) {
                     filter {
-                        gt("updated_at", timestamp)
+                        gt("updated_at_ms", timestamp)
                     }
                 }.decodeList<Exam>()
             kotlin.Result.success(exams)
@@ -57,7 +57,7 @@ class SupabaseResultRepo @Inject constructor(
             val results = supabase.postgrest["results"]
                 .select(columns = Columns.ALL) {
                     filter {
-                        gt("updated_at", timestamp)
+                        gt("updated_at_ms", timestamp)
                     }
                 }.decodeList<Result>()
             kotlin.Result.success(results)
@@ -75,8 +75,8 @@ class SupabaseResultRepo @Inject constructor(
                 .select(columns = Columns.ALL) {
                     filter {
                         and {
-                            eq("student_id", studentId)
-                            gt("updated_at", updatedAfter)
+                            eq("user_id", studentId)
+                            gt("updated_at_ms", updatedAfter)
                         }
                     }
                 }.decodeList<Result>()

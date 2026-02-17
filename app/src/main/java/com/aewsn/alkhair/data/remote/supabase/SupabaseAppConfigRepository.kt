@@ -15,7 +15,7 @@ class SupabaseAppConfigRepository @Inject constructor(
         return try {
             val list = supabase.from("app_config").select {
                 filter {
-                    AppConfig::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<AppConfig>()
             Result.success(list)

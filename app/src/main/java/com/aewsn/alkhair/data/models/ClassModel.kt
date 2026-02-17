@@ -12,15 +12,19 @@ data class ClassModel(
     @PrimaryKey
     val id: String = "",
     @SerialName("division_id")
+    @androidx.room.ColumnInfo(name = "division_id")
     val divisionId: String? = null,
     @kotlinx.serialization.Transient
     val divisionName: String = "",
     @SerialName("class_name")
+    @androidx.room.ColumnInfo(name = "class_name")
     val className: String = "",
-    @SerialName("updated_at")
+    @SerialName("updated_at_ms")
+    @androidx.room.ColumnInfo(name = "updated_at_ms")
     override val updatedAt: Long = System.currentTimeMillis(),
     @kotlinx.serialization.Transient
     @SerialName("is_synced")
+    @androidx.room.ColumnInfo(name = "is_synced")
     override val isSynced: Boolean = true
 ) : Syncable {
     override fun toString(): String = className

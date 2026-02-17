@@ -19,7 +19,7 @@ interface LeaveDao {
     @Update
     suspend fun updateLeave(leave: Leave)
 
-    @Query("SELECT * FROM leaves WHERE student_id = :studentId ORDER BY start_date DESC")
+    @Query("SELECT * FROM leaves WHERE user_id = :studentId ORDER BY start_date DESC")
     fun getLeavesByStudent(studentId: String): Flow<List<Leave>>
 
     @Query("SELECT * FROM leaves WHERE id = :id")
@@ -38,7 +38,7 @@ interface LeaveDao {
     @Query("""
         SELECT leaves.*, users.name as student_name, users.role as student_role 
         FROM leaves 
-        INNER JOIN users ON leaves.student_id = users.uid 
+        INNER JOIN users ON leaves.user_id = users.id 
         ORDER BY leaves.start_date DESC
     """)
     fun getAllLeaves(): Flow<List<com.aewsn.alkhair.data.models.LeaveWithStudent>>
@@ -47,8 +47,8 @@ interface LeaveDao {
     @Query("""
         SELECT leaves.*, users.name as student_name, users.role as student_role 
         FROM leaves 
-        INNER JOIN users ON leaves.student_id = users.uid 
-        WHERE users.classId = :classId AND users.role = 'student'
+        INNER JOIN users ON leaves.user_id = users.id 
+        WHERE users.class_id = :classId AND users.role = 'student'
         ORDER BY leaves.start_date DESC
     """)
     fun getLeavesByClass(classId: String): Flow<List<com.aewsn.alkhair.data.models.LeaveWithStudent>>

@@ -98,8 +98,15 @@ class SalaryHeaderAdapter(
                 binding.spinnerStaff.setText(names.first(), false)
             }
 
-            binding.spinnerStaff.setOnItemClickListener { _, _, position, _ ->
-                onStaffSelected(ids[position])
+            binding.spinnerStaff.setOnItemClickListener { parent, _, position, _ ->
+                val selectedName = parent.getItemAtPosition(position) as String
+                if (selectedName == "All Staff") {
+                    onStaffSelected(null)
+                } else {
+                    // Fix: Use find to lookup in the latest staffList to avoid IndexOutOfBounds with stale IDs list
+                    val user = staffList.find { it.name == selectedName }
+                    onStaffSelected(user?.uid)
+                }
             }
         }
 

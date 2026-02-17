@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SyllabusDao {
 
-    @Query("SELECT * FROM syllabus ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM syllabus ORDER BY updated_at_ms DESC")
     fun getAllSyllabus(): Flow<List<Syllabus>>
 
-    @Query("SELECT * FROM syllabus WHERE classId = :classId ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM syllabus WHERE class_id = :classId ORDER BY updated_at_ms DESC")
     fun getSyllabusByClass(classId: String): Flow<List<Syllabus>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -28,9 +28,9 @@ interface SyllabusDao {
     @Query("DELETE FROM syllabus")
     suspend fun clearAllSyllabus()
 
-    @Query("SELECT * FROM syllabus WHERE isSynced = 0")
+    @Query("SELECT * FROM syllabus WHERE is_synced = 0")
     suspend fun getUnsyncedSyllabus(): List<Syllabus>
 
-    @Query("UPDATE syllabus SET isSynced = 1 WHERE id IN (:ids)")
+    @Query("UPDATE syllabus SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markSyllabusAsSynced(ids: List<String>)
 }

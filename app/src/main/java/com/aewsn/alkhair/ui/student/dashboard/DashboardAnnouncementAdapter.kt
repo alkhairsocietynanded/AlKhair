@@ -26,7 +26,7 @@ class DashboardAnnouncementAdapter : ListAdapter<Announcement, DashboardAnnounce
             binding.tvContent.text = item.content
             
             // Format time relative (e.g., "2 hours ago")
-            val relativeTime = DateUtils.getRelativeTimeSpanString(item.timeStamp, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+            val relativeTime = DateUtils.getRelativeTimeSpanString(item.timestamp, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
             binding.tvDate.text = relativeTime
             
             // Badge Logic (Mock based on title content for demo)

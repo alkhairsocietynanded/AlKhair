@@ -13,6 +13,6 @@ data class DeletedRecord(
     @SerialName("type")
     val type: String = "", 
     
-    @SerialName("timestamp")
+    @SerialName("updated_at_ms")
     val timestamp: Long = 0L
 )

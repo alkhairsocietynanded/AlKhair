@@ -41,8 +41,8 @@ class SupabaseLeaveRepository @Inject constructor(
         return try {
             supabase.from("leaves").select {
                 filter {
-                    eq("student_id", studentId)
-                    gt("updated_at", after)
+                    eq("user_id", studentId)
+                    gt("updated_at_ms", after)
                 }
             }.decodeList()
         } catch (e: Exception) {
@@ -56,8 +56,8 @@ class SupabaseLeaveRepository @Inject constructor(
         return try {
             supabase.from("leaves").select {
                 filter {
-                    isIn("student_id", studentIds)
-                    gt("updated_at", after)
+                    isIn("user_id", studentIds)
+                    gt("updated_at_ms", after)
                 }
             }.decodeList()
         } catch (e: Exception) {
@@ -71,7 +71,7 @@ class SupabaseLeaveRepository @Inject constructor(
         return try {
             supabase.from("leaves").select {
                 filter {
-                    gt("updated_at", after)
+                    gt("updated_at_ms", after)
                 }
             }.decodeList()
         } catch (e: Exception) {

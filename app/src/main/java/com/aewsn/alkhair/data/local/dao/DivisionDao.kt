@@ -30,10 +30,10 @@ interface DivisionDao {
     @Query("DELETE FROM divisions")
     suspend fun clearAllDivisions()
 
-    @Query("SELECT * FROM divisions WHERE isSynced = 0")
+    @Query("SELECT * FROM divisions WHERE is_synced = 0")
     suspend fun getUnsyncedDivisions(): List<DivisionModel>
 
-    @Query("UPDATE divisions SET isSynced = 1 WHERE id IN (:ids)")
+    @Query("UPDATE divisions SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markDivisionsAsSynced(ids: List<String>)
 
     @Query("SELECT * FROM divisions WHERE name = :name LIMIT 1")

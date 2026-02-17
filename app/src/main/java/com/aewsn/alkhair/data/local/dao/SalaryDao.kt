@@ -19,15 +19,15 @@ interface SalaryDao {
     fun getSalaryById(id: String): Flow<SalaryModel?>
 
     // ✅ UPDATE: Staff ki history dekhte waqt latest salary upar dikhegi
-    @Query("SELECT * FROM salary WHERE staffId = :staffId ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM salary WHERE user_id = :staffId ORDER BY updated_at_ms DESC")
     fun getSalariesByStaffId(staffId: String): Flow<List<SalaryModel>>
 
     // ✅ UPDATE: Admin ko sabse nayi entries sabse upar dikhengi
-    @Query("SELECT * FROM salary ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM salary ORDER BY updated_at_ms DESC")
     fun getAllSalaries(): Flow<List<SalaryModel>>
 
     // ✅ UPDATE: Filter karte waqt bhi latest data upar rahega
-    @Query("SELECT * FROM salary WHERE (:staffId IS NULL OR staffId = :staffId) AND (:monthYear IS NULL OR salaryDate LIKE :monthYear || '%') ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM salary WHERE (:staffId IS NULL OR user_id = :staffId) AND (:monthYear IS NULL OR salary_date LIKE :monthYear || '%') ORDER BY updated_at_ms DESC")
     fun getFilteredSalaries(staffId: String?, monthYear: String?): Flow<List<SalaryModel>>
 
     @Query("DELETE FROM salary WHERE id = :id")
@@ -36,9 +36,9 @@ interface SalaryDao {
     @Query("DELETE FROM salary")
     suspend fun clearAllSalaries()
 
-    @Query("SELECT * FROM salary WHERE isSynced = 0")
+    @Query("SELECT * FROM salary WHERE is_synced = 0")
     suspend fun getUnsyncedSalaries(): List<SalaryModel>
 
-    @Query("UPDATE salary SET isSynced = 1 WHERE id IN (:ids)")
+    @Query("UPDATE salary SET is_synced = 1 WHERE id IN (:ids)")
     suspend fun markSalariesAsSynced(ids: List<String>)
 }

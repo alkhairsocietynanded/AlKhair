@@ -43,8 +43,8 @@ class SupabaseStudyMaterialRepository @Inject constructor(
         return try {
             val list = supabase.from("study_materials").select {
                 filter {
-                    StudyMaterial::classId eq classId
-                    StudyMaterial::updatedAt gt timestamp
+                    eq("class_id", classId)
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<StudyMaterial>()
             Result.success(list)
@@ -59,7 +59,7 @@ class SupabaseStudyMaterialRepository @Inject constructor(
         return try {
             val list = supabase.from("study_materials").select {
                 filter {
-                    StudyMaterial::updatedAt gt timestamp
+                    gt("updated_at_ms", timestamp)
                 }
             }.decodeList<StudyMaterial>()
             Result.success(list)
@@ -73,7 +73,7 @@ class SupabaseStudyMaterialRepository @Inject constructor(
         return try {
             supabase.from("study_materials").delete {
                 filter {
-                    StudyMaterial::id isIn ids
+                    isIn("id", ids)
                 }
             }
             Result.success(Unit)

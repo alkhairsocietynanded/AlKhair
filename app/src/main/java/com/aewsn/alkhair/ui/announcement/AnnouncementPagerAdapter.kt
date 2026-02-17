@@ -33,7 +33,8 @@ class AnnouncementPagerAdapter(
             binding.tvAnnouncementTitle.text = announcement.title
             binding.tvAnnouncementContent.text = announcement.content
             binding.tvTimeStamp.text =
-                DateUtils.convertTimestampToStringDate(announcement.timeStamp)
+                DateUtils.convertTimestampToStringDate(announcement.timestamp)
+
             binding.deleteButton.setOnClickListener {
                 onDelete(announcement)
             }

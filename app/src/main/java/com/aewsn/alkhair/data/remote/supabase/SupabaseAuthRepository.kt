@@ -38,8 +38,8 @@ class SupabaseAuthRepository @Inject constructor(
                 put("subject", user.subject)
                 put("shift", user.shift)
                 put("parent_name", user.parentName)
-                put("dob", user.dateOfBirth)
-                put("doj", user.dateOfJoining)
+                put("date_of_birth", user.dateOfBirth)
+                put("date_of_joining", user.dateOfJoining)
                 put("total_fees", user.totalFees)
                 put("salary", user.salary)
 
@@ -58,7 +58,8 @@ class SupabaseAuthRepository @Inject constructor(
             val data = Json.parseToJsonElement(responseText).jsonObject
 
             // Access properties safely
-            val uid = data["uid"]?.jsonPrimitive?.content
+            val uid = data["id"]?.jsonPrimitive?.content
+            // Note: id in public.users is same as auth.users id
                 ?: data["user"]?.jsonObject?.get("id")?.jsonPrimitive?.content
 
             if (uid != null) {
