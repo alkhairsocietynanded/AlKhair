@@ -2,10 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
-
+    alias(libs.plugins.ksp)
     id("kotlin-parcelize")
     id("com.google.dagger.hilt.android")
-    kotlin("kapt") // kapt zaroori hai
 }
 
 android {
@@ -32,12 +31,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
     buildFeatures {
@@ -76,11 +75,9 @@ dependencies {
 
 // Hilt
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
-
-    // ViewModel integration (agar chahiye)
-//    implementation (libs.androidx.hilt.lifecycle.viewmodel)
-    kapt(libs.androidx.hilt.compiler)
+//    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.gson)
@@ -93,13 +90,15 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
+//    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     // ✅ CameraX
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation(libs.guava)
 
     // ✅ ML Kit Barcode Scanning (BUNDLED version - No internet needed)
     implementation(libs.barcode.scanning)

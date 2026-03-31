@@ -34,6 +34,10 @@ class AppInfoBottomSheet : BottomSheetDialogFragment() {
             openUrl("https://example.com/privacy") // Replace with actual URL
         }
 
+        // Click listeners are no longer strictly needed for direct intents 
+        // as android:autoLink handles it, but we can keep them for better UX 
+        // if the link detection isn't enough.
+
         try {
             val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
             val versionName = packageInfo.versionName

@@ -59,12 +59,16 @@
                 android:layout_marginBottom="2dp"/>
             
             <TextView
+                android:id="@+id/tvDeveloperEmail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Abdul Aala, Nanded\nContact : 9028128689"
+                android:text="Abdul Aala, Nanded\nzabibtech@gmail.com"
                 android:textColor="#64748B"
                 android:textSize="14sp"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="12dp"
+                android:autoLink="email"
+                android:textColorLink="#6366F1"
+                android:linksClickable="true"/>
 
             <View
                 android:layout_width="match_parent"
@@ -76,7 +80,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp">
 
                 <ImageView
                     android:layout_width="20dp"
@@ -86,11 +91,15 @@
                     android:layout_marginEnd="8dp"/>
 
                 <TextView
+                    android:id="@+id/tvDeveloperPhone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="zabibtech@gmail.com"
+                    android:text="Ph: +919028128689"
                     android:textColor="#334155"
-                    android:textSize="14sp"/>
+                    android:textSize="14sp"
+                    android:autoLink="phone"
+                    android:textColorLink="#6366F1"
+                    android:linksClickable="true"/>
 
             </LinearLayout>
 
