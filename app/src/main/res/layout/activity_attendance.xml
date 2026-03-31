@@ -13,17 +13,150 @@
         android:layout_height="wrap_content"
         android:background="#F9FAFB"
         app:elevation="0dp"
-        app:liftOnScroll="false">
+        app:liftOnScroll="true">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            app:layout_scrollFlags="scroll|enterAlways"
             app:navigationIcon="@drawable/ic_arrow_back"
             app:title="Attendance"
             app:titleCentered="true"
             app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge"
             app:titleTextColor="#0F172A" />
+
+        <!-- Moved Date Selector Card here -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/dateSelectorCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:layout_scrollFlags="scroll"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnPrevDate"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Previous Date"
+                    android:src="@drawable/ic_prev"
+                    app:tint="#64748B" />
+
+                <TextView
+                    android:id="@+id/tvSelectedDate"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Today"
+                    android:textColor="#0F172A"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnNextDate"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Next Date"
+                    android:src="@drawable/ic_next"
+                    app:tint="#64748B" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Moved Shift Selection Card here -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/shiftSelectionCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="4dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:layout_scrollFlags="scroll"
+            app:strokeColor="#E2E8F0"
+            app:strokeWidth="1dp">
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupShift"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipAll"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="All"
+                        android:textColor="@color/selector_chip_all_text"
+                        app:chipBackgroundColor="@color/selector_chip_all_bg"
+                        app:chipStrokeColor="@color/selector_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSubah"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Subah"
+                        android:textColor="@color/selector_chip_subah_text"
+                        app:chipBackgroundColor="@color/selector_chip_subah_bg"
+                        app:chipStrokeColor="@color/selector_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipDopahar"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dopahar"
+                        android:textColor="@color/selector_chip_dopahar_text"
+                        app:chipBackgroundColor="@color/selector_chip_dopahar_bg"
+                        app:chipStrokeColor="@color/selector_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipShaam"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Shaam"
+                        android:textColor="@color/selector_chip_shaam_text"
+                        app:chipBackgroundColor="@color/selector_chip_shaam_bg"
+                        app:chipStrokeColor="@color/selector_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:checkedIconVisible="false" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+        </com.google.android.material.card.MaterialCardView>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -33,172 +166,32 @@
         android:layout_height="match_parent"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
-        <androidx.core.widget.NestedScrollView
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:fillViewport="true"
-            android:paddingBottom="100dp">
+            android:layout_height="match_parent">
 
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="8dp"
+                android:paddingBottom="100dp"
+                tools:listitem="@layout/item_attendance" />
+
+            <TextView
+                android:id="@+id/emptyView"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <!-- Date Selector Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/dateSelectorCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="#FFFFFF"
-                    app:cardCornerRadius="24dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#E2E8F0"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="8dp">
-
-                        <ImageButton
-                            android:id="@+id/btnPrevDate"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="Previous Date"
-                            android:src="@drawable/ic_prev"
-                            app:tint="#64748B" />
-
-                        <TextView
-                            android:id="@+id/tvSelectedDate"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="Today"
-                            android:textColor="#0F172A"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <ImageButton
-                            android:id="@+id/btnNextDate"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="Next Date"
-                            android:src="@drawable/ic_next"
-                            app:tint="#64748B" />
-
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Shift Selection Card -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/shiftSelectionCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="#FFFFFF"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#E2E8F0"
-                    app:strokeWidth="1dp">
-                    
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:scrollbars="none">
-
-                        <com.google.android.material.chip.ChipGroup
-                            android:id="@+id/chipGroupShift"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:padding="12dp"
-                            app:singleLine="true"
-                            app:singleSelection="true">
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipAll"
-                                style="@style/Widget.Material3.Chip.Filter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:checked="true"
-                                android:text="All"
-                                android:textColor="@color/selector_chip_all_text"
-                                app:chipBackgroundColor="@color/selector_chip_all_bg"
-                                app:chipStrokeColor="@color/selector_chip_stroke"
-                                app:chipStrokeWidth="1dp"
-                                app:checkedIconVisible="false" />
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipSubah"
-                                style="@style/Widget.Material3.Chip.Filter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Subah"
-                                android:textColor="@color/selector_chip_subah_text"
-                                app:chipBackgroundColor="@color/selector_chip_subah_bg"
-                                app:chipStrokeColor="@color/selector_chip_stroke"
-                                app:chipStrokeWidth="1dp"
-                                app:checkedIconVisible="false" />
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipDopahar"
-                                style="@style/Widget.Material3.Chip.Filter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Dopahar"
-                                android:textColor="@color/selector_chip_dopahar_text"
-                                app:chipBackgroundColor="@color/selector_chip_dopahar_bg"
-                                app:chipStrokeColor="@color/selector_chip_stroke"
-                                app:chipStrokeWidth="1dp"
-                                app:checkedIconVisible="false" />
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipShaam"
-                                style="@style/Widget.Material3.Chip.Filter"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Shaam"
-                                android:textColor="@color/selector_chip_shaam_text"
-                                app:chipBackgroundColor="@color/selector_chip_shaam_bg"
-                                app:chipStrokeColor="@color/selector_chip_stroke"
-                                app:chipStrokeWidth="1dp"
-                                app:checkedIconVisible="false" />
-
-                        </com.google.android.material.chip.ChipGroup>
-                    </HorizontalScrollView>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Student List List -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
-                    tools:listitem="@layout/item_attendance" />
-
-                <TextView
-                    android:id="@+id/emptyView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="32dp"
-                    android:text="No students found"
-                    android:textColor="#64748B"
-                    android:textSize="16sp"
-                    android:visibility="gone" />
-
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
+                android:layout_gravity="center"
+                android:text="No students found"
+                android:textColor="#64748B"
+                android:textSize="16sp"
+                android:visibility="gone" />
+        </FrameLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Bottom Actions Bar -->
+    <!-- Bottom Actions Bar remains here -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/attendanceSummaryCard"
         android:layout_width="match_parent"
@@ -225,14 +218,12 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Present Stats -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="12dp"
                     android:gravity="center"
                     android:orientation="vertical">
-                    
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -249,14 +240,12 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Absent Stats -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="12dp"
                     android:gravity="center"
                     android:orientation="vertical">
-                    
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -273,13 +262,11 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                 <!-- Leave Stats -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical">
-                    
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -295,10 +282,9 @@
                         android:textSize="16sp"
                         android:textStyle="bold" />
                 </LinearLayout>
-
             </LinearLayout>
 
-             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/fabSaveAttendance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
