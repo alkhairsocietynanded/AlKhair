@@ -22,6 +22,9 @@ interface SyllabusDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSyllabusList(syllabusList: List<Syllabus>)
 
+    @Query("SELECT * FROM syllabus WHERE id = :id LIMIT 1")
+    suspend fun getSyllabusById(id: String): Syllabus?
+
     @Query("DELETE FROM syllabus WHERE id = :id")
     suspend fun deleteSyllabusById(id: String)
 

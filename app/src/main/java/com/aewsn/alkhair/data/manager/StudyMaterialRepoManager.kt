@@ -109,6 +109,12 @@ class StudyMaterialRepoManager @Inject constructor(
     }
 
     suspend fun deleteMaterial(id: String): Result<Unit> {
+        // Attempt to delete file from storage first if it exists
+        val item = localRepo.getStudyMaterialById(id)
+        if (!item?.attachmentUrl.isNullOrBlank()) {
+            storageManager.deleteFile(item!!.attachmentUrl!!)
+        }
+
         deleteLocally(id)
 
         val pendingDeletion = PendingDeletion(

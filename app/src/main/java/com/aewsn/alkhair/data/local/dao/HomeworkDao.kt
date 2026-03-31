@@ -17,6 +17,9 @@ interface HomeworkDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHomeworkList(homeworkList: List<Homework>)
 
+    @Query("SELECT * FROM homework WHERE id = :homeworkId LIMIT 1")
+    suspend fun getHomeworkById(homeworkId: String): Homework?
+
     @Query("DELETE FROM homework WHERE id = :homeworkId")
     suspend fun deleteHomeworkById(homeworkId: String)
 

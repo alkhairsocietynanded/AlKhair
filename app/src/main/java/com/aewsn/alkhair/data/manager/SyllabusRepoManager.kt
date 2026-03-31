@@ -112,6 +112,12 @@ class SyllabusRepoManager @Inject constructor(
     }
 
     suspend fun deleteSyllabus(id: String): Result<Unit> {
+        // Attempt to delete file from storage first if it exists
+        val item = localRepo.getSyllabusById(id)
+        if (!item?.attachmentUrl.isNullOrBlank()) {
+            storageManager.deleteFile(item!!.attachmentUrl!!)
+        }
+
         deleteLocally(id)
         
         val pendingDeletion = PendingDeletion(

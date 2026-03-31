@@ -171,6 +171,12 @@ class HomeworkRepoManager @Inject constructor(
     }
 
     suspend fun deleteHomework(id: String): Result<Unit> {
+        // Attempt to delete file from storage first if it exists
+        val item = localRepo.getHomeworkById(id)
+        if (!item?.attachmentUrl.isNullOrBlank()) {
+            storageManager.deleteFile(item!!.attachmentUrl!!)
+        }
+
         // 1. Delete Local
         deleteLocally(id)
         

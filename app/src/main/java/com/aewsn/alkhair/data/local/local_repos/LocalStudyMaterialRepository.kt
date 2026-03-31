@@ -17,6 +17,9 @@ class LocalStudyMaterialRepository @Inject constructor(
     fun getStudyMaterialsByClass(classId: String): Flow<List<StudyMaterial>> =
         studyMaterialDao.getStudyMaterialsByClass(classId)
 
+    suspend fun getStudyMaterialById(id: String): StudyMaterial? =
+        studyMaterialDao.getStudyMaterialById(id)
+
     suspend fun insertStudyMaterial(item: StudyMaterial) =
         studyMaterialDao.insertStudyMaterial(item)
 

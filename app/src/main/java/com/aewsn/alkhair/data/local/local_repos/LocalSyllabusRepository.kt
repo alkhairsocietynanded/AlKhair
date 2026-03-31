@@ -17,6 +17,9 @@ class LocalSyllabusRepository @Inject constructor(
     fun getSyllabusByClass(classId: String): Flow<List<Syllabus>> =
         syllabusDao.getSyllabusByClass(classId)
 
+    suspend fun getSyllabusById(id: String): Syllabus? =
+        syllabusDao.getSyllabusById(id)
+
     suspend fun insertSyllabus(syllabus: Syllabus) =
         syllabusDao.insertSyllabus(syllabus)
 

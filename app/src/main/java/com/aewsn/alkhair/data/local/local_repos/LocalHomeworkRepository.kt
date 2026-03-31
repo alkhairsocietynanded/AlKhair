@@ -40,6 +40,9 @@ class LocalHomeworkRepository @Inject constructor(
     fun getAllHomework(): Flow<List<Homework>> =
         homeworkDao.getAllHomework()
 
+    suspend fun getHomeworkById(homeworkId: String): Homework? =
+        homeworkDao.getHomeworkById(homeworkId)
+
     suspend fun insertHomework(homework: Homework) =
         homeworkDao.insertHomework(homework)
 

@@ -28,3 +28,4 @@ local.properties
 .externalNativeBuild
 .cxx
 app/google-services.json
+/gradle/gradle-daemon-jvm.properties

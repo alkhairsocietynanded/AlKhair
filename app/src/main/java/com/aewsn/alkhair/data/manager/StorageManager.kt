@@ -15,7 +15,7 @@ class StorageManager @Inject constructor(
 
     companion object {
         private const val TAG = "StorageManager"
-        private const val BUCKET_NAME = "homework" // Ensure this bucket is public in Supabase
+        private const val BUCKET_NAME = "alkhair_assets" // Ensure this bucket is public in Supabase
     }
 
     /**

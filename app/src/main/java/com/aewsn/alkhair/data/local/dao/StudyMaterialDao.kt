@@ -22,6 +22,9 @@ interface StudyMaterialDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudyMaterialList(list: List<StudyMaterial>)
 
+    @Query("SELECT * FROM study_materials WHERE id = :id LIMIT 1")
+    suspend fun getStudyMaterialById(id: String): StudyMaterial?
+
     @Query("DELETE FROM study_materials WHERE id = :id")
     suspend fun deleteStudyMaterialById(id: String)
 
