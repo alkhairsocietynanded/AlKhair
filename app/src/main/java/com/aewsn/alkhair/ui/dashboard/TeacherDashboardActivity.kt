@@ -96,6 +96,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
         setupToolbar()
         setupListeners()
         setupAnnouncementViewPager()
+        requestNotificationPermission()
 
         // Observers
         observeLoadingState()
@@ -106,6 +107,19 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
 //        Temp Script, run only once
 //        dashboardViewModel.runMigrationScript()
+    }
+
+    /**
+     * Request POST_NOTIFICATIONS permission for Android 13+ (API 33)
+     */
+    private fun requestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
+            }
+        }
     }
 
     private fun setupWindowInsets() {

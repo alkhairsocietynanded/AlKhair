@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     id("kotlin-parcelize")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -111,4 +112,7 @@ dependencies {
     implementation(libs.functions.kt)
     implementation(libs.ktor.client.android)
 
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 }

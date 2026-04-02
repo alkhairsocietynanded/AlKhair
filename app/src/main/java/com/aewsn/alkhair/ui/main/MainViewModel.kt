@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aewsn.alkhair.data.manager.AuthRepoManager
 import com.aewsn.alkhair.data.manager.UserRepoManager
+import com.aewsn.alkhair.data.remote.fcm.FcmTokenManager
 import com.aewsn.alkhair.data.models.User
 import com.aewsn.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +20,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val authRepoManager: AuthRepoManager,
     private val userRepoManager: UserRepoManager,
+    private val fcmTokenManager: FcmTokenManager
 ) : ViewModel() {
 
     private val _userSessionState = MutableStateFlow<UiState<User?>>(UiState.Idle)
@@ -79,6 +81,8 @@ class MainViewModel @Inject constructor(
             // 1. Try Local DB
             val user = userRepoManager.getUserById(uid)
             if (user != null) {
+                // Register FCM token for push notifications
+                fcmTokenManager.registerToken(uid)
                 _userSessionState.value = UiState.Success(user)
             } else {
                 // 2. User Authenticated but Missing in Local DB (Sync Issue/Fresh Clean)
@@ -88,6 +92,8 @@ class MainViewModel @Inject constructor(
                         // Retry Local Fetch after Sync
                         val syncedUser = userRepoManager.getUserById(uid)
                         if (syncedUser != null) {
+                            // Register FCM token for push notifications
+                            fcmTokenManager.registerToken(uid)
                             _userSessionState.value = UiState.Success(syncedUser)
                         } else {
                             _userSessionState.value = UiState.Error("User profile fetch failed")

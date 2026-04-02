@@ -6,6 +6,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- ✅ UPI Apps Visibility for Android 11+ (API 30) -->
     <queries>
@@ -124,6 +125,20 @@
         <activity
             android:name=".ui.studymaterial.StudyMaterialActivity"
             android:exported="false" />
+
+        <!-- FCM Messaging Service -->
+        <service
+            android:name=".data.remote.fcm.AlKhairMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Default FCM Notification Channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="alkhair_general" />
 
     </application>
 

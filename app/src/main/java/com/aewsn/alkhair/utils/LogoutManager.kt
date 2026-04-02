@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import com.aewsn.alkhair.data.manager.AppDataSyncManager
 import com.aewsn.alkhair.data.manager.AuthRepoManager
+import com.aewsn.alkhair.data.remote.fcm.FcmTokenManager
 import com.aewsn.alkhair.di.ApplicationScope
 import com.aewsn.alkhair.ui.auth.LoginActivity
 import kotlinx.coroutines.CoroutineScope
@@ -15,10 +16,17 @@ import javax.inject.Singleton
 class LogoutManager @Inject constructor(
     private val authRepoManager: AuthRepoManager,
     private val appDataSyncManager: AppDataSyncManager,
+    private val fcmTokenManager: FcmTokenManager,
     @param:ApplicationScope private val externalScope: CoroutineScope
 ) {
     fun logout(context: Context) {
         externalScope.launch {
+            // 0. Remove FCM Token BEFORE clearing data (needs userId)
+            val uid = authRepoManager.getCurrentUserUid()
+            if (uid != null) {
+                fcmTokenManager.unregisterToken(uid)
+            }
+
             // 1. Clear Local Data (Room + Prefs)
             appDataSyncManager.clearAllLocalData()
 

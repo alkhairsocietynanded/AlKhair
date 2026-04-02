@@ -20,6 +20,9 @@ class MyApp : Application(), androidx.work.Configuration.Provider {
         // Force Light Mode
         androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
 
+        // Create Notification Channels
+        com.aewsn.alkhair.utils.NotificationHelper.createChannels(this)
+
         // Offline persistence - Removed for Supabase
     }
 }
