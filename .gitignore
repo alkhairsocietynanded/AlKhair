@@ -1,31 +1,58 @@
-# === Gradle ===
+# Gradle files
 .gradle/
 build/
-*/build/
-!gradle/wrapper/gradle-wrapper.jar
-gradlew
-gradlew.bat
+/*/build/
 
-# === Local Configuration ===
+# Local configuration files
 local.properties
+secrets.properties
 *.log
 *.tmp
 
-# === Android Studio / IntelliJ ===
+# Android Studio / IntelliJ IDEA files
 .idea/
+.idea/deploymentTargetSelector.xml
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+*.ipr
+*.iws
 .DS_Store
-/build
 /captures
 .externalNativeBuild
 .cxx
-app/google-services.json
 /gradle/gradle-daemon-jvm.properties
+
+# Build artifacts
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# Signing files
+*.jks
+*.keystore
+*.pk8
+*.pem
+
+# Keystore files (should never be committed)
+*.jks
+*.keystore
+*.p12
+*.pem
+google-services.json
+
+# Log files
+*.log
+
+# Temp files
+*.tmp
+*.temp
+
+# Test and Lint reports
+/lint/
+/test-results/
+/test-reports/
+
+# App-specific sensitive files
+app/google-services.json
+app/src/main/assets/google-services.json
