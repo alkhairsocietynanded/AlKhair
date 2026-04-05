@@ -152,6 +152,10 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, com.aewsn.alkhair.ui.result.ResultActivity::class.java))
         }
 
+        binding.cardChat.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatListActivity::class.java))
+        }
+
         binding.cardSalary.setOnClickListener {
             startActivity(Intent(this, SalaryActivity::class.java))
         }
@@ -208,7 +212,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         
         binding.fabAskAi.isVisible = true
         binding.fabAskAi.setOnClickListener {
-            startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatActivity::class.java))
+            startActivity(Intent(this, com.aewsn.alkhair.ui.aichat.AiChatActivity::class.java))
         }
     }
 

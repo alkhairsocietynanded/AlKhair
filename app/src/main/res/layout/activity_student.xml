@@ -50,7 +50,7 @@
         android:layout_marginBottom="24dp"
         android:backgroundTint="#0F172A"
         android:contentDescription="Ask AI"
-        android:src="@drawable/ic_chat"
+        android:src="@drawable/ic_ai_chat"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/navContainer"
         app:layout_constraintEnd_toEndOf="parent"

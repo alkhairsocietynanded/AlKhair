@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.aewsn.alkhair.data.local.dao.AnnouncementDao
 import com.aewsn.alkhair.data.local.dao.AttendanceDao
+import com.aewsn.alkhair.data.local.dao.ChatMessageDao
 import com.aewsn.alkhair.data.local.dao.ClassDao
 import com.aewsn.alkhair.data.local.dao.DivisionDao
 import com.aewsn.alkhair.data.local.dao.FeesDao
@@ -13,6 +14,7 @@ import com.aewsn.alkhair.data.local.dao.UserDao
 import com.aewsn.alkhair.data.local.dao.PendingDeletionDao
 import com.aewsn.alkhair.data.models.Announcement
 import com.aewsn.alkhair.data.models.Attendance
+import com.aewsn.alkhair.data.models.ChatMessage
 import com.aewsn.alkhair.data.models.ClassModel
 import com.aewsn.alkhair.data.models.DivisionModel
 import com.aewsn.alkhair.data.models.FeesModel
@@ -32,6 +34,7 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         ClassModel::class,
         DivisionModel::class,
         PendingDeletion::class,
+        ChatMessage::class,
         com.aewsn.alkhair.data.models.Leave::class,
         com.aewsn.alkhair.data.models.Syllabus::class,
         com.aewsn.alkhair.data.models.Subject::class,
@@ -41,7 +44,7 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         com.aewsn.alkhair.data.models.StudyMaterial::class,
         com.aewsn.alkhair.data.models.AppConfig::class
     ],
-    version = 16, // v16: Added AppConfig entity
+    version = 17, // v17: Added ChatMessage entity for group chat feature
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -54,6 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun classDao(): ClassDao
     abstract fun divisionDao(): DivisionDao
     abstract fun pendingDeletionDao(): PendingDeletionDao
+    abstract fun chatMessageDao(): ChatMessageDao
     abstract fun leaveDao(): com.aewsn.alkhair.data.local.dao.LeaveDao
     abstract fun syllabusDao(): com.aewsn.alkhair.data.local.dao.SyllabusDao
     abstract fun subjectDao(): com.aewsn.alkhair.data.local.dao.SubjectDao

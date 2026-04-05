@@ -152,4 +152,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAppConfigDao(db: AppDatabase) = db.appConfigDao()
+
+    @Provides
+    @Singleton
+    fun provideChatMessageDao(db: AppDatabase) = db.chatMessageDao()
 }

@@ -1,6 +1,6 @@
 package com.aewsn.alkhair.data.repository
 
-import com.aewsn.alkhair.data.remote.ChatRequest
+import com.aewsn.alkhair.data.remote.AiChatRequest
 import com.aewsn.alkhair.data.remote.n8nApiService
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.flow
 import retrofit2.Response
 
 @Singleton
-class ChatRepository @Inject constructor(
+class AiChatRepository @Inject constructor(
     private val apiService: n8nApiService,
     private val appConfigRepoManager: com.aewsn.alkhair.data.manager.AppConfigRepoManager
 ) {
@@ -22,7 +22,7 @@ class ChatRepository @Inject constructor(
             val dynamicUrl = appConfigRepoManager.getConfigValue("n8n_url") ?: DEFAULT_N8N_URL
             
             // 2. Call API with dynamic URL
-            val response = apiService.sendMessage(dynamicUrl, ChatRequest(chatInput = message, sessionId = sessionId))
+            val response = apiService.sendMessage(dynamicUrl, AiChatRequest(chatInput = message, sessionId = sessionId))
             
             if (response.isSuccessful && response.body() != null) {
                 // n8n now returns a single object { "output": "...", "text": "..." }

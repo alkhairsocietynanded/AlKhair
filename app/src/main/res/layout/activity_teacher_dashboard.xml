@@ -995,10 +995,9 @@
 
                     <!-- Ask AI -->
 
-                    <!-- Ask AI (Removed as it is now a main card at the top) -->
-                    <!--
+                    <!-- Chat -->
                     <LinearLayout
-                        android:id="@+id/cardAskAiGrid"
+                        android:id="@+id/cardChat"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_columnWeight="1"
@@ -1020,7 +1019,7 @@
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_gravity="center"
-                                android:src="@drawable/ic_robot"
+                                android:src="@drawable/ic_chat"
                                 app:tint="#EAB308" />
                         </androidx.cardview.widget.CardView>
 
@@ -1028,12 +1027,11 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="Ask AI"
+                            android:text="Chat"
                             android:textColor="#334155"
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-                    -->
 
                 </GridLayout>
 

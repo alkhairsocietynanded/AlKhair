@@ -2,109 +2,94 @@ package com.aewsn.alkhair.ui.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aewsn.alkhair.data.manager.ClassDivisionRepoManager
-import com.aewsn.alkhair.data.manager.UserRepoManager
-import com.aewsn.alkhair.data.repository.ChatRepository
+import com.aewsn.alkhair.data.manager.AuthRepoManager
+import com.aewsn.alkhair.data.manager.ChatRepoManager
+import com.aewsn.alkhair.data.models.ChatMessage
 import com.aewsn.alkhair.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import java.util.UUID
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val chatRepository: ChatRepository,
-    private val userRepoManager: UserRepoManager,
-    private val classDivisionRepoManager: ClassDivisionRepoManager
+    private val chatRepoManager: ChatRepoManager,
+    private val authRepoManager: AuthRepoManager
 ) : ViewModel() {
 
-    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
+    val currentUserId: String
+        get() = authRepoManager.getCurrentUserUid() ?: ""
 
-    private val _chatState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
-    val chatState: StateFlow<UiState<Unit>> = _chatState.asStateFlow()
+    private val _messagesState = MutableStateFlow<UiState<List<ChatMessage>>>(UiState.Loading)
+    val messagesState: StateFlow<UiState<List<ChatMessage>>> = _messagesState
 
-    // Aggregate Auto-Complete Suggestions
-    val suggestions: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
-        userRepoManager.observeLocal(),
-        classDivisionRepoManager.observeClasses(),
-        classDivisionRepoManager.observeDivisions()
-    ) { users, classes, divisions ->
-        val userNames = users.map { it.name }
-        val userEmails = users.map { it.email }
-        val userPhones = users.map { it.phone }
-        val classNames = classes.map { it.className }
-        val divisionNames = divisions.map { it.name }
+    private val _sendState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val sendState: StateFlow<UiState<Unit>> = _sendState
 
-        (userNames + userEmails + userPhones + classNames + divisionNames)
-            .filter { !it.isNullOrBlank() }
-            .distinct()
-            .sorted()
-            .also { 
-                android.util.Log.d("ChatViewModel", "Aggregated ${it.size} suggestions") 
-            }
-    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
+    private var currentGroupId: String = ""
+    private var currentGroupType: String = ""
 
-    // Generate a session ID for this chat session
-    private val sessionId = UUID.randomUUID().toString()
+    /**
+     * Start observing messages for a group + initial sync from Supabase
+     */
+    fun observeMessages(groupId: String, groupType: String) {
+        currentGroupId = groupId
+        currentGroupType = groupType
 
-    fun sendMessage(text: String) {
+        // 1. Observe local DB (SSOT)
+        viewModelScope.launch {
+            chatRepoManager.observeMessagesByGroup(groupId)
+                .catch { e ->
+                    _messagesState.value = UiState.Error(e.message ?: "Error loading messages")
+                }
+                .collectLatest { messages ->
+                    _messagesState.value = UiState.Success(messages)
+                }
+        }
+
+        // 2. Initial sync from remote
+        viewModelScope.launch {
+            chatRepoManager.syncGroupMessages(groupId, after = 0L)
+        }
+
+        // 3. Subscribe to real-time events
+        viewModelScope.launch {
+            chatRepoManager.startRealtimeSubscription(groupId)
+        }
+    }
+
+    /**
+     * Send a text message
+     */
+    fun sendMessage(
+        text: String,
+        senderName: String
+    ) {
         if (text.isBlank()) return
 
-        // 1. Add User Message immediately
-        val userMsg = ChatMessage(
-            id = UUID.randomUUID().toString(),
-            text = text,
-            isFromUser = true,
-            timestamp = System.currentTimeMillis()
-        )
-        // Correctly update StateFlow list
-        _messages.value = _messages.value + userMsg
+        val senderId = authRepoManager.getCurrentUserUid() ?: return
 
-        // 2. Set Loading State
-        _chatState.value = UiState.Loading
-
-        // 3. Call API
         viewModelScope.launch {
-            chatRepository.sendMessage(text, sessionId).collect { result ->
-                result.fold(
-                    onSuccess = { reply ->
-                        val botMsg = ChatMessage(
-                            id = UUID.randomUUID().toString(),
-                            text = reply,
-                            isFromUser = false,
-                            timestamp = System.currentTimeMillis()
-                        )
-                        _messages.value = _messages.value + botMsg
-                        _chatState.value = UiState.Success(Unit)
-                    },
-                    onFailure = { error ->
-                        val errorMsg = ChatMessage(
-                            id = UUID.randomUUID().toString(),
-                            text = "Error: ${error.message}",
-                            isFromUser = false,
-                            timestamp = System.currentTimeMillis(),
-                            isError = true
-                        )
-                        _messages.value = _messages.value + errorMsg
-                        _chatState.value = UiState.Error(error.message ?: "Unknown error")
-                    }
-                )
+            _sendState.value = UiState.Loading
+            val result = chatRepoManager.sendMessage(
+                messageText = text.trim(),
+                groupId = currentGroupId,
+                groupType = currentGroupType,
+                senderId = senderId,
+                senderName = senderName
+            )
+            _sendState.value = if (result.isSuccess) {
+                UiState.Success(Unit)
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Failed to send message")
             }
         }
     }
-}
 
-data class ChatMessage(
-    val id: String,
-    val text: String,
-    val isFromUser: Boolean,
-    val timestamp: Long,
-    val isError: Boolean = false
-)
+    fun resetSendState() {
+        _sendState.value = UiState.Idle
+    }
+}

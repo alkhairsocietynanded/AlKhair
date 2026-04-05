@@ -30,6 +30,7 @@ class AppDataSyncManager @Inject constructor(
     private val resultRepoManager: ResultRepoManager,
     private val studyMaterialRepoManager: StudyMaterialRepoManager,
     private val appConfigRepoManager: AppConfigRepoManager,
+    private val chatRepoManager: ChatRepoManager,
     private val deletionRepository: SupabaseDeletionRepository,
     private val sharedPreferences: android.content.SharedPreferences
 ) {
@@ -378,6 +379,7 @@ class AppDataSyncManager @Inject constructor(
                             "timetable" -> timetableRepoManager.deleteLocally(record.recordId)
                             "exams" -> resultRepoManager.deleteExamLocally(record.recordId)
                             "results" -> resultRepoManager.deleteResultLocally(record.recordId)
+                            "chat_messages" -> chatRepoManager.clearLocal()
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed deleting ${record.type} : ${record.recordId}", e)
@@ -412,6 +414,7 @@ class AppDataSyncManager @Inject constructor(
         timetableRepoManager.clearLocal()
         resultRepoManager.clearLocal()
         appConfigRepoManager.clearLocal()
+        chatRepoManager.clearLocal()
 
         // 2. Clear Sync Timestamp (Important!)
         // Taaki naya user login kare to full sync ho

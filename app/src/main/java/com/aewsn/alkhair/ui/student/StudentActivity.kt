@@ -159,7 +159,7 @@ class StudentActivity : AppCompatActivity() {
         if (user.role == com.aewsn.alkhair.utils.Roles.ADMIN || user.role == com.aewsn.alkhair.utils.Roles.TEACHER) {
             binding.fabAskAi.visibility = android.view.View.VISIBLE
             binding.fabAskAi.setOnClickListener {
-                startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatActivity::class.java))
+                startActivity(Intent(this, com.aewsn.alkhair.ui.aichat.AiChatActivity::class.java))
             }
         } else {
             binding.fabAskAi.visibility = android.view.View.GONE

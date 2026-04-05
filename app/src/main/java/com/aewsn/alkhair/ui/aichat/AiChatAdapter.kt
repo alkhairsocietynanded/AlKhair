@@ -1,14 +1,14 @@
-package com.aewsn.alkhair.ui.chat
+package com.aewsn.alkhair.ui.aichat
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.aewsn.alkhair.databinding.ItemChatMessageReceivedBinding
-import com.aewsn.alkhair.databinding.ItemChatMessageSentBinding
+import com.aewsn.alkhair.databinding.ItemAiChatMessageReceivedBinding
+import com.aewsn.alkhair.databinding.ItemAiChatMessageSentBinding
 
-class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallback()) {
+class AiChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallback()) {
 
     companion object {
         private const val VIEW_TYPE_SENT = 1
@@ -22,10 +22,10 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallba
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return if (viewType == VIEW_TYPE_SENT) {
-            val binding = ItemChatMessageSentBinding.inflate(inflater, parent, false)
+            val binding = ItemAiChatMessageSentBinding.inflate(inflater, parent, false)
             SentMessageViewHolder(binding)
         } else {
-            val binding = ItemChatMessageReceivedBinding.inflate(inflater, parent, false)
+            val binding = ItemAiChatMessageReceivedBinding.inflate(inflater, parent, false)
             ReceivedMessageViewHolder(binding)
         }
     }
@@ -39,7 +39,7 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallba
         }
     }
 
-    class SentMessageViewHolder(private val binding: ItemChatMessageSentBinding) :
+    class SentMessageViewHolder(private val binding: ItemAiChatMessageSentBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(message: ChatMessage) {
             binding.tvMessage.text = message.text
@@ -47,7 +47,7 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallba
         }
     }
 
-    class ReceivedMessageViewHolder(private val binding: ItemChatMessageReceivedBinding) :
+    class ReceivedMessageViewHolder(private val binding: ItemAiChatMessageReceivedBinding) :
         RecyclerView.ViewHolder(binding.root) {
         
         private val markwon = io.noties.markwon.Markwon.create(binding.root.context)

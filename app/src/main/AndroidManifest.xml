@@ -63,7 +63,7 @@
             android:name=".ui.approval.LeaveApprovalActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.chat.ChatActivity"
+            android:name=".ui.aichat.AiChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
@@ -125,6 +125,15 @@
         <activity
             android:name=".ui.studymaterial.StudyMaterialActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.chat.ChatListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.chat.ChatWindowActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- FCM Messaging Service -->
         <service

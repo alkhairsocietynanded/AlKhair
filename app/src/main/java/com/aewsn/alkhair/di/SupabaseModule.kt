@@ -12,6 +12,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.functions.Functions
+import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import kotlinx.serialization.json.Json
 import javax.inject.Singleton
@@ -34,6 +35,7 @@ object SupabaseModule {
             }
             install(Storage)
             install(Functions) // ✅ Enable Edge Functions
+            install(Realtime)  // ✅ Enable Realtime (Chat Feature)
             
             // Explicitly set the serializer to ignore unknown keys - strict mode is false by default in recent versions but good to be explicit
             defaultSerializer = KotlinXSerializer(Json {

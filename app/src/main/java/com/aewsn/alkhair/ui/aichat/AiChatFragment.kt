@@ -1,4 +1,4 @@
-package com.aewsn.alkhair.ui.chat
+package com.aewsn.alkhair.ui.aichat
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,26 +11,26 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.aewsn.alkhair.databinding.FragmentChatBinding
+import com.aewsn.alkhair.databinding.FragmentAiChatBinding
 import com.aewsn.alkhair.utils.UiState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class ChatFragment : Fragment() {
+class AiChatFragment : Fragment() {
 
-    private var _binding: FragmentChatBinding? = null
+    private var _binding: FragmentAiChatBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: ChatViewModel by viewModels()
-    private val chatAdapter = ChatAdapter()
+    private val viewModel: AiChatViewModel by viewModels()
+    private val chatAdapter = AiChatAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentChatBinding.inflate(inflater, container, false)
+        _binding = FragmentAiChatBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -181,6 +181,6 @@ class ChatFragment : Fragment() {
     }
 
     companion object {
-        fun newInstance() = ChatFragment()
+        fun newInstance() = AiChatFragment()
     }
 }

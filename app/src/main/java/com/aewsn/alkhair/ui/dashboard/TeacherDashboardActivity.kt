@@ -177,6 +177,10 @@ class TeacherDashboardActivity : AppCompatActivity() {
              startActivity(Intent(this, com.aewsn.alkhair.ui.result.ResultActivity::class.java))
         }
 
+        binding.cardChat.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatListActivity::class.java))
+        }
+
         binding.cardAnnouncement.setOnClickListener {
             val addAnnouncementSheet = AddAnnouncementSheet()
             addAnnouncementSheet.show(supportFragmentManager, AddAnnouncementSheet.TAG)
@@ -216,7 +220,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
 
         // --- Ask AI ---
         binding.cardAskAi.setOnClickListener {
-            startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatActivity::class.java))
+            startActivity(Intent(this, com.aewsn.alkhair.ui.aichat.AiChatActivity::class.java))
         }
 
         binding.cardApplyLeave.setOnClickListener {

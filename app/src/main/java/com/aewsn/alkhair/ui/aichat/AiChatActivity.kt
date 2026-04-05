@@ -1,4 +1,4 @@
-package com.aewsn.alkhair.ui.chat
+package com.aewsn.alkhair.ui.aichat
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -6,25 +6,25 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.aewsn.alkhair.R
-import com.aewsn.alkhair.databinding.ActivityChatBinding
+import com.aewsn.alkhair.databinding.ActivityAiChatBinding
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class ChatActivity : AppCompatActivity() {
+class AiChatActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityChatBinding
+    private lateinit var binding: ActivityAiChatBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        binding = ActivityChatBinding.inflate(layoutInflater)
+        binding = ActivityAiChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupWindowInsets()
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
-                .replace(R.id.container, ChatFragment.newInstance())
+                .replace(R.id.container, AiChatFragment.newInstance())
                 .commitNow()
         }
 

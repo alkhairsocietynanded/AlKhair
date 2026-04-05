@@ -8,14 +8,14 @@ import retrofit2.http.Url
 
 interface n8nApiService {
     @POST
-    suspend fun sendMessage(@Url url: String, @Body request: ChatRequest): Response<ChatResponse>
+    suspend fun sendMessage(@Url url: String, @Body request: AiChatRequest): Response<AiChatResponse>
 }
-data class ChatRequest(
+data class AiChatRequest(
     val chatInput: String,
     val sessionId: String
 )
 
-data class ChatResponse(
+data class AiChatResponse(
     val output: String? = null,
     val text: String? = null // Handle variations
 )

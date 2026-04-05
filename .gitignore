@@ -56,3 +56,4 @@ google-services.json
 # App-specific sensitive files
 app/google-services.json
 app/src/main/assets/google-services.json
+supabase/functions/*/service-account.json
