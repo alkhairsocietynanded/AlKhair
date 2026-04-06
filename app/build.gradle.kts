@@ -111,7 +111,7 @@ dependencies {
     implementation(libs.storage.kt)
     implementation(libs.realtime.kt)
     implementation(libs.functions.kt)
-    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.okhttp)
 
     // Firebase
     implementation(platform(libs.firebase.bom))

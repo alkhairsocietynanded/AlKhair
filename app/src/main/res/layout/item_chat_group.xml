@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="4dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp"
+    android:layout_marginVertical="6dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0.5dp"
     app:strokeWidth="0dp"
     app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
     android:clickable="true"
@@ -19,34 +19,31 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <!-- Group Icon -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            app:cardCornerRadius="24dp"
-            app:cardBackgroundColor="?attr/colorPrimaryContainer"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp">
+        <!-- Group Icon Container -->
+        <FrameLayout
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_icon_container"
+            android:padding="12dp">
 
             <ImageView
                 android:id="@+id/ivGroupIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:src="@drawable/ic_group"
-                app:tint="?attr/colorOnPrimaryContainer"
+                app:tint="?attr/colorPrimary"
                 android:importantForAccessibility="no" />
 
-        </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
 
         <!-- Group Info -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="16dp"
             android:orientation="vertical">
 
             <TextView
@@ -56,6 +53,7 @@
                 android:text="Group Name"
                 android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
@@ -74,10 +72,11 @@
 
         <!-- Arrow -->
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="8dp"
             android:src="@drawable/ic_chevron_right"
-            app:tint="?attr/colorOnSurfaceVariant"
+            app:tint="?attr/colorOutline"
             android:importantForAccessibility="no" />
 
     </LinearLayout>

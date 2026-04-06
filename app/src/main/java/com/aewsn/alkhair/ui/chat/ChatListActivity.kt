@@ -41,7 +41,18 @@ class ChatListActivity : AppCompatActivity() {
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            
+            // Apply status bar padding to the AppBarLayout to fix the "blank space"
+            binding.appBarLayout.setPadding(0, systemBars.top, 0, 0)
+            
+            // Apply navigation bar padding to the RecyclerView
+            binding.rvChatGroups.setPadding(
+                binding.rvChatGroups.paddingLeft,
+                binding.rvChatGroups.paddingTop,
+                binding.rvChatGroups.paddingRight,
+                systemBars.bottom
+            )
+            
             insets
         }
     }

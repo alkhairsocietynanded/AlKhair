@@ -1,8 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { JWT } from 'npm:google-auth-library@9'
 
-const serviceAccount = JSON.parse(Deno.env.get('SERVICE_ACCOUNT')!)
-
 interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE'
   table: string
@@ -17,7 +15,9 @@ const supabase = createClient(
 )
 
 /**
- * Generate OAuth2 Access Token from Service Account
+ * Generate OAuth2 Access Token from individual Firebase credentials.
+ * Uses 3 separate secrets (FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_PROJECT_ID)
+ * instead of a single SERVICE_ACCOUNT JSON blob to avoid JSON parsing issues.
  */
 const getAccessToken = ({
   clientEmail,
@@ -50,9 +50,9 @@ async function sendFcmNotification(
   fcmToken: string,
   title: string,
   body: string,
-  dataPayload: Record<string, string>
+  dataPayload: Record<string, string>,
+  projectId: string
 ): Promise<any> {
-  const projectId = serviceAccount.project_id
   const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
 
   const response = await fetch(url, {
@@ -64,10 +64,7 @@ async function sendFcmNotification(
     body: JSON.stringify({
       message: {
         token: fcmToken,
-        notification: {
-          title,
-          body,
-        },
+        notification: { title, body },
         data: dataPayload,
         android: {
           priority: 'high',
@@ -80,7 +77,9 @@ async function sendFcmNotification(
     }),
   })
 
-  return await response.json()
+  const responseJson = await response.json()
+  console.log(`FCM Response for ...${fcmToken.slice(-10)}:`, JSON.stringify(responseJson))
+  return responseJson
 }
 
 /**
@@ -93,176 +92,151 @@ async function getTargetUserIds(
   let userIds: string[] = []
 
   if (table === 'homework') {
-    // Get students with matching class_id and shift
     const classId = record.class_id
     const shift = record.shift || 'General'
-
     let query = supabase
       .from('users')
       .select('id')
       .eq('role', 'student')
       .eq('class_id', classId)
       .eq('is_active', true)
-
     if (shift && shift !== 'All') {
       query = query.eq('shift', shift)
     }
-
     const { data, error } = await query
-    if (error) {
-      console.error('Error fetching target users:', error)
-      return []
-    }
+    if (error) { console.error('Error fetching target users:', error); return [] }
     userIds = (data || []).map((u: any) => u.id)
+
   } else if (table === 'announcements') {
     const targetId = record.target_id || 'All'
-
     if (targetId === 'All') {
-      // All active students
-      const { data } = await supabase
-        .from('users')
-        .select('id')
-        .eq('role', 'student')
-        .eq('is_active', true)
+      const { data } = await supabase.from('users').select('id').eq('role', 'student').eq('is_active', true)
       userIds = (data || []).map((u: any) => u.id)
     } else {
-      // Students of specific class
-      const { data } = await supabase
-        .from('users')
-        .select('id')
-        .eq('role', 'student')
-        .eq('class_id', targetId)
-        .eq('is_active', true)
+      const { data } = await supabase.from('users').select('id').eq('role', 'student').eq('class_id', targetId).eq('is_active', true)
       userIds = (data || []).map((u: any) => u.id)
     }
+
   } else if (table === 'fees') {
-    // Notify specific student
-    if (record.user_id) {
-      userIds = [record.user_id]
-    }
+    if (record.user_id) userIds = [record.user_id]
+
   } else if (table === 'chat_messages') {
     const groupType = record.group_type
     const groupId = record.group_id
     const senderId = record.sender_id
-
-    // Fetch all active users (to filter in memory or we can do complex OR queries)
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, role, class_id')
-      .eq('is_active', true)
-      
+    const { data, error } = await supabase.from('users').select('id, role, class_id').eq('is_active', true)
     if (!error && data) {
       if (groupType === 'teachers') {
-        userIds = data
-          .filter((u: any) => ['admin', 'teacher'].includes(u.role))
-          .map((u: any) => u.id)
+        userIds = data.filter((u: any) => ['admin', 'teacher'].includes(u.role)).map((u: any) => u.id)
       } else if (groupType === 'class') {
-        userIds = data
-          .filter((u: any) => {
-            if (u.role === 'admin') return true
-            if (u.role === 'teacher' && u.class_id === groupId) return true
-            if (u.role === 'student' && u.class_id === groupId) return true
-            return false
-          })
-          .map((u: any) => u.id)
+        userIds = data.filter((u: any) => {
+          if (u.role === 'admin') return true
+          if (u.role === 'teacher' && u.class_id === groupId) return true
+          if (u.role === 'student' && u.class_id === groupId) return true
+          return false
+        }).map((u: any) => u.id)
       }
     }
-    // Exclude the sender
+    // Exclude sender
     userIds = userIds.filter(id => id !== senderId)
+    console.log(`Chat targets (excl. sender): ${userIds.length} users`)
   }
 
   return userIds
 }
 
-/**
- * Build notification content based on table type
- */
-function buildNotification(
+async function buildNotification(
   table: string,
   record: Record<string, any>
-): { title: string; body: string; data: Record<string, string> } {
+): Promise<{ title: string; body: string; data: Record<string, string> }> {
   switch (table) {
     case 'homework':
       return {
-        title: `\ud83d\udcda New Homework: ${record.subject || 'General'}`,
-        body: `${record.title || 'New homework assigned'} \u2014 Due: ${record.due_date || 'N/A'}`,
+        title: `📚 New Homework: ${record.subject || 'General'}`,
+        body: `${record.title || 'New homework assigned'} — Due: ${record.due_date || 'N/A'}`,
         data: {
-          type: 'HOMEWORK',
-          click_action: 'HOMEWORK',
-          channel_id: 'alkhair_homework',
-          homework_id: record.id || '',
-          class_id: record.class_id || '',
+          type: 'HOMEWORK', click_action: 'HOMEWORK', channel_id: 'alkhair_homework',
+          homework_id: record.id || '', class_id: record.class_id || '',
         },
       }
     case 'announcements':
       const content = record.content || ''
       return {
-        title: `\ud83d\udce2 ${record.title || 'New Announcement'}`,
+        title: `📢 ${record.title || 'New Announcement'}`,
         body: content.length > 100 ? content.substring(0, 100) + '...' : content,
         data: {
-          type: 'ANNOUNCEMENT',
-          click_action: 'ANNOUNCEMENT',
-          channel_id: 'alkhair_announcements',
+          type: 'ANNOUNCEMENT', click_action: 'ANNOUNCEMENT', channel_id: 'alkhair_announcements',
           announcement_id: record.id || '',
         },
       }
     case 'fees':
       return {
-        title: '\ud83d\udcb0 Fee Update',
-        body: `Amount: \u20b9${record.net_fees || record.base_amount || '0'} \u2014 Status: ${record.payment_status || 'Pending'}`,
+        title: '💰 Fee Update',
+        body: `Amount: ₹${record.net_fees || record.base_amount || '0'} — Status: ${record.payment_status || 'Pending'}`,
         data: {
-          type: 'FEES',
-          click_action: 'FEES',
-          channel_id: 'alkhair_fees',
+          type: 'FEES', click_action: 'FEES', channel_id: 'alkhair_fees',
           fee_id: record.id || '',
         },
       }
     case 'chat_messages':
-      const senderName = record.sender_name || 'Someone'
+      let senderName = 'Someone'
+      if (record.sender_id) {
+        const { data: senderData } = await supabase.from('users').select('name').eq('id', record.sender_id).single()
+        if (senderData?.name) senderName = senderData.name
+      }
       const msgText = record.message_text || (record.media_url ? 'Sent an attachment' : 'New message')
       const chatTitle = record.group_type === 'teachers' ? 'Teachers Chat' : 'Class Chat'
       return {
-        title: `\ud83d\udcac ${chatTitle}`,
+        title: `💬 ${chatTitle}`,
         body: `${senderName}: ${msgText}`,
         data: {
-          type: 'CHAT',
-          click_action: 'CHAT',
-          channel_id: 'alkhair_chat',
-          group_id: record.group_id || '',
-          group_type: record.group_type || '',
+          type: 'CHAT', click_action: 'CHAT', channel_id: 'alkhair_chat',
+          group_id: record.group_id || '', group_type: record.group_type || '',
         },
       }
     default:
       return {
         title: 'AlKhair Update',
         body: 'You have a new update.',
-        data: {
-          type: 'GENERAL',
-          click_action: 'GENERAL',
-          channel_id: 'alkhair_general',
-        },
+        data: { type: 'GENERAL', click_action: 'GENERAL', channel_id: 'alkhair_general' },
       }
   }
 }
 
 // ========== MAIN HANDLER ==========
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   try {
-    // Handle CORS
     if (req.method === 'OPTIONS') {
       return new Response('ok', {
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers':
-            'authorization, x-client-info, apikey, content-type',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
         },
       })
     }
 
-    const payload: WebhookPayload = await req.json()
-    console.log(`Received webhook: ${payload.type} on ${payload.table}`)
+    // ✅ Read individual secrets — NO JSON parsing needed!
+    // Required secrets: FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_PROJECT_ID
+    const clientEmail = Deno.env.get('FIREBASE_CLIENT_EMAIL')
+    const privateKeyRaw = Deno.env.get('FIREBASE_PRIVATE_KEY')
+    const projectId = Deno.env.get('FIREBASE_PROJECT_ID')
 
-    // Only process INSERT events
+    if (!clientEmail || !privateKeyRaw || !projectId) {
+      console.error('Missing Firebase secrets. Need: FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_PROJECT_ID')
+      return new Response(JSON.stringify({ error: 'Missing Firebase configuration secrets' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Restore newlines in private key
+    // Supabase secret storage may escape \n as literal \\n
+    const privateKey = privateKeyRaw.replace(/\\n/g, '\n')
+    console.log(`Firebase config OK. email: ${clientEmail}, project: ${projectId}, key: ${privateKey.substring(0, 27)}...`)
+
+    const payload: WebhookPayload = await req.json()
+    console.log(`Webhook: ${payload.type} on ${payload.table}`)
+
     if (payload.type !== 'INSERT') {
       return new Response(
         JSON.stringify({ message: 'Skipped: Not an INSERT event' }),
@@ -270,18 +244,13 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 1. Get target user IDs
     const userIds = await getTargetUserIds(payload.table, payload.record)
     console.log(`Target users: ${userIds.length}`)
 
     if (userIds.length === 0) {
-      return new Response(
-        JSON.stringify({ message: 'No target users found' }),
-        { headers: { 'Content-Type': 'application/json' } }
-      )
+      return new Response(JSON.stringify({ message: 'No target users found' }), { headers: { 'Content-Type': 'application/json' } })
     }
 
-    // 2. Get FCM tokens for all target users (multi-device)
     const { data: tokenRows, error: tokenError } = await supabase
       .from('user_fcm_tokens')
       .select('fcm_token')
@@ -289,49 +258,41 @@ Deno.serve(async (req) => {
 
     if (tokenError) {
       console.error('Error fetching FCM tokens:', tokenError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch FCM tokens' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      )
+      return new Response(JSON.stringify({ error: 'Failed to fetch FCM tokens' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
     }
 
     const tokens = (tokenRows || []).map((row: any) => row.fcm_token)
-    console.log(`FCM tokens found: ${tokens.length}`)
+    console.log(`FCM tokens: ${tokens.length}`)
 
     if (tokens.length === 0) {
+      return new Response(JSON.stringify({ message: 'No FCM tokens found' }), { headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const { title, body, data } = await buildNotification(payload.table, payload.record)
+    console.log(`Sending: "${title}" to ${tokens.length} devices`)
+
+    // Get OAuth2 access token
+    let accessToken: string
+    try {
+      accessToken = await getAccessToken({ clientEmail, privateKey })
+      console.log('OAuth2 token obtained ✅')
+    } catch (authErr) {
+      console.error('OAuth2 token failed:', authErr)
       return new Response(
-        JSON.stringify({ message: 'No FCM tokens found for target users' }),
-        { headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'OAuth2 token generation failed', detail: String(authErr) }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
-    // 3. Build notification
-    const { title, body, data } = buildNotification(
-      payload.table,
-      payload.record
-    )
-
-    // 4. Get OAuth2 access token
-    const accessToken = await getAccessToken({
-      clientEmail: serviceAccount.client_email,
-      privateKey: serviceAccount.private_key,
-    })
-
-    // 5. Send notifications to all tokens
     const results = await Promise.allSettled(
       tokens.map((token: string) =>
-        sendFcmNotification(accessToken, token, title, body, data)
+        sendFcmNotification(accessToken, token, title, body, data, projectId)
       )
     )
 
-    const successCount = results.filter(
-      (r) => r.status === 'fulfilled'
-    ).length
+    const successCount = results.filter((r) => r.status === 'fulfilled').length
     const failCount = results.filter((r) => r.status === 'rejected').length
-
-    console.log(
-      `Notifications sent: ${successCount} success, ${failCount} failed`
-    )
+    console.log(`Done: ${successCount} success, ${failCount} failed`)
 
     return new Response(
       JSON.stringify({
@@ -339,8 +300,8 @@ Deno.serve(async (req) => {
         results: results.map((r, i) => ({
           token: tokens[i]?.substring(0, 10) + '...',
           status: r.status,
-          value: r.status === 'fulfilled' ? r.value : undefined,
-          reason: r.status === 'rejected' ? String(r.reason) : undefined,
+          value: r.status === 'fulfilled' ? (r as PromiseFulfilledResult<any>).value : undefined,
+          reason: r.status === 'rejected' ? String((r as PromiseRejectedResult).reason) : undefined,
         })),
       }),
       { headers: { 'Content-Type': 'application/json' } }

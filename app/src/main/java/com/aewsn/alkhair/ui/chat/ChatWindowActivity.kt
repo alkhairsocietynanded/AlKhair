@@ -69,13 +69,32 @@ class ChatWindowActivity : AppCompatActivity() {
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            
+            // Padding the root for system status bar (top)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            
+            val bottomInset = if (ime.bottom > 0) ime.bottom else systemBars.bottom
+            
+            val density = resources.displayMetrics.density
+            val hPadding = (16 * density).toInt()
+            val vPadding = (8 * density).toInt()
+            
+            // Preserve horizontal and top padding while adjusting bottom for insets
+            binding.inputBarContainer.setPadding(hPadding, vPadding, hPadding, vPadding + bottomInset)
+            
+            // Adjust RecyclerView padding so messages aren't hidden behind the floating bar
+            val floatingBarHeight = (80 * density).toInt() 
+            binding.rvMessages.setPadding(0, (8 * density).toInt(), 0, bottomInset + floatingBarHeight)
+            
             insets
         }
     }
 
     private fun setupToolbar() {
-        binding.toolbar.title = groupName
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = groupName
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
@@ -83,7 +102,7 @@ class ChatWindowActivity : AppCompatActivity() {
         // Use ViewModel's currentUserId for sent/received differentiation
         adapter = ChatMessageAdapter(currentUserId = viewModel.currentUserId)
         val layoutManager = LinearLayoutManager(this).apply {
-            stackFromEnd = true
+            reverseLayout = true
         }
         binding.rvMessages.layoutManager = layoutManager
         binding.rvMessages.adapter = adapter
@@ -108,9 +127,9 @@ class ChatWindowActivity : AppCompatActivity() {
                             val messages = state.data
 
                             adapter.submitList(messages) {
-                                // Scroll to bottom after new messages
+                                // Scroll to bottom after new messages (index 0 is newest now due to reverseLayout)
                                 if (messages.isNotEmpty()) {
-                                    binding.rvMessages.scrollToPosition(messages.size - 1)
+                                    binding.rvMessages.scrollToPosition(0)
                                 }
                             }
 

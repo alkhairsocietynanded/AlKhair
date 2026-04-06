@@ -1,6 +1,5 @@
 package com.aewsn.alkhair.di
 
-import com.aewsn.alkhair.data.datastore.AppDataStore
 import com.aewsn.alkhair.data.remote.supabase.AndroidSessionManager
 import dagger.Module
 import dagger.Provides
@@ -16,6 +15,7 @@ import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import kotlinx.serialization.json.Json
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -23,15 +23,16 @@ object SupabaseModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseClient(appDataStore: AppDataStore): SupabaseClient {
+    fun provideSupabaseClient(androidSessionManager: AndroidSessionManager): SupabaseClient {
         return createSupabaseClient(
             supabaseUrl = "https://eedvsfrjwkhlwqqdkbsm.supabase.co",
             supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlZHZzZnJqd2tobHdxcWRrYnNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxNjY3MTYsImV4cCI6MjA4NDc0MjcxNn0.vYT9SEzTH5rEdVXJjB8zF_njGIZYnnIvh6rl9KlUPZw"
         ) {
+            requestTimeout = 45.seconds
             install(Postgrest)
             install(Auth) {
                 // ✅ Session Persistence Fix (Using DataStore)
-                sessionManager = AndroidSessionManager(appDataStore)
+                sessionManager = androidSessionManager
             }
             install(Storage)
             install(Functions) // ✅ Enable Edge Functions

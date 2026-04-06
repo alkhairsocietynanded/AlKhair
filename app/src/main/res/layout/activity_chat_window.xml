@@ -5,25 +5,24 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:fitsSystemWindows="true">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true"
+        app:elevation="0dp"
         app:liftOnScroll="true">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
+            android:background="?attr/colorSurface"
             app:title="Chat"
-            app:titleTextColor="@android:color/white"
+            app:titleTextColor="?attr/colorOnSurface"
             app:navigationIcon="@drawable/ic_arrow_back"
-            app:navigationIconTint="@android:color/white" />
+            app:navigationIconTint="?attr/colorOnSurface" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -34,11 +33,11 @@
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:paddingTop="8dp"
-        android:paddingBottom="72dp"
+        android:paddingBottom="120dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         app:stackFromEnd="true" />
 
-    <!-- Empty State -->
+    <!-- Empty State (No changes needed for visibility logic) -->
     <LinearLayout
         android:id="@+id/emptyState"
         android:layout_width="wrap_content"
@@ -49,42 +48,45 @@
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:src="@drawable/ic_chat"
-            android:alpha="0.3"
-            android:importantForAccessibility="no" />
+            android:alpha="0.2"
+            android:importantForAccessibility="no"
+            app:tint="?attr/colorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="No messages yet. Start the conversation!"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:layout_marginTop="16dp"
+            android:text="No messages yet"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="?attr/colorOnSurfaceVariant" />
 
     </LinearLayout>
 
-    <!-- Bottom Input Bar -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/inputBar"
+    <!-- Modern Floating Input Bar -->
+    <LinearLayout
+        android:id="@+id/inputBarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:cardElevation="8dp"
-        app:cardCornerRadius="0dp"
-        app:cardBackgroundColor="?attr/colorSurface">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_chat_input_modern"
+            android:elevation="2dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="4dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:minHeight="56dp">
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp"
+            android:minHeight="52dp">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etMessage"
@@ -92,25 +94,41 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:hint="Type a message..."
-                android:background="@drawable/bg_message_input"
-                android:padding="12dp"
-                android:maxLines="4"
+                android:background="@null"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:maxLines="5"
                 android:inputType="textMultiLine|textCapSentences"
                 android:textAppearance="?attr/textAppearanceBodyMedium" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSend"
-                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                app:icon="@drawable/ic_send"
-                app:iconSize="24dp"
-                app:iconGravity="textStart"
-                app:iconPadding="0dp" />
+            <ImageButton
+                android:id="@+id/btnAttach"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_attach_file"
+                android:alpha="0.6"
+                app:tint="?attr/colorOnSurface"
+                android:visibility="gone" />
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/btnSend"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="8dp"
+            android:padding="0dp"
+            android:text=""
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Material3.Corner.Full"
+            app:elevation="4dp"
+            app:icon="@drawable/ic_send"
+            app:iconPadding="0dp"
+            app:iconGravity="textStart"
+            app:iconTint="@android:color/white"
+            app:backgroundTint="?attr/colorPrimary"
+            android:contentDescription="Send" />
+
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
