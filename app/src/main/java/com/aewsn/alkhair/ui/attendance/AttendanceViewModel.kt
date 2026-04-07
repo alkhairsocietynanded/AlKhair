@@ -146,9 +146,12 @@ class AttendanceViewModel @Inject constructor(
     fun markSelfPresent() {
         _saveState.value = UiState.Loading
         viewModelScope.launch {
-            val currentUid = authRepoManager.getCurrentUserUid()
+            var currentUid = authRepoManager.getCurrentUserUid()
             if (currentUid == null) {
-                _saveState.value = UiState.Error("User not logged in")
+                currentUid = authRepoManager.getLocalLoginUid()
+            }
+            if (currentUid == null) {
+                _saveState.value = UiState.Error("User not logged in locally")
                 return@launch
             }
 

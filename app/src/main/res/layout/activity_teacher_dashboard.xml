@@ -209,8 +209,7 @@
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
-                                    android:src="@drawable/ic_calendar"
-                                    app:tint="#FFFFFF" />
+                                    android:src="@drawable/ic_calendar" />
                             </FrameLayout>
 
                             <LinearLayout
@@ -237,10 +236,8 @@
                         </RelativeLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Timetable Card REMOVED -->
-
                     <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/cardAskAi"
+                        android:id="@+id/cardChat"
                         android:layout_width="0dp"
                         android:layout_height="160dp"
                         android:layout_marginStart="8dp"
@@ -274,7 +271,7 @@
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
-                                    android:src="@drawable/ic_robot"
+                                    android:src="@drawable/ic_chat"
                                     app:tint="#FFFFFF" />
                             </FrameLayout>
 
@@ -287,14 +284,14 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Ask Ai"
+                                    android:text="Join"
                                     android:textColor="#CCFFFFFF"
                                     android:textSize="14sp" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Assistant"
+                                    android:text="Chat Group"
                                     android:textColor="#FFFFFF"
                                     android:textSize="20sp"
                                     android:textStyle="bold" />
@@ -991,48 +988,6 @@
                             android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-
-
-                    <!-- Ask AI -->
-
-                    <!-- Chat -->
-                    <LinearLayout
-                        android:id="@+id/cardChat"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_columnWeight="1"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                         <androidx.cardview.widget.CardView
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            app:cardBackgroundColor="#FEFCE8"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="0dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_chat"
-                                app:tint="#EAB308" />
-                        </androidx.cardview.widget.CardView>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Chat"
-                            android:textColor="#334155"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
                 </GridLayout>
 
 

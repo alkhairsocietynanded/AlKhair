@@ -36,7 +36,12 @@ object SupabaseModule {
             }
             install(Storage)
             install(Functions) // ✅ Enable Edge Functions
-            install(Realtime)  // ✅ Enable Realtime (Chat Feature)
+            install(Realtime) { // ✅ Enable Realtime (Chat Feature)
+                // Fix for WebSocket Heartbeat timeouts on Android
+                disconnectOnSessionLoss = false
+                heartbeatInterval = 15.seconds
+                reconnectDelay = 3.seconds
+            }
             
             // Explicitly set the serializer to ignore unknown keys - strict mode is false by default in recent versions but good to be explicit
             defaultSerializer = KotlinXSerializer(Json {

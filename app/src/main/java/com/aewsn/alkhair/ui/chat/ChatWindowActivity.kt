@@ -12,8 +12,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.aewsn.alkhair.data.models.ChatMessage
 import com.aewsn.alkhair.databinding.ActivityChatWindowBinding
+import com.aewsn.alkhair.utils.Roles
 import com.aewsn.alkhair.utils.UiState
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -26,6 +30,7 @@ class ChatWindowActivity : AppCompatActivity() {
         const val EXTRA_GROUP_TYPE = "group_type"
         const val EXTRA_GROUP_NAME = "group_name"
         const val EXTRA_SENDER_NAME = "sender_name"
+        const val EXTRA_USER_ROLE = "user_role"
     }
 
     private lateinit var binding: ActivityChatWindowBinding
@@ -36,6 +41,7 @@ class ChatWindowActivity : AppCompatActivity() {
     private var groupType: String = ""
     private var groupName: String = ""
     private var senderName: String = ""
+    private var userRole: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +54,7 @@ class ChatWindowActivity : AppCompatActivity() {
         groupType = intent.getStringExtra(EXTRA_GROUP_TYPE) ?: ""
         groupName = intent.getStringExtra(EXTRA_GROUP_NAME) ?: "Chat"
         senderName = intent.getStringExtra(EXTRA_SENDER_NAME) ?: ""
+        userRole = intent.getStringExtra(EXTRA_USER_ROLE) ?: ""
 
         if (groupId.isEmpty()) {
             Toast.makeText(this, "Invalid chat group", Toast.LENGTH_SHORT).show()
@@ -61,6 +68,7 @@ class ChatWindowActivity : AppCompatActivity() {
         setupSendButton()
         observeMessages()
         observeSendState()
+        observeDeleteState()
 
         // Start observing messages for this group
         viewModel.observeMessages(groupId, groupType)
@@ -99,13 +107,35 @@ class ChatWindowActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        // Use ViewModel's currentUserId for sent/received differentiation
-        adapter = ChatMessageAdapter(currentUserId = viewModel.currentUserId)
+        val isAdmin = userRole.equals(Roles.ADMIN, ignoreCase = true)
+
+        adapter = ChatMessageAdapter(
+            currentUserId = viewModel.currentUserId,
+            isAdmin = isAdmin,
+            onMessageLongPressed = { message -> showDeleteOptions(message) }
+        )
         val layoutManager = LinearLayoutManager(this).apply {
             reverseLayout = true
         }
         binding.rvMessages.layoutManager = layoutManager
         binding.rvMessages.adapter = adapter
+    }
+
+    private fun showDeleteOptions(message: ChatMessage) {
+        val isOwnMessage = message.senderId == viewModel.currentUserId
+        val isAdmin = userRole.equals(Roles.ADMIN, ignoreCase = true)
+
+        // Only show delete if it's own message OR admin
+        if (!isOwnMessage && !isAdmin) return
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Delete Message")
+            .setMessage("\"${message.messageText.take(60)}${if (message.messageText.length > 60) "…" else ""}\"")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete") { _, _ ->
+                viewModel.deleteMessage(message.id)
+            }
+            .show()
     }
 
     private fun setupSendButton() {
@@ -168,6 +198,26 @@ class ChatWindowActivity : AppCompatActivity() {
                             viewModel.resetSendState()
                         }
 
+                        else -> Unit
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeDeleteState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.deleteState.collectLatest { state ->
+                    when (state) {
+                        is UiState.Success -> {
+                            Toast.makeText(this@ChatWindowActivity, "Message deleted", Toast.LENGTH_SHORT).show()
+                            viewModel.resetDeleteState()
+                        }
+                        is UiState.Error -> {
+                            Toast.makeText(this@ChatWindowActivity, "Failed to delete: ${state.message}", Toast.LENGTH_SHORT).show()
+                            viewModel.resetDeleteState()
+                        }
                         else -> Unit
                     }
                 }

@@ -218,10 +218,7 @@ class TeacherDashboardActivity : AppCompatActivity() {
             binding.swipeRefreshLayout.isRefreshing = false
         }
 
-        // --- Ask AI ---
-        binding.cardAskAi.setOnClickListener {
-            startActivity(Intent(this, com.aewsn.alkhair.ui.aichat.AiChatActivity::class.java))
-        }
+
 
         binding.cardApplyLeave.setOnClickListener {
              com.aewsn.alkhair.ui.dashboard.leave.TeacherApplyLeaveBottomSheet().show(supportFragmentManager, com.aewsn.alkhair.ui.dashboard.leave.TeacherApplyLeaveBottomSheet.TAG)

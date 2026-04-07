@@ -42,7 +42,7 @@ class ChatListActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             
-            // Apply status bar padding to the AppBarLayout to fix the "blank space"
+            // Apply status bar padding to the AppBarLayout
             binding.appBarLayout.setPadding(0, systemBars.top, 0, 0)
             
             // Apply navigation bar padding to the RecyclerView
@@ -52,6 +52,11 @@ class ChatListActivity : AppCompatActivity() {
                 binding.rvChatGroups.paddingRight,
                 systemBars.bottom
             )
+
+            // ✅ Apply bottom margin to FAB so it stays above the navigation bar
+            val params = binding.fabAskAi.layoutParams as android.view.ViewGroup.MarginLayoutParams
+            params.bottomMargin = systemBars.bottom + (16 * resources.displayMetrics.density).toInt()
+            binding.fabAskAi.layoutParams = params
             
             insets
         }
@@ -59,6 +64,10 @@ class ChatListActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+        
+        binding.fabAskAi.setOnClickListener {
+            startActivity(Intent(this, com.aewsn.alkhair.ui.aichat.AiChatActivity::class.java))
+        }
     }
 
     private fun setupRecyclerView() {
@@ -115,6 +124,7 @@ class ChatListActivity : AppCompatActivity() {
             putExtra(ChatWindowActivity.EXTRA_GROUP_TYPE, group.groupType)
             putExtra(ChatWindowActivity.EXTRA_GROUP_NAME, group.groupName)
             putExtra(ChatWindowActivity.EXTRA_SENDER_NAME, viewModel.currentUserName)
+            putExtra(ChatWindowActivity.EXTRA_USER_ROLE, viewModel.currentUserRole)
         }
         startActivity(intent)
     }

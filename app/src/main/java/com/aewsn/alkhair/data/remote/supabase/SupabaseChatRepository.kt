@@ -9,10 +9,18 @@ import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.realtime
-import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onCompletion
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/** Realtime events ke liye sealed class — INSERT ya DELETE */
+sealed class ChatRealtimeEvent {
+    data class MessageInserted(val message: ChatMessage) : ChatRealtimeEvent()
+    data class MessageDeleted(val messageId: String) : ChatRealtimeEvent()
+}
 
 @Singleton
 class SupabaseChatRepository @Inject constructor(
@@ -23,8 +31,6 @@ class SupabaseChatRepository @Inject constructor(
         private const val TAG = "SupabaseChatRepo"
         private const val TABLE = "chat_messages"
     }
-
-
 
     /**
      * Fetch messages for a specific group after a given timestamp (delta sync)
@@ -60,29 +66,85 @@ class SupabaseChatRepository @Inject constructor(
     }
 
     /**
-     * Listen for real-time inserts for a specific group
+     * Delete a single message from Supabase by ID.
+     * The DB trigger will automatically insert into deleted_chat_messages tombstone table.
      */
-    suspend fun listenForGroupMessages(groupId: String): kotlinx.coroutines.flow.Flow<ChatMessage> {
-        val channel = supabase.channel("chat_messages_$groupId")
-        
-        val changeFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
-            table = TABLE
+    suspend fun deleteMessage(messageId: String): Result<Unit> {
+        return try {
+            supabase.from(TABLE).delete {
+                filter { eq("id", messageId) }
+            }
+            Log.d(TAG, "Message deleted from Supabase: $messageId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting message $messageId from Supabase", e)
+            Result.failure(e)
         }
-        
-        // Connect and join if not already connected
-        supabase.realtime.connect()
-        // join() completes when subscribed
-        channel.subscribe()
+    }
 
-        return changeFlow.mapNotNull { action ->
+    /**
+     * Tombstone sync — fetch IDs of messages deleted after a given timestamp.
+     * Used when device comes back online to catch up on missed deletions.
+     */
+    suspend fun fetchDeletedMessageIds(groupId: String, after: Long): Result<List<String>> {
+        return try {
+            @kotlinx.serialization.Serializable
+            data class TombstoneRow(
+                @kotlinx.serialization.SerialName("message_id") val messageId: String
+            )
+            val rows = supabase.from("deleted_chat_messages").select {
+                filter {
+                    eq("group_id", groupId)
+                    gt("deleted_at", after)
+                }
+            }.decodeList<TombstoneRow>()
+            Log.d(TAG, "Tombstone: ${rows.size} deleted IDs fetched for group $groupId since $after")
+            Result.success(rows.map { it.messageId })
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching deleted messages for group $groupId", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Listen for real-time INSERT + DELETE events for a specific group.
+     * Returns a Flow of ChatRealtimeEvent (MessageInserted or MessageDeleted).
+     */
+    suspend fun listenForGroupMessages(groupId: String): Flow<ChatRealtimeEvent> {
+        val channel = supabase.channel("chat_messages_${groupId}")
+
+        // 1️⃣ INSERT flow — naya message aaya
+        val insertFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+            table = TABLE
+        }.mapNotNull { action ->
             try {
                 val message = action.decodeRecord<ChatMessage>()
-                if (message.groupId == groupId) message else null
+                if (message.groupId == groupId) ChatRealtimeEvent.MessageInserted(message) else null
             } catch (e: Exception) {
-                Log.e(TAG, "Error decoding realtime message", e)
+                Log.e(TAG, "Error decoding inserted message", e)
                 null
             }
-        }.onCompletion {
+        }
+
+        // 2️⃣ DELETE flow — message delete hua
+        val deleteFlow = channel.postgresChangeFlow<PostgresAction.Delete>(schema = "public") {
+            table = TABLE
+        }.mapNotNull { action ->
+            try {
+                // DELETE event mein old_record se ID milti hai
+                val deletedId = action.oldRecord["id"]?.toString()?.removeSurrounding("\"")
+                Log.d(TAG, "Realtime DELETE event received, id=$deletedId")
+                if (deletedId != null) ChatRealtimeEvent.MessageDeleted(deletedId) else null
+            } catch (e: Exception) {
+                Log.e(TAG, "Error decoding deleted message", e)
+                null
+            }
+        }
+
+        supabase.realtime.connect()
+        channel.subscribe()
+
+        return merge(insertFlow, deleteFlow).onCompletion {
             channel.unsubscribe()
             supabase.realtime.removeChannel(channel)
         }

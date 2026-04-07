@@ -946,43 +946,7 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- Chat -->
-                    <LinearLayout
-                        android:id="@+id/cardChat"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_columnWeight="1"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="vertical">
 
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            app:cardBackgroundColor="#EFF6FF"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="0dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_chat"
-                                app:tint="#3B82F6" />
-                        </androidx.cardview.widget.CardView>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Chat Groups"
-                            android:textColor="#334155"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
 
                 </GridLayout>
 
@@ -1058,13 +1022,13 @@
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAskAi"
+        android:id="@+id/fabChat"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
-        android:contentDescription="Ask AI"
-        android:src="@drawable/ic_robot"
+        android:contentDescription="Chat Groups"
+        android:src="@drawable/ic_chat"
         app:backgroundTint="?attr/colorPrimary"
         app:tint="?attr/colorOnPrimary" />
 

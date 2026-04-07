@@ -31,7 +31,8 @@ class UserRepoManager @Inject constructor(
     private val supabaseUserRepository: SupabaseUserRepository,
     private val supabaseAuthRepository: SupabaseAuthRepository,
     private val pendingDeletionDao: PendingDeletionDao,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val appDataStore: com.aewsn.alkhair.data.datastore.AppDataStore
 ) : BaseRepoManager<User>() {
 
     /* ============================================================
@@ -45,7 +46,14 @@ class UserRepoManager @Inject constructor(
     suspend fun getUserById(uid: String): User? = localUserRepository.getUserByIdOneShot(uid)
 
     suspend fun getCurrentUser(): User? {
-        val uid = supabaseAuthRepository.currentUserUid() ?: return null
+        var uid = supabaseAuthRepository.currentUserUid()
+        if (uid == null) {
+            val localUid = appDataStore.getString("current_user_uid", "")
+            if (localUid.isNotEmpty()) uid = localUid
+        }
+        
+        if (uid == null) return null
+        
         val user = getUserById(uid) ?: return null
 
         // ✅ Re-hydrate if names are missing but IDs depend on them
@@ -62,9 +70,21 @@ class UserRepoManager @Inject constructor(
         return user
     }
 
-    fun getCurrentUserFlow(): Flow<User?> {
-        val uid = supabaseAuthRepository.currentUserUid() ?: return kotlinx.coroutines.flow.flowOf(null)
-        return localUserRepository.getUserById(uid)
+    fun getCurrentUserFlow(): Flow<User?> = kotlinx.coroutines.flow.flow {
+        var uid = supabaseAuthRepository.currentUserUid()
+        if (uid == null) {
+            val localUid = appDataStore.getString("current_user_uid", "")
+            if (localUid.isNotEmpty()) uid = localUid
+        }
+        
+        if (uid == null) {
+            emit(null)
+            return@flow
+        }
+        
+        localUserRepository.getUserById(uid).collect { user ->
+            emit(user)
+        }
     }
 
     suspend fun getUsersByRole(role: String): Result<List<User>> {

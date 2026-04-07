@@ -75,14 +75,16 @@ class ChatRepoManager @Inject constructor(
        ============================================================ */
 
     /**
-     * Initial/foreground sync — fetch messages for a group after given timestamp
+     * Initial/foreground sync — fetch messages + apply missed deletions (tombstone sync).
+     * Called when ChatWindow opens, or swipe-refresh.
+     * Handles offline devices catching up on missed delete events.
      */
     suspend fun syncGroupMessages(groupId: String, after: Long): Result<Unit> {
         return try {
+            // 1️⃣ Sync new/updated messages (existing logic)
             val result = remoteRepo.getMessagesForGroup(groupId, after)
             result.onSuccess { messages ->
                 if (messages.isNotEmpty()) {
-                    // Mark as synced and resolve sender name locally
                     val syncedMessages = messages.map { msg ->
                         var user = userRepository.getUserByIdOneShot(msg.senderId)
                         if (user == null) {
@@ -93,16 +95,22 @@ class ChatRepoManager @Inject constructor(
                                 }
                             }
                         }
-                        
-                        msg.copy(
-                            isSynced = true,
-                            senderName = user?.name ?: "Unknown"
-                        )
+                        msg.copy(isSynced = true, senderName = user?.name ?: "Unknown")
                     }
                     localRepo.insertMessages(syncedMessages)
                     Log.d(TAG, "Synced ${syncedMessages.size} messages for group $groupId")
                 }
             }
+
+            // 2️⃣ ✅ Tombstone sync — apply missed deletions (offline devices ka fix)
+            // after=0L means fetch all deletions; in future can be timestamp-based
+            remoteRepo.fetchDeletedMessageIds(groupId, after).onSuccess { deletedIds ->
+                if (deletedIds.isNotEmpty()) {
+                    Log.d(TAG, "Tombstone: applying ${deletedIds.size} missed deletions for group $groupId")
+                    deletedIds.forEach { id -> localRepo.deleteById(id) }
+                }
+            }
+
             result.map { }
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing messages for group $groupId", e)
@@ -112,30 +120,41 @@ class ChatRepoManager @Inject constructor(
 
     /**
      * Start a real-time subscription for the current group.
-     * This Flow runs as long as the caller's Job is active.
+     * Handles both INSERT (new message) and DELETE (message removed by anyone) events.
      */
     suspend fun startRealtimeSubscription(groupId: String) {
         try {
-            remoteRepo.listenForGroupMessages(groupId).collect { message ->
-                Log.d(TAG, "Realtime: New message received ${message.id}")
-                
-                // Resolve sender name and mark as synced
-                var user = userRepository.getUserByIdOneShot(message.senderId)
-                if (user == null) {
-                    supabaseUserRepo.getUserById(message.senderId).onSuccess { remoteUser ->
-                        if (remoteUser != null) {
-                            userRepository.insertUser(remoteUser)
-                            user = remoteUser
+            remoteRepo.listenForGroupMessages(groupId).collect { event ->
+                when (event) {
+                    is com.aewsn.alkhair.data.remote.supabase.ChatRealtimeEvent.MessageInserted -> {
+                        val message = event.message
+                        Log.d(TAG, "Realtime INSERT: ${message.id}")
+
+                        // Resolve sender name
+                        var user = userRepository.getUserByIdOneShot(message.senderId)
+                        if (user == null) {
+                            supabaseUserRepo.getUserById(message.senderId).onSuccess { remoteUser ->
+                                if (remoteUser != null) {
+                                    userRepository.insertUser(remoteUser)
+                                    user = remoteUser
+                                }
+                            }
                         }
+
+                        val syncedMessage = message.copy(
+                            isSynced = true,
+                            senderName = user?.name ?: "Unknown"
+                        )
+                        localRepo.insertMessage(syncedMessage)
+                    }
+
+                    is com.aewsn.alkhair.data.remote.supabase.ChatRealtimeEvent.MessageDeleted -> {
+                        val deletedId = event.messageId
+                        Log.d(TAG, "Realtime DELETE: $deletedId — removing from local DB")
+                        // ✅ Doosre devices par bhi local DB se delete karo
+                        localRepo.deleteById(deletedId)
                     }
                 }
-                
-                val syncedMessage = message.copy(
-                    isSynced = true,
-                    senderName = user?.name ?: "Unknown"
-                )
-                
-                localRepo.insertMessage(syncedMessage)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Exception in realtime subscription for $groupId", e)
@@ -143,8 +162,24 @@ class ChatRepoManager @Inject constructor(
     }
 
     /* ============================================================
-       🗑️ CLEAR
+       🗑️ DELETE MESSAGE — Local First → Remote Sync
        ============================================================ */
+
+    suspend fun deleteMessage(messageId: String): Result<Unit> {
+        return try {
+            // 1️⃣ Delete from local DB immediately (UI updates via Flow)
+            localRepo.deleteById(messageId)
+            Log.d(TAG, "Message deleted locally: $messageId")
+
+            // 2️⃣ Delete from Supabase immediately (best effort)
+            remoteRepo.deleteMessage(messageId)
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting message $messageId", e)
+            Result.failure(e)
+        }
+    }
 
     suspend fun clearLocal() {
         localRepo.clearAll()

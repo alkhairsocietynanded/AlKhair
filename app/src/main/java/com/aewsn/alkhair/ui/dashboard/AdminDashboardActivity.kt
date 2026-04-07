@@ -152,7 +152,7 @@ class AdminDashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, com.aewsn.alkhair.ui.result.ResultActivity::class.java))
         }
 
-        binding.cardChat.setOnClickListener {
+        binding.fabChat.setOnClickListener {
             startActivity(Intent(this, com.aewsn.alkhair.ui.chat.ChatListActivity::class.java))
         }
 
@@ -208,11 +208,6 @@ class AdminDashboardActivity : AppCompatActivity() {
 
         binding.swipeRefreshLayout.setOnRefreshListener {
             adminDashboardViewModel.refreshData()
-        }
-        
-        binding.fabAskAi.isVisible = true
-        binding.fabAskAi.setOnClickListener {
-            startActivity(Intent(this, com.aewsn.alkhair.ui.aichat.AiChatActivity::class.java))
         }
     }
 

@@ -70,9 +70,13 @@ class ChatViewModel @Inject constructor(
     ) {
         if (text.isBlank()) return
 
-        val senderId = authRepoManager.getCurrentUserUid() ?: return
-
         viewModelScope.launch {
+            var senderId = authRepoManager.getCurrentUserUid()
+             if (senderId == null) {
+                 senderId = authRepoManager.getLocalLoginUid()
+             }
+             if (senderId == null) return@launch
+
             _sendState.value = UiState.Loading
             val result = chatRepoManager.sendMessage(
                 messageText = text.trim(),
@@ -91,5 +95,24 @@ class ChatViewModel @Inject constructor(
 
     fun resetSendState() {
         _sendState.value = UiState.Idle
+    }
+
+    private val _deleteState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
+    val deleteState: StateFlow<UiState<Unit>> = _deleteState
+
+    fun deleteMessage(messageId: String) {
+        viewModelScope.launch {
+            _deleteState.value = UiState.Loading
+            val result = chatRepoManager.deleteMessage(messageId)
+            _deleteState.value = if (result.isSuccess) {
+                UiState.Success(Unit)
+            } else {
+                UiState.Error(result.exceptionOrNull()?.message ?: "Failed to delete message")
+            }
+        }
+    }
+
+    fun resetDeleteState() {
+        _deleteState.value = UiState.Idle
     }
 }

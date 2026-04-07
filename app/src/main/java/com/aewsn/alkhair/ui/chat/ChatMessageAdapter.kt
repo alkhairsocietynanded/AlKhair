@@ -13,7 +13,9 @@ import java.util.Date
 import java.util.Locale
 
 class ChatMessageAdapter(
-    private val currentUserId: String
+    private val currentUserId: String,
+    private val isAdmin: Boolean = false,
+    private val onMessageLongPressed: (message: ChatMessage) -> Unit
 ) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
     companion object {
@@ -61,6 +63,13 @@ class ChatMessageAdapter(
         fun bind(message: ChatMessage) {
             binding.tvMessageText.text = message.messageText
             binding.tvTimestamp.text = timeFormat.format(Date(message.updatedAt))
+
+            // ✅ chatBubble directly set karo — root FrameLayout touch nahi pakadta
+            binding.chatBubble.isLongClickable = true
+            binding.chatBubble.setOnLongClickListener {
+                onMessageLongPressed(message)
+                true
+            }
         }
     }
 
@@ -71,6 +80,18 @@ class ChatMessageAdapter(
             binding.tvSenderName.text = message.senderName.ifEmpty { "Unknown" }
             binding.tvMessageText.text = message.messageText
             binding.tvTimestamp.text = timeFormat.format(Date(message.updatedAt))
+
+            // ✅ chatBubble LinearLayout directly set karo
+            if (isAdmin) {
+                binding.chatBubble.isLongClickable = true
+                binding.chatBubble.setOnLongClickListener {
+                    onMessageLongPressed(message)
+                    true
+                }
+            } else {
+                binding.chatBubble.setOnLongClickListener(null)
+                binding.chatBubble.isLongClickable = false
+            }
         }
     }
 }

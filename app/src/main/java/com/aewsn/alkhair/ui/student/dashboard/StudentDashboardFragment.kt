@@ -72,16 +72,7 @@ class StudentDashboardFragment : Fragment() {
 
 
 
-        binding.cardAskAi.setOnClickListener {
-            startActivity(
-                Intent(
-                    requireContext(),
-                    com.aewsn.alkhair.ui.aichat.AiChatActivity::class.java
-                )
-            )
-        }
-
-        binding.actionStudyMaterial.setOnClickListener {
+               binding.actionStudyMaterial.setOnClickListener {
             startActivity(
                 Intent(
                     requireContext(),
@@ -110,7 +101,7 @@ class StudentDashboardFragment : Fragment() {
             // showPurchasePremiumDialog("Results")
             com.aewsn.alkhair.ui.result.ResultActivity.start(requireContext())
         }
-        binding.actionChat.setOnClickListener {
+        binding.cardChat.setOnClickListener {
             startActivity(Intent(requireContext(), com.aewsn.alkhair.ui.chat.ChatListActivity::class.java))
         }
         binding.swipeRefreshLayout.setOnRefreshListener {

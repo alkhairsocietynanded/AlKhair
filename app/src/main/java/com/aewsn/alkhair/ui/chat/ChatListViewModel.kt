@@ -40,7 +40,12 @@ class ChatListViewModel @Inject constructor(
         viewModelScope.launch {
             _groupsState.value = UiState.Loading
             try {
-                val uid = authRepoManager.getCurrentUserUid()
+                // Try Supabase Auth first, fallback to our offline DataStore
+                var uid = authRepoManager.getCurrentUserUid()
+                if (uid == null) {
+                    uid = authRepoManager.getLocalLoginUid()
+                }
+                
                 if (uid == null) {
                     _groupsState.value = UiState.Error("User not logged in")
                     return@launch
@@ -48,7 +53,7 @@ class ChatListViewModel @Inject constructor(
 
                 val user = userRepoManager.getUserById(uid)
                 if (user == null) {
-                    _groupsState.value = UiState.Error("User data not found")
+                    _groupsState.value = UiState.Error("User data not found offline")
                     return@launch
                 }
 
