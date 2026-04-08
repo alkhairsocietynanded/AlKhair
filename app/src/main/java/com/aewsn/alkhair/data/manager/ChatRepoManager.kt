@@ -24,6 +24,7 @@ class ChatRepoManager @Inject constructor(
     private val remoteRepo: SupabaseChatRepository,
     private val userRepository: LocalUserRepository,
     private val supabaseUserRepo: com.aewsn.alkhair.data.remote.supabase.SupabaseUserRepository,
+    private val storageManager: StorageManager,
     private val workManager: WorkManager
 ) {
 
@@ -47,8 +48,33 @@ class ChatRepoManager @Inject constructor(
         groupId: String,
         groupType: String,
         senderId: String,
-        senderName: String
+        senderName: String,
+        mediaBytes: ByteArray? = null,
+        mimeType: String? = null,
+        mediaFileName: String? = null
     ): Result<Unit> {
+
+        // 1️⃣ Upload media via StorageManager.uploadBytes() — bytes already read by Activity
+        var resolvedMediaUrl: String? = null
+        var resolvedMediaType: String? = null
+        if (mediaBytes != null && mediaFileName != null) {
+            val folder = "chat/$groupId"
+            val uniqueName = "${System.currentTimeMillis()}_$mediaFileName"
+            val resolvedMime = mimeType ?: "application/octet-stream"
+            storageManager.uploadBytes(
+                bytes = mediaBytes,
+                folder = folder,
+                fileName = uniqueName,
+                contentType = resolvedMime
+            ).onSuccess { url ->
+                resolvedMediaUrl = url
+                resolvedMediaType = if (resolvedMime.startsWith("image/")) "image" else "document"
+                Log.d(TAG, "Chat media uploaded: $url")
+            }.onFailure { e ->
+                Log.e(TAG, "Chat media upload failed: ${e.message}")
+            }
+        }
+
         val message = ChatMessage(
             id = UUID.randomUUID().toString(),
             senderId = senderId,
@@ -56,15 +82,17 @@ class ChatRepoManager @Inject constructor(
             groupId = groupId,
             groupType = groupType,
             messageText = messageText,
+            mediaUrl = resolvedMediaUrl,
+            mediaType = resolvedMediaType,
             updatedAt = System.currentTimeMillis(),
             isSynced = false
         )
 
-        // 1️⃣ Save to Local immediately (UI will auto-update via Flow)
+        // 2️⃣ Save to Local immediately (UI auto-update via Flow)
         localRepo.insertMessage(message)
         Log.d(TAG, "Message saved locally: ${message.id}")
 
-        // 2️⃣ Schedule Background Upload
+        // 3️⃣ Schedule Background Upload to Supabase table
         scheduleUploadWorker()
 
         return Result.success(Unit)

@@ -33,6 +33,49 @@
             android:textColor="?attr/colorPrimary"
             android:textStyle="bold" />
 
+        <!-- Media Image (image/jpeg, image/png etc.) -->
+        <ImageView
+            android:id="@+id/ivMedia"
+            android:layout_width="240dp"
+            android:layout_height="180dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            android:contentDescription="Attached image"
+            android:background="@drawable/bg_rounded_card" />
+
+        <!-- Document row (PDF / file) -->
+        <LinearLayout
+            android:id="@+id/llDocument"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_attachment"
+                app:tint="?attr/colorPrimary"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:id="@+id/tvDocumentName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:maxWidth="180dp"
+                android:maxLines="1"
+                android:ellipsize="middle"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorPrimary"
+                android:text="document.pdf" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/tvMessageText"
             android:layout_width="wrap_content"
@@ -56,3 +99,4 @@
     </LinearLayout>
 
 </FrameLayout>
+

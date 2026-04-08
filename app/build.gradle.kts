@@ -116,4 +116,7 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+
+    // Glide (Image loading)
+    implementation(libs.glide)
 }

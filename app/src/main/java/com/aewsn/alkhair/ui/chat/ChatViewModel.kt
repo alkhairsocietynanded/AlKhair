@@ -66,9 +66,12 @@ class ChatViewModel @Inject constructor(
      */
     fun sendMessage(
         text: String,
-        senderName: String
+        senderName: String,
+        mediaBytes: ByteArray? = null,
+        mimeType: String? = null,
+        mediaFileName: String? = null
     ) {
-        if (text.isBlank()) return
+        if (text.isBlank() && mediaBytes == null) return
 
         viewModelScope.launch {
             var senderId = authRepoManager.getCurrentUserUid()
@@ -83,7 +86,10 @@ class ChatViewModel @Inject constructor(
                 groupId = currentGroupId,
                 groupType = currentGroupType,
                 senderId = senderId,
-                senderName = senderName
+                senderName = senderName,
+                mediaBytes = mediaBytes,
+                mimeType = mimeType,
+                mediaFileName = mediaFileName
             )
             _sendState.value = if (result.isSuccess) {
                 UiState.Success(Unit)
@@ -100,14 +106,22 @@ class ChatViewModel @Inject constructor(
     private val _deleteState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val deleteState: StateFlow<UiState<Unit>> = _deleteState
 
-    fun deleteMessage(messageId: String) {
+    fun deleteMessages(messageIds: List<String>) {
         viewModelScope.launch {
             _deleteState.value = UiState.Loading
-            val result = chatRepoManager.deleteMessage(messageId)
-            _deleteState.value = if (result.isSuccess) {
+            var allSuccess = true
+            var errorMsg = ""
+            for (id in messageIds) {
+                val result = chatRepoManager.deleteMessage(id)
+                if (!result.isSuccess) {
+                    allSuccess = false
+                    errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
+                }
+            }
+            _deleteState.value = if (allSuccess) {
                 UiState.Success(Unit)
             } else {
-                UiState.Error(result.exceptionOrNull()?.message ?: "Failed to delete message")
+                UiState.Error("Failed to delete some messages: $errorMsg")
             }
         }
     }

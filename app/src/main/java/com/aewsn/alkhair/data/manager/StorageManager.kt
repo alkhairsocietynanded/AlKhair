@@ -19,7 +19,8 @@ class StorageManager @Inject constructor(
     }
 
     /**
-     * Upload a file to Supabase Storage
+     * Upload a file to Supabase Storage from URI.
+     * NOTE: URI must be readable by the context (use application context or pass bytes directly).
      */
     suspend fun uploadFile(
         fileUri: Uri,
@@ -38,21 +39,42 @@ class StorageManager @Inject constructor(
             val bytes = context.contentResolver.openInputStream(fileUri)?.use { it.readBytes() }
                 ?: return Result.failure(Exception("Could not read file from URI"))
 
-            // Upload (upsert=true to overwrite if exists)
-            bucket.upload(path, bytes) {
-                upsert = true
-            }
-
-            // Get Public URL
-            val publicUrl = bucket.publicUrl(path)
-            Log.d(TAG, "Upload success: $publicUrl")
-
-            Result.success(publicUrl)
+            uploadBytes(bytes = bytes, folder = folder, fileName = name)
         } catch (e: Exception) {
             Log.e(TAG, "Upload failed", e)
             Result.failure(e)
         }
     }
+
+    /**
+     * Upload raw bytes to Supabase Storage.
+     * Prefer this when bytes are already read in Activity context (content picker URIs).
+     */
+    suspend fun uploadBytes(
+        bytes: ByteArray,
+        folder: String = "uploads",
+        fileName: String,
+        contentType: String = "application/octet-stream"
+    ): Result<String> {
+        return try {
+            val path = "$folder/$fileName"
+            val bucket = supabaseClient.storage.from(BUCKET_NAME)
+            Log.d(TAG, "Uploading ${bytes.size} bytes to $path (type=$contentType)")
+
+            bucket.upload(path, bytes) {
+                upsert = true
+                this.contentType = io.ktor.http.ContentType.parse(contentType)
+            }
+
+            val publicUrl = bucket.publicUrl(path)
+            Log.d(TAG, "Upload success: $publicUrl")
+            Result.success(publicUrl)
+        } catch (e: Exception) {
+            Log.e(TAG, "Upload bytes failed: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 
     /**
      * Delete a file using its Supabase Storage URL

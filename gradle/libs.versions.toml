@@ -1,7 +1,7 @@
 [versions]
 agp = "9.1.0"
 barcodeScanning = "17.3.0"
-bom = "3.4.1"
+bom = "3.5.0"
 cameraxVersion = "1.6.0"
 datastorePreferences = "1.2.1"
 ksp = "2.3.6"  # Must match your Kotlin version prefix
@@ -35,6 +35,7 @@ retrofit = "3.0.0"
 markwon = "4.6.2"
 guava = "33.5.0-android"
 firebaseBom = "34.11.0"
+glide = "5.0.5"
 
 [libraries]
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraxVersion" }
@@ -67,7 +68,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
-ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
+#ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientAndroid" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
@@ -86,6 +87,7 @@ converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
