@@ -1,119 +1,161 @@
-# AlKhair Project Architecture & Patterns
+# 🏛 AlKhair Master Guide (AGENT.md)
 
-This document outlines the architectural patterns, technology stack, and coding standards used in the AlKhair Android application. It serves as a guide for developers and AI agents working on the codebase.
+This document is the **Definitive Technical Reference** for the AlKhair Android project. It provides exhaustive detail on every architectural component, synchronization logic, and implementation pattern, enabling developers and AI agents to understand the entire project context from a single file.
 
-## 🏗 Architecture Overview
+---
 
-The project follows the **MVVM (Model-View-ViewModel)** architecture with the **Repository Pattern** and **Clean Architecture** principles.
+## 🏗 High-Level Architecture (MVVM + Clean)
 
-- **UI Layer**: Activities/Fragments (View) observe data from ViewModels. ViewBinding is strictly used (No Jetpack Compose yet).
-- **ViewModel Layer**: Manages UI state, handles business logic, and interacts with RepoManagers. Uses `StateFlow` for reactive data streams.
-- **Data Layer**:
-    - **Managers/Repositories**: Abstract data sources (`*RepoManager` classes). Control the synchronization logic and data flow.
-    - **Local Data**: Room Database (SQLite) acting as the Single Source of Truth for the UI.
-    - **Remote Data**: Supabase (Backend-as-a-Service) handles Auth, PostgREST (Database), and Storage.
-    - **Background Sync**: `WorkManager` heavily utilized for offline-first operations (`*UploadWorker`).
+The project follows a strict **Offline-First** architecture with **Room** as the Single Source of Truth (SSOT).
 
-## 🛠 Technology Stack
+### Structural Layers:
+1.  **UI Layer**: Uses **ViewBinding** in Fragments. Fragments observe data streams (`Flow`/`StateFlow`) from ViewModels.
+2.  **ViewModel Layer**: Manages UI state using a sealed `UiState<T>`. Leverages Hilt for dependency injection.
+3.  **Manager Layer (RepoManagers)**: Singletons that orchestrate data flow between Room (Local) and Supabase (Remote).
+4.  **Network/Remote Layer**: Uses **Supabase SDK** for Auth, Database (PostgREST), Storage, and Realtime. **Retrofit** is used for legacy or third-party n8n APIs.
+5.  **Synchronization Layer**: `AppDataSyncManager` handles bulk periodic syncs, while `WorkManager` handles background uploads of local changes.
 
-Detailed in `libs.versions.toml`:
-- **Android & Kotlin**: AGP 9.1.0, Kotlin 2.3.20, KSP 2.3.6.
-- **Dependency Injection**: Hilt (Dagger) (`@HiltAndroidApp`, `@HiltWorker`, `@HiltViewModel`).
-- **Async & Reactive**: Kotlin Coroutines & Flow.
-- **Database**: Room 2.8.4.
-- **Network**: Retrofit (n8n/Custom APIs) & Supabase SDK (Auth, Postgrest, Storage, Functions).
-- **Push Notifications**: Firebase Cloud Messaging (FCM) via Supabase Edge Functions.
-- **UI & Layouts**: XML Layouts, ViewBinding, Material 3, ConstraintLayout, MPAndroidChart (Graphs), Kizitonwose Calendar, SwipeRefreshLayout.
-- **Background Work**: WorkManager (for generic and data upload work).
-- **Utilities**: MLKit Barcode Scanning + CameraX (Scanner feature), Markwon (Markdown rendering).
+---
 
-## 🧩 Key Patterns
+## 🔁 Synchronization Engine (`AppDataSyncManager`)
 
-### 1. Synchronization (`AppDataSyncManager`)
-The app uses a robust "Offline-First" server synchronization strategy.
-- **Single Source of Truth**: The UI *always* observes the local Room database (`Flow<List<T>>`).
-- **Sync Process**:
-    1. **Trigger**: `syncAllData()` is called (e.g., on app start, refresh).
-    2. **Locking**: A `Mutex` ensures only one sync runs at a time.
-    3. **Metadata First**: Syncs core hierarchies (Classes, Divisions, Subjects) sequentially first.
-    4. **Role-Based Sync**:
-        - **Admin**: Syncs ALL data (global sync).
-        - **Teacher**: Syncs Global Announcements, Personal Salary, and Class-specific data (Students, Attendance, Homework, etc.).
-        - **Student**: Syncs Personal Profile, Fees, Attendance, and Class-specific data.
-    5. **Deletions**: Checks a `deleted_records` table (Tombstone pattern) to remove local stale data via `SupabaseDeletionRepository`.
-    6. **Timestamp Delta**: Tracks `last_sync_timestamp` in `AppDataStore` to fetch only delta changes (`updated_at_ms > last_sync`).
+The sync engine uses a multi-stage approach to ensure data consistency and referential integrity.
 
-### 2. The Repository/Manager Pattern (`*RepoManager`)
-Data access logic is completely encapsulated within "RepoManager" classes (e.g., `UserRepoManager`, `TimetableRepoManager`).
-- **Structure**:
-    - `observeLocal()`: Returns `Flow<List<T>>` directly from the Room DAO to the ViewModel.
-    - `sync(after: Long)`: Fetches delta remote data from Supabase and performs bulk inserts/updates to the local DB.
-    - **Creation/Updates (Local First)**: Most entity creation functions first write to the Room database, then enqueue a `*UploadWorker` via WorkManager for background syncing to Supabase.
-    - **Exceptions (Remote First)**: User creation happens in Supabase Auth first, then syncs locally.
+### Detailed Sync Protocol (5 Steps):
+1.  **Metadata (Sequential)**: 
+    - Syncs `Classes` and `Divisions`. 
+    - *Why?* Most other tables (Users, Homework, etc.) have foreign keys or logical dependencies on specific Class/Division IDs.
+2.  **Global Level-1 Parallel Jobs**: 
+    - Syncs `Subjects`, `Exams`, `AppConfig`, and `Timetable`. 
+    - These are lightweight metadata tables needed for rendering lists.
+3.  **Role-Based Deep Sync**:
+    - **ADMIN Strategy**: 
+        - Parallel sync of ALL tables: `Users`, `Fees`, `Salary`, `Homework`, `Announcements`, `Attendance`, `Leaves`, `Syllabus`, `StudyMaterials`.
+    - **TEACHER Strategy**: 
+        - Personal `Salary` sync.
+        - `syncClassStudents` (awaiting result) → followed by `syncLeavesForClass`.
+        - Parallel sync of class-specific `Homework`, `Attendance`, `Fees`, `Syllabus`, and `StudyMaterials` (filtered by `classId` and `shift`).
+    - **STUDENT Strategy**: 
+        - `syncUserProfile` (awaiting result).
+        - Parallel sync of personal `Fees`, `Attendance`, `Leaves`, and class-specific `Homework`/`Announcements`.
+4.  **Tombstone Delete Sync**: 
+    - Fetches records from the `deleted_records` table in Supabase updated after `last_sync_timestamp`.
+    - Purges local Room records corresponding to the returned `record_id` and `type`.
+5.  **Integrity Sync (Results)**: 
+    - Syncs `Results` only after all dependencies (Users, Subjects, Exams) are local.
 
-### 3. Background Workers (`*UploadWorker`)
-Extensive use of `WorkManager` for asynchronous uploads:
-- Every data model capable of offline mutation has a corresponding worker (e.g., `HomeworkUploadWorker`, `AttendanceUploadWorker`).
-- This guarantees that offline changes are pushed to Supabase reliably once network connectivity is restored.
+### Key Logic:
+- **Mutex Guard**: Uses `kotlinx.coroutines.sync.Mutex` to ensure `syncAllData` is never re-entered while running.
+- **Wipe Detection**: If `currentUser` profile is missing locally during sync, it resets the timestamp to `0`, forcing a full re-sync (handles post-migration or clearing app data).
 
-### 4. Push Notifications (FCM + Supabase)
-- Devices register their FCM tokens locally and sync them to Supabase.
-- Supabase Edge Functions coupled with Database Webhooks are utilized to trigger push notifications when certain database events occur (e.g., new Homework, new Announcement).
+---
 
-### 5. Dependency Injection (Hilt)
-- **AppModule**: Provides global singletons like `AppDatabase`, all DAOs, `Gson`, `AppDataStore`, Retrofit instances.
-- **ViewModels**: Initialized with `@HiltViewModel` and constructor `@Inject`.
-- **Workers**: Initialized with `@HiltWorker`.
+## 🧩 Key Implementation Patterns
 
-### 6. UI State Management
-ViewModels must map repository `Flow`s to a sealed UI state.
+### 1. Repository Manager Blueprint (`*RepoManager`)
+Standardizes the "Local-First" data flow:
 ```kotlin
-sealed class UiState<out T> {
-    object Idle : UiState<Nothing>()
-    object Loading : UiState<Nothing>()
-    data class Success<T>(val data: T) : UiState<T>()
-    data class Error(val message: String) : UiState<Nothing>()
+// Example Pattern
+fun observeLocal(): Flow<List<T>> = localRepo.getAll() // Direct from Room
+
+suspend fun create(item: T) {
+    localRepo.insert(item.copy(isSynced = false)) // UI updates via Flow
+    enqueueWorker() // WorkManager handles remote sync
+}
+
+suspend fun sync(after: Long) {
+    val remoteData = remoteRepo.fetch(after)
+    localRepo.bulkInsert(remoteData.map { it.copy(isSynced = true) })
 }
 ```
-- `StateFlow` requires a `SharingStarted.WhileSubscribed(5000)` strategy to conserve resources when the UI is not visible.
 
-## 📂 Project Structure
+### 2. WhatsApp-style Chat System
+Optimized for real-time performance and data efficiency.
+-   **Real-time Handlers**:
+    -   `INSERT`: Automatically inserts incoming remote message into Room.
+    -   `DELETE`: Purges local message entirely to support "Delete for Everyone".
+-   **Media Download-on-Demand**:
+    -   Remote `media_url` is stored, but file is not downloaded automatically.
+    -   User clicks download → `ChatRepoManager.downloadMedia(message)` → `StorageManager.downloadPublicFile` saves to `cacheDir/chat_media/`.
+    -   Room `local_uri` is updated.
+-   **Tombstone Catch-up**: `syncGroupMessages` fetches missed deletions (`fetchDeletedMessageIds`) for devices that were offline during realtime events.
 
-- `com.aewsn.alkhair`
-    - `di`: Hilt Dependency Injection Modules (`AppModule.kt`).
-    - `data`:
-        - `local`: Room Database implementation (`dao`, `database`, `entities`).
-        - `remote`: Networking logic (`supabase` API, Retrofit `api`).
-        - `models`: Universal data models/DTOs.
-        - `manager`: Abstract Repositories (`AppDataSyncManager`, `base`, `*RepoManager`).
-        - `datastore`: Jetpack DataStore implementations (`AppDataStore`).
-        - `worker`: WorkManager classes (`*UploadWorker`).
-        - `repository`: Core repositories without specific manager-level abstractions (like Auth, Deletion logic).
-    - `ui`: Feature-based packaging (e.g., `dashboard`, `timetable`, `student`, `scanner`, `auth`).
-    - `utils`: Shared constants, extensions, role definitions.
+### 3. Storage Management (`StorageManager`)
+-   **Byte-based Upload**: Encodes URIs to bytes in the UI thread/Activity result and passes them to `uploadBytes()` for maximum reliability.
+-   **Caching**: Uses `context.cacheDir` for all chat media to allow OS-managed cleanup if space is low, but persists links in Room for fast retrieval.
 
-## 📝 Coding Standards
+---
 
-1. **Naming**:
-    - Classes: `PascalCase` (e.g., `TimetableFragment`).
-    - Functions/Variables: `camelCase` (e.g., `syncAllData()`, `loadHomework()`).
-    - Layouts: `snake_case` (e.g., `fragment_teacher_dashboard.xml`, `item_student_attendance.xml`).
-2. **Safety & Kotlin Idioms**:
-    - Avoid `!!`. Extensive use of `?` and safe casts `as?` to prevent `NullPointerException` crashes.
-3. **Logging**: Utilize `companion object { const val TAG = "ClassName" }` and Android `Log` for debugging.
-4. **Resources**: Hardcoded strings are discouraged in layouts. Use `strings.xml`.
+## ⚙️ Background Synchronization (`WorkManager`)
 
-## 🚀 Workflows
+Workers ensure that no offline mutation is lost.
+-   **Unique Work Policies**: Uses `ExistingWorkPolicy.APPEND_OR_REPLACE` to queue updates.
+-   **Retry Strategy**: `Result.retry()` is returned on network failure with an `EXPONENTIAL` backoff.
+-   **Specific Work Names**:
+    -   `"ChatUploadWork"`: For messages.
+    -   `"HomeworkUploadWork"`: For assignments.
+    -   `"AttendanceUploadWork"`: For staff/admin tagging.
 
-### 1. Adding a New Data Model/Feature
-1. **Data layer**: Define the Room `Entity` in `data/local/entities`. Create its `Dao` in `data/local/dao`. Add the `Dao` to `AppDatabase` and `AppModule`.
-2. **Worker**: Create a `ModelUploadWorker` in `data/worker` to handle offline-first background syncing to Supabase.
-3. **RepoManager**: Create a `ModelRepoManager` in `data/manager`. Implement `sync()`, `observeLocal()`, and local-first upload methods. Incorporate it into `AppDataSyncManager`.
-4. **UI Layer**: Create the necessary `Fragment` inside a new package in `ui/`. Handle XML layouts (`fragment_model.xml`).
-5. **ViewModel**: Create a `ModelViewModel` utilizing Hilt, exposing a `StateFlow<UiState>` mapped directly from `ModelRepoManager.observeLocal()`.
+---
 
-### 2. Modifying Database Schema
-If altering an existing Room entity:
-1. Increment the `version` in `@Database` annotation of `AppDatabase`.
-2. Write a Room Migration function if moving beyond destructive actions (though destructive migration may be preferred depending on stage).
-3. Ensure Supabase PostgREST table schema mirrors the local changes precisely.
+## 🔐 Auth & Security Protocols
+
+### Session Persistence:
+-   Supabase Auth handles the network session.
+-   `current_user_uid` is mirrored in `AppDataStore` (Jetpack DataStore) for synchronous checks during app launch before Supabase init completes.
+
+### Cloud Security & FCM:
+-   **Edge Functions**: `send-notification` triggers on database webhooks.
+-   **Secrets**: Firebase Service Account is NOT a JSON string in secrets. It is split into:
+    -   `FIREBASE_PROJECT_ID`
+    -   `FIREBASE_CLIENT_EMAIL`
+    -   `FIREBASE_PRIVATE_KEY`
+-   **Reasoning**: Prevents JSON parsing errors in the Deno environment during edge function execution.
+
+---
+
+## 📂 Project Structure Details
+
+-   `com.aewsn.alkhair`
+    -   `di`: Hilt-based dependency injection.
+        -   `AppModule`: Room DB, DAOs, DataStore, Gson.
+        -   `SupabaseModule`: Supabase Clients (Auth, Storage, Realtime, Functions).
+    -   `data/local`: Room `Entity` (SQL schemas) and `Dao` (Queries).
+    -   `data/remote`: SDK-level interaction logic.
+    -   `data/manager`: High-level orchestration (RepoManagers).
+    -   `ui`: XML-based layouts, ViewBinding, and Fragment navigation.
+    -   `utils**: Shared constants (e.g., `Roles.ADMIN`, `Roles.TEACHER`) and common extensions.
+
+---
+
+## 🚀 Workflows for AI Agents
+
+### Common Scenario: "Add a New Field to X"
+1.  **Room Entity**: Update the class in `data/local/entities`.
+2.  **Supabase Table**: Update the table schema via SQL.
+3.  **Migration**: Increment `AppDatabase` version. (Destructive migration `true` for dev phase).
+4.  **Sync**: Ensure the `RepoManager.sync()` mapping correctly hydates the new field.
+
+### Common Scenario: "Add a New Syncable Feature"
+1.  Create `Entity`, `Dao`, `RemoteRepository`, `RepoManager`, and `UploadWorker`.
+2.  Register the `Dao` in `AppModule`.
+3.  Add the mapping in `AppDataSyncManager.syncDeletions` for the Tombstone pattern.
+4.  Add the role-based sync call in `AppDataSyncManager.performSync`.
+
+---
+
+## 📝 Database Schema Blueprints (Logical)
+
+### `chat_messages`
+-   `id` (PK), `sender_id`, `group_id`, `message_text`, `media_url`, `media_type`, `updated_at`, `is_synced`, `local_uri`.
+
+### `deleted_records` (Tombstone)
+-   `id` (PK), `record_id`, `type` (e.g., 'homework', 'attendance'), `deleted_at` (Timestamp).
+
+---
+
+## 🎨 UI/UX Standards
+
+-   **State Management**: Use `UiState.Loading`, `UiState.Success<T>`, and `UiState.Error`.
+-   **Binding Lifecycle**: Always set `_binding = null` in `onDestroyView()` to prevent memory leaks.
+-   **Loading Overlays**: Use common XML layouts for consistent loading states.

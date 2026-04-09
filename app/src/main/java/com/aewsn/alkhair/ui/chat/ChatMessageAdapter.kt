@@ -52,6 +52,24 @@ class ChatMessageAdapter(
     private val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
     private val selectedMessageIds = mutableSetOf<String>()
 
+    private fun getFormattedTime(timeMs: Long): String {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = timeMs }
+        val today = java.util.Calendar.getInstance()
+        
+        val timeStr = timeFormat.format(cal.time)
+        
+        return if (cal.get(java.util.Calendar.YEAR) == today.get(java.util.Calendar.YEAR) &&
+                   cal.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR)) {
+            timeStr
+        } else if (cal.get(java.util.Calendar.YEAR) == today.get(java.util.Calendar.YEAR) &&
+                   cal.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR) - 1) {
+            "Yesterday, $timeStr"
+        } else {
+            val dateFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
+            "${dateFormat.format(cal.time)}, $timeStr"
+        }
+    }
+
     // In-memory set of IDs currently being downloaded — updated by Activity from ViewModel
     private var downloadingIds: Set<String> = emptySet()
 
@@ -254,7 +272,14 @@ class ChatMessageAdapter(
         fun bind(message: ChatMessage) {
             binding.tvMessageText.text = message.messageText
             binding.tvMessageText.isVisible = message.messageText.isNotEmpty()
-            binding.tvTimestamp.text = timeFormat.format(Date(message.updatedAt))
+            binding.tvTimestamp.text = getFormattedTime(message.updatedAt)
+
+            // Sync status tick
+            if (message.isSynced) {
+                binding.ivSyncStatus.setImageResource(R.drawable.ic_check)
+            } else {
+                binding.ivSyncStatus.setImageResource(R.drawable.ic_pending)
+            }
 
             bindMedia(
                 flImageContainer = binding.flImageContainer,
@@ -291,7 +316,7 @@ class ChatMessageAdapter(
             binding.tvSenderName.text = message.senderName.ifEmpty { "Unknown" }
             binding.tvMessageText.text = message.messageText
             binding.tvMessageText.isVisible = message.messageText.isNotEmpty()
-            binding.tvTimestamp.text = timeFormat.format(Date(message.updatedAt))
+            binding.tvTimestamp.text = getFormattedTime(message.updatedAt)
 
             bindMedia(
                 flImageContainer = binding.flImageContainer,

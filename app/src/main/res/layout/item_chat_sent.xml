@@ -127,16 +127,33 @@
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnPrimaryContainer" />
 
-            <TextView
-                android:id="@+id/tvTimestamp"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginTop="2dp"
-                android:text="12:30 PM"
-                android:textAppearance="?attr/textAppearanceLabelSmall"
-                android:textColor="?attr/colorOnPrimaryContainer"
-                android:alpha="0.7" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvTimestamp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12:30 PM"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:alpha="0.7" />
+
+                <!-- WhatsApp style sync status tick -->
+                <ImageView
+                    android:id="@+id/ivSyncStatus"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="4dp"
+                    android:src="@drawable/ic_pending"
+                    android:alpha="0.7"
+                    app:tint="?attr/colorOnPrimaryContainer" />
+            </LinearLayout>
 
         </LinearLayout>
 

@@ -27,7 +27,9 @@ class ChatUploadWorker @AssistedInject constructor(
                 val result = supabaseChatRepository.saveMessageBatch(unsyncedMessages)
                 if (result.isSuccess) {
                     localChatRepository.markAsSynced(unsyncedMessages.map { it.id })
+                    android.util.Log.d("ChatUploadWorker", "✅ Successfully uploaded and marked ${unsyncedMessages.size} messages as synced in Room")
                 } else {
+                    android.util.Log.e("ChatUploadWorker", "❌ Upload failed, retrying...")
                     return@withContext Result.retry()
                 }
             }

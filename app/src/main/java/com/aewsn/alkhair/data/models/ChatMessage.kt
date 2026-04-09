@@ -75,5 +75,6 @@ data class ChatMessage(
     // isDownloading is TRANSIENT (in-memory only, not stored in Room)
     // Used by the adapter to show a ProgressBar while download is in progress
     @Ignore
+    @kotlinx.serialization.Transient
     var isDownloading: Boolean = false
 }
