@@ -13,14 +13,27 @@ import com.aewsn.alkhair.databinding.ItemChatReceivedBinding
 import com.aewsn.alkhair.databinding.ItemChatSentBinding
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * WhatsApp-style chat adapter.
+ *
+ * Media states:
+ *  • NOT_DOWNLOADED  → dark overlay + ic_download — click triggers download
+ *  • DOWNLOADING     → dark overlay + ProgressBar (spinner)
+ *  • DOWNLOADED      → no overlay, localUri loaded via Glide (image) or attachment icon (doc)
+ *
+ * Clicking a DOWNLOADED file calls [onOpenMedia].
+ */
 class ChatMessageAdapter(
     private val currentUserId: String,
     private val isAdmin: Boolean = false,
-    private val onSelectionChanged: (selectedCount: Int) -> Unit
+    private val onSelectionChanged: (selectedCount: Int) -> Unit,
+    private val onDownloadMedia: (ChatMessage) -> Unit,
+    private val onOpenMedia: (ChatMessage) -> Unit
 ) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
     companion object {
@@ -32,19 +45,29 @@ class ChatMessageAdapter(
                 oldItem.id == newItem.id
 
             override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean =
-                oldItem == newItem
+                oldItem == newItem && oldItem.localUri == newItem.localUri
         }
     }
 
     private val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
     private val selectedMessageIds = mutableSetOf<String>()
 
-    fun toggleSelection(messageId: String) {
-        if (selectedMessageIds.contains(messageId)) {
-            selectedMessageIds.remove(messageId)
-        } else {
-            selectedMessageIds.add(messageId)
+    // In-memory set of IDs currently being downloaded — updated by Activity from ViewModel
+    private var downloadingIds: Set<String> = emptySet()
+
+    /** Called by Activity when ViewModel's downloadingIds state changes */
+    fun updateDownloadingIds(ids: Set<String>) {
+        if (downloadingIds != ids) {
+            downloadingIds = ids
+            notifyDataSetChanged()
         }
+    }
+
+    // ─── Selection helpers ────────────────────────────────────────────────────
+
+    fun toggleSelection(messageId: String) {
+        if (selectedMessageIds.contains(messageId)) selectedMessageIds.remove(messageId)
+        else selectedMessageIds.add(messageId)
         notifyDataSetChanged()
         onSelectionChanged(selectedMessageIds.size)
     }
@@ -62,9 +85,10 @@ class ChatMessageAdapter(
         return Color.argb(60, Color.red(color), Color.green(color), Color.blue(color))
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return if (getItem(position).senderId == currentUserId) VIEW_TYPE_SENT else VIEW_TYPE_RECEIVED
-    }
+    // ─── ViewHolder factory ───────────────────────────────────────────────────
+
+    override fun getItemViewType(position: Int): Int =
+        if (getItem(position).senderId == currentUserId) VIEW_TYPE_SENT else VIEW_TYPE_RECEIVED
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -82,40 +106,147 @@ class ChatMessageAdapter(
         }
     }
 
-    /** Bind media views (shared by Sent and Received) */
+    // ─── Shared media binding logic ───────────────────────────────────────────
+
+    /**
+     * Binds media views for both Sent and Received items.
+     *
+     * @param flImageContainer  FrameLayout wrapping ivMedia + overlay
+     * @param ivMedia           ImageView for actual image
+     * @param ivMediaOverlay    Dark overlay FrameLayout
+     * @param ivDownloadIcon    Download icon inside overlay
+     * @param pbImageDownload   Spinner inside overlay
+     * @param llDocument        Document row LinearLayout
+     * @param ivDocIcon         Document icon or download icon
+     * @param pbDocDownload     Document download spinner
+     * @param tvDocumentName    Document filename label
+     */
     private fun bindMedia(
+        flImageContainer: android.widget.FrameLayout,
         ivMedia: android.widget.ImageView,
+        ivMediaOverlay: android.view.View,
+        ivDownloadIcon: android.widget.ImageView,
+        pbImageDownload: android.widget.ProgressBar,
         llDocument: android.view.View,
-        tvDocumentName: android.widget.TextView?,
+        ivDocIcon: android.widget.ImageView,
+        pbDocDownload: android.widget.ProgressBar,
+        tvDocumentName: android.widget.TextView,
         message: ChatMessage
     ) {
+        val isDownloading = downloadingIds.contains(message.id)
+        val localUri = message.localUri
+        val hasLocalFile = !localUri.isNullOrBlank() && File(localUri).exists()
+
         when (message.mediaType) {
+
+            // ════════════════════════════════════════
+            //  IMAGE
+            // ════════════════════════════════════════
             "image" -> {
-                ivMedia.isVisible = true
+                flImageContainer.isVisible = true
                 llDocument.isVisible = false
-                Glide.with(ivMedia.context)
-                    .load(message.mediaUrl)
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .placeholder(R.drawable.ic_image)
-                    .error(R.drawable.ic_image)
-                    .into(ivMedia)
+
+                when {
+                    // STATE 1 — Downloading: show spinner only
+                    isDownloading -> {
+                        ivMediaOverlay.isVisible = true
+                        ivDownloadIcon.isVisible = false
+                        pbImageDownload.isVisible = true
+                        // Blur placeholder using a low-res version
+                        Glide.with(ivMedia.context)
+                            .load(R.drawable.ic_image)
+                            .into(ivMedia)
+                    }
+
+                    // STATE 2 — Downloaded: show actual image, no overlay
+                    hasLocalFile -> {
+                        ivMediaOverlay.isVisible = false
+                        ivDownloadIcon.isVisible = false
+                        pbImageDownload.isVisible = false
+                        Glide.with(ivMedia.context)
+                            .load(File(localUri!!))
+                            .transition(DrawableTransitionOptions.withCrossFade())
+                            .placeholder(R.drawable.ic_image)
+                            .into(ivMedia)
+                        // Open on tap
+                        flImageContainer.setOnClickListener {
+                            if (selectedMessageIds.isEmpty()) onOpenMedia(message)
+                        }
+                    }
+
+                    // STATE 3 — Not downloaded: placeholder + download icon overlay
+                    else -> {
+                        ivMediaOverlay.isVisible = true
+                        ivDownloadIcon.isVisible = true
+                        pbImageDownload.isVisible = false
+                        // Grey placeholder bg
+                        ivMedia.setImageResource(R.drawable.ic_image)
+                        ivMedia.scaleType = android.widget.ImageView.ScaleType.CENTER
+                        // Trigger download on overlay tap
+                        ivMediaOverlay.setOnClickListener {
+                            if (selectedMessageIds.isEmpty()) onDownloadMedia(message)
+                        }
+                        flImageContainer.setOnClickListener {
+                            if (selectedMessageIds.isEmpty()) onDownloadMedia(message)
+                        }
+                    }
+                }
             }
+
+            // ════════════════════════════════════════
+            //  DOCUMENT
+            // ════════════════════════════════════════
             "document" -> {
-                ivMedia.isVisible = false
+                flImageContainer.isVisible = false
                 llDocument.isVisible = true
-                // Extract filename from URL
-                val fileName = message.mediaUrl?.substringAfterLast("/")?.let {
-                    // Remove timestamp prefix (e.g. "1234567890_filename.pdf")
-                    it.substringAfter("_").ifEmpty { it }
-                } ?: "document"
-                tvDocumentName?.text = fileName
+
+                val fileName = message.mediaUrl
+                    ?.substringAfterLast("/")
+                    ?.substringAfter("_")
+                    ?.ifEmpty { "document" } ?: "document"
+                tvDocumentName.text = fileName
+
+                when {
+                    // STATE 1 — Downloading
+                    isDownloading -> {
+                        ivDocIcon.isVisible = false
+                        pbDocDownload.isVisible = true
+                        llDocument.setOnClickListener(null)
+                    }
+
+                    // STATE 2 — Downloaded
+                    hasLocalFile -> {
+                        ivDocIcon.isVisible = true
+                        ivDocIcon.setImageResource(R.drawable.ic_attachment)
+                        pbDocDownload.isVisible = false
+                        llDocument.setOnClickListener {
+                            if (selectedMessageIds.isEmpty()) onOpenMedia(message)
+                        }
+                    }
+
+                    // STATE 3 — Not downloaded
+                    else -> {
+                        ivDocIcon.isVisible = true
+                        ivDocIcon.setImageResource(R.drawable.ic_download)
+                        pbDocDownload.isVisible = false
+                        llDocument.setOnClickListener {
+                            if (selectedMessageIds.isEmpty()) onDownloadMedia(message)
+                        }
+                    }
+                }
             }
+
+            // ════════════════════════════════════════
+            //  No media
+            // ════════════════════════════════════════
             else -> {
-                ivMedia.isVisible = false
+                flImageContainer.isVisible = false
                 llDocument.isVisible = false
             }
         }
     }
+
+    // ─── ViewHolders ──────────────────────────────────────────────────────────
 
     inner class SentViewHolder(
         private val binding: ItemChatSentBinding
@@ -125,10 +256,23 @@ class ChatMessageAdapter(
             binding.tvMessageText.isVisible = message.messageText.isNotEmpty()
             binding.tvTimestamp.text = timeFormat.format(Date(message.updatedAt))
 
-            bindMedia(binding.ivMedia, binding.llDocument, binding.tvDocumentName, message)
+            bindMedia(
+                flImageContainer = binding.flImageContainer,
+                ivMedia = binding.ivMedia,
+                ivMediaOverlay = binding.ivMediaOverlay,
+                ivDownloadIcon = binding.ivDownloadIcon,
+                pbImageDownload = binding.pbImageDownload,
+                llDocument = binding.llDocument,
+                ivDocIcon = binding.ivDocIcon,
+                pbDocDownload = binding.pbDocDownload,
+                tvDocumentName = binding.tvDocumentName,
+                message = message
+            )
 
             val isSelected = selectedMessageIds.contains(message.id)
-            binding.root.setBackgroundColor(if (isSelected) getSelectionColor(binding.root.context) else Color.TRANSPARENT)
+            binding.root.setBackgroundColor(
+                if (isSelected) getSelectionColor(binding.root.context) else Color.TRANSPARENT
+            )
 
             binding.root.setOnClickListener {
                 if (selectedMessageIds.isNotEmpty()) toggleSelection(message.id)
@@ -149,10 +293,23 @@ class ChatMessageAdapter(
             binding.tvMessageText.isVisible = message.messageText.isNotEmpty()
             binding.tvTimestamp.text = timeFormat.format(Date(message.updatedAt))
 
-            bindMedia(binding.ivMedia, binding.llDocument, binding.tvDocumentName, message)
+            bindMedia(
+                flImageContainer = binding.flImageContainer,
+                ivMedia = binding.ivMedia,
+                ivMediaOverlay = binding.ivMediaOverlay,
+                ivDownloadIcon = binding.ivDownloadIcon,
+                pbImageDownload = binding.pbImageDownload,
+                llDocument = binding.llDocument,
+                ivDocIcon = binding.ivDocIcon,
+                pbDocDownload = binding.pbDocDownload,
+                tvDocumentName = binding.tvDocumentName,
+                message = message
+            )
 
             val isSelected = selectedMessageIds.contains(message.id)
-            binding.root.setBackgroundColor(if (isSelected) getSelectionColor(binding.root.context) else Color.TRANSPARENT)
+            binding.root.setBackgroundColor(
+                if (isSelected) getSelectionColor(binding.root.context) else Color.TRANSPARENT
+            )
 
             if (isAdmin) {
                 binding.root.setOnClickListener {

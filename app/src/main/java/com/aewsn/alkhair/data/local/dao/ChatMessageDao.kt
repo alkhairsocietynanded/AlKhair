@@ -36,6 +36,10 @@ interface ChatMessageDao {
     @Query("DELETE FROM chat_messages")
     suspend fun clearAll()
 
+    // ✅ Download — Update local cached file path after download
+    @Query("UPDATE chat_messages SET local_uri = :localUri WHERE id = :messageId")
+    suspend fun updateLocalUri(messageId: String, localUri: String)
+
     // ✅ Initial sync — fetch latest messages for a group
     @Query("SELECT * FROM chat_messages WHERE group_id = :groupId AND updated_at_ms > :after ORDER BY updated_at_ms ASC")
     suspend fun getMessagesAfter(groupId: String, after: Long): List<ChatMessage>

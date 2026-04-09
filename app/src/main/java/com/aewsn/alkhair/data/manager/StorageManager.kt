@@ -77,7 +77,70 @@ class StorageManager @Inject constructor(
 
 
     /**
-     * Delete a file using its Supabase Storage URL
+     * Check if a media file (identified by its remote URL) is already cached locally.
+     *
+     * Called during sync to auto-populate `local_uri` in Room without re-downloading.
+     * This handles DB wipe (destructive migration) where cache files survive but Room loses local_uri.
+     *
+     * Returns absolute path string if file exists and is non-empty, null otherwise.
+     */
+    fun findCachedFile(mediaUrl: String): String? {
+        val rawSegment = mediaUrl.substringAfterLast("/")
+        val safeFileName = if (rawSegment.isNotBlank()) rawSegment else return null
+        val cacheFile = java.io.File(context.cacheDir, "chat_media/$safeFileName")
+        return if (cacheFile.exists() && cacheFile.length() > 0) {
+            Log.d(TAG, "Cache hit for $safeFileName")
+            cacheFile.absolutePath
+        } else null
+    }
+
+    /**
+     * Download a publicly accessible file from Supabase Storage by URL.
+     * Saves the file to `cacheDir/chat_media/fileName`.
+     * Returns Result<String> — absolute path of the saved file on success.
+     */
+    suspend fun downloadPublicFile(storageUrl: String, fileName: String): Result<String> {
+        return try {
+            // Ensure the chat_media folder exists in app's cache directory
+            val cacheFolder = java.io.File(context.cacheDir, "chat_media")
+            if (!cacheFolder.exists()) cacheFolder.mkdirs()
+
+            val destFile = java.io.File(cacheFolder, fileName)
+
+            // If already downloaded (cached), return existing path immediately
+            if (destFile.exists() && destFile.length() > 0) {
+                Log.d(TAG, "File already cached: ${destFile.absolutePath}")
+                return Result.success(destFile.absolutePath)
+            }
+
+            // Extract storage path from the public URL to use the Supabase SDK download
+            // URL format: .../storage/v1/object/public/<bucket>/<path>
+            val bucketPrefix = "/$BUCKET_NAME/"
+            val storagePath = if (storageUrl.contains(bucketPrefix)) {
+                storageUrl.substringAfter(bucketPrefix)
+            } else {
+                // Fallback: download directly via HTTP without SDK
+                Log.w(TAG, "Unexpected URL format, falling back to HTTP: $storageUrl")
+                val bytes = java.net.URL(storageUrl).readBytes()
+                destFile.writeBytes(bytes)
+                Log.d(TAG, "Downloaded via HTTP to: ${destFile.absolutePath}")
+                return Result.success(destFile.absolutePath)
+            }
+
+            // Download bytes from Supabase Storage SDK
+            val bytes = supabaseClient.storage.from(BUCKET_NAME).downloadPublic(storagePath)
+            destFile.writeBytes(bytes)
+            Log.d(TAG, "Downloaded to: ${destFile.absolutePath} (${bytes.size} bytes)")
+
+            Result.success(destFile.absolutePath)
+        } catch (e: Exception) {
+            Log.e(TAG, "Download failed for $storageUrl: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Delete a publicly accessible file from Supabase Storage URL
      */
     suspend fun deleteFile(storageUrl: String): Result<Unit> {
         return try {

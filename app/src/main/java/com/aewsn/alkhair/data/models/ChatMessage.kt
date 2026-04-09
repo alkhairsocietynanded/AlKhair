@@ -3,6 +3,7 @@ package com.aewsn.alkhair.data.models
 import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
@@ -61,6 +62,18 @@ data class ChatMessage(
     // is_synced is LOCAL ONLY — not in Supabase table
     @kotlinx.serialization.Transient
     @ColumnInfo(name = "is_synced")
-    override var isSynced: Boolean = false
+    override var isSynced: Boolean = false,
 
-) : Parcelable, Syncable
+    // local_uri: LOCAL ONLY — path to cached downloaded media on this device
+    // null means media has NOT been downloaded yet (show placeholder)
+    @kotlinx.serialization.Transient
+    @ColumnInfo(name = "local_uri")
+    var localUri: String? = null
+
+) : Parcelable, Syncable {
+
+    // isDownloading is TRANSIENT (in-memory only, not stored in Room)
+    // Used by the adapter to show a ProgressBar while download is in progress
+    @Ignore
+    var isDownloading: Boolean = false
+}

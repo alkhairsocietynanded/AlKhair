@@ -1,16 +1,19 @@
 package com.aewsn.alkhair.ui.chat
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
@@ -19,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.aewsn.alkhair.R
+import com.aewsn.alkhair.data.models.ChatMessage
 import com.aewsn.alkhair.databinding.ActivityChatWindowBinding
 import com.aewsn.alkhair.utils.Roles
 import com.aewsn.alkhair.utils.UiState
@@ -28,6 +32,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.File
 
 @AndroidEntryPoint
 class ChatWindowActivity : AppCompatActivity() {
@@ -38,6 +43,7 @@ class ChatWindowActivity : AppCompatActivity() {
         const val EXTRA_GROUP_NAME = "group_name"
         const val EXTRA_SENDER_NAME = "sender_name"
         const val EXTRA_USER_ROLE = "user_role"
+        private const val TAG = "ChatWindowActivity"
     }
 
     private lateinit var binding: ActivityChatWindowBinding
@@ -117,6 +123,7 @@ class ChatWindowActivity : AppCompatActivity() {
         observeMessages()
         observeSendState()
         observeDeleteState()
+        observeDownloadingIds()
 
         viewModel.observeMessages(groupId, groupType)
         onBackPressedDispatcher.addCallback(this, backCallback)
@@ -134,9 +141,7 @@ class ChatWindowActivity : AppCompatActivity() {
             val bottomInset = if (ime.bottom > 0) ime.bottom else systemBars.bottom
 
             // Apply to unified bottom container — preview + input bar move together
-            binding.bottomContainer.setPadding(
-                0, 0, 0, bottomInset
-            )
+            binding.bottomContainer.setPadding(0, 0, 0, bottomInset)
 
             // RecyclerView bottom padding accounts for bottomContainer height (~80dp) + nav bar
             val density = resources.displayMetrics.density
@@ -161,7 +166,9 @@ class ChatWindowActivity : AppCompatActivity() {
         adapter = ChatMessageAdapter(
             currentUserId = viewModel.currentUserId,
             isAdmin = isAdmin,
-            onSelectionChanged = { count -> updateSelectionMode(count) }
+            onSelectionChanged = { count -> updateSelectionMode(count) },
+            onDownloadMedia = { message -> viewModel.downloadMedia(message) },
+            onOpenMedia = { message -> openDownloadedMedia(message) }
         )
         val layoutManager = LinearLayoutManager(this).apply { reverseLayout = true }
         binding.rvMessages.layoutManager = layoutManager
@@ -256,21 +263,19 @@ class ChatWindowActivity : AppCompatActivity() {
         // Show preview bar
         binding.mediaPreviewContainer.isVisible = true
 
-        // ✅ Always show filename
+        // Always show filename
         binding.tvMediaPreviewName.isVisible = true
         binding.tvMediaPreviewName.text = fileName
 
-        // ✅ Always show image view — thumbnail for images, icon for documents
+        // Always show image view — thumbnail for images, icon for documents
         binding.ivMediaPreview.isVisible = true
 
         if (mimeType.startsWith("image/")) {
-            // Image: load actual thumbnail
             Glide.with(this)
                 .load(uri)
                 .centerCrop()
                 .into(binding.ivMediaPreview)
         } else {
-            // Document: show a generic document icon placeholder
             binding.ivMediaPreview.setImageResource(R.drawable.ic_attachment)
             binding.ivMediaPreview.scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
             binding.ivMediaPreview.setPadding(8, 8, 8, 8)
@@ -295,13 +300,12 @@ class ChatWindowActivity : AppCompatActivity() {
             val mimeType = pendingMimeType
             val fileName = pendingFileName
 
-            // ✅ Bytes Activity mein read karo — yahan URI permission valid hai
-            // ViewModel/StorageManager application context use karta hai jisme permission nahi hoti
+            // Bytes read in Activity — URI permission is valid here
             val bytes: ByteArray? = if (uri != null) {
                 try {
                     contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 } catch (e: Exception) {
-                    android.util.Log.e("ChatWindow", "Media bytes read failed: ${e.message}")
+                    Log.e(TAG, "Media bytes read failed: ${e.message}")
                     null
                 }
             } else null
@@ -319,6 +323,53 @@ class ChatWindowActivity : AppCompatActivity() {
         }
 
         binding.btnCancelMediaPreview.setOnClickListener { clearPendingMedia() }
+    }
+
+    // ─── Open downloaded media ────────────────────────────────────────────────
+
+    /**
+     * Opens a downloaded media file using Android's ACTION_VIEW intent via FileProvider.
+     * This is the WhatsApp behaviour: tap downloaded file → system opens appropriate viewer.
+     */
+    private fun openDownloadedMedia(message: ChatMessage) {
+        val localUri = message.localUri ?: return
+        val file = File(localUri)
+        if (!file.exists()) {
+            Toast.makeText(this, "File not found, please re-download", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val mimeType = when (message.mediaType) {
+            "image" -> "image/*"
+            "document" -> {
+                val ext = file.extension.lowercase()
+                when (ext) {
+                    "pdf" -> "application/pdf"
+                    "doc", "docx" -> "application/msword"
+                    "xls", "xlsx" -> "application/vnd.ms-excel"
+                    "ppt", "pptx" -> "application/vnd.ms-powerpoint"
+                    "txt" -> "text/plain"
+                    else -> "*/*"
+                }
+            }
+            else -> "*/*"
+        }
+
+        try {
+            val contentUri = FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                file
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(contentUri, mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, "Open with"))
+        } catch (e: Exception) {
+            Log.e(TAG, "Cannot open file: ${e.message}")
+            Toast.makeText(this, "No app found to open this file", Toast.LENGTH_SHORT).show()
+        }
     }
 
     // ─── Observers ────────────────────────────────────────────────────────────
@@ -376,6 +427,20 @@ class ChatWindowActivity : AppCompatActivity() {
                         }
                         else -> Unit
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Observe which message IDs are currently being downloaded.
+     * Forward the set to the adapter so it can show/hide ProgressBars.
+     */
+    private fun observeDownloadingIds() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.downloadingIds.collectLatest { ids ->
+                    adapter.updateDownloadingIds(ids)
                 }
             }
         }

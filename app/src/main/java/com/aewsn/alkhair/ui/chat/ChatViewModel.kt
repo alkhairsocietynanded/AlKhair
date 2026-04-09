@@ -129,4 +129,33 @@ class ChatViewModel @Inject constructor(
     fun resetDeleteState() {
         _deleteState.value = UiState.Idle
     }
+
+    /* ============================================================
+       ⬇️ DOWNLOAD MEDIA
+       ============================================================ */
+
+    // In-memory Set of message IDs currently being downloaded
+    // This drives the ProgressBar in the adapter (no Room needed)
+    private val _downloadingIds = MutableStateFlow<Set<String>>(emptySet())
+    val downloadingIds: StateFlow<Set<String>> = _downloadingIds
+
+    fun downloadMedia(message: com.aewsn.alkhair.data.models.ChatMessage) {
+        val msgId = message.id
+        // Avoid duplicate downloads
+        if (_downloadingIds.value.contains(msgId)) return
+
+        viewModelScope.launch {
+            // Mark as downloading → adapter shows ProgressBar
+            _downloadingIds.value = _downloadingIds.value + msgId
+
+            chatRepoManager.downloadMedia(message).onFailure { e ->
+                android.util.Log.e("ChatViewModel", "Download failed: ${e.message}")
+            }
+
+            // Remove from downloading set regardless of success/failure
+            // On success: Room Flow fires → adapter gets updated localUri → shows actual media
+            // On failure: ProgressBar disappears → download icon reappears
+            _downloadingIds.value = _downloadingIds.value - msgId
+        }
+    }
 }

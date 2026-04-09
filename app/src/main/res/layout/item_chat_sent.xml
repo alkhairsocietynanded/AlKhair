@@ -29,18 +29,56 @@
             android:paddingBottom="6dp"
             android:maxWidth="280dp">
 
-            <!-- Media Image -->
-            <ImageView
-                android:id="@+id/ivMedia"
+            <!-- ═══ IMAGE MEDIA — WhatsApp-style placeholder + overlay ═══ -->
+            <FrameLayout
+                android:id="@+id/flImageContainer"
                 android:layout_width="240dp"
                 android:layout_height="180dp"
                 android:layout_marginBottom="4dp"
-                android:scaleType="centerCrop"
-                android:visibility="gone"
-                android:contentDescription="Attached image"
-                android:background="@drawable/bg_rounded_card" />
+                android:visibility="gone">
 
-            <!-- Document row -->
+                <!-- Actual image (shown after download) -->
+                <ImageView
+                    android:id="@+id/ivMedia"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Attached image"
+                    android:background="@drawable/bg_rounded_card" />
+
+                <!-- Download overlay (shown when NOT downloaded) -->
+                <FrameLayout
+                    android:id="@+id/ivMediaOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#AA000000"
+                    android:visibility="gone">
+
+                    <!-- Download icon -->
+                    <ImageView
+                        android:id="@+id/ivDownloadIcon"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_download"
+                        android:visibility="visible"
+                        android:importantForAccessibility="no"
+                        app:tint="@android:color/white" />
+
+                    <!-- ProgressBar — shown while downloading -->
+                    <ProgressBar
+                        android:id="@+id/pbImageDownload"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center"
+                        android:indeterminateTint="@android:color/white"
+                        android:visibility="gone" />
+
+                </FrameLayout>
+
+            </FrameLayout>
+
+            <!-- ═══ DOCUMENT ROW — WhatsApp-style placeholder + overlay ═══ -->
             <LinearLayout
                 android:id="@+id/llDocument"
                 android:layout_width="wrap_content"
@@ -50,12 +88,22 @@
                 android:layout_marginBottom="4dp"
                 android:visibility="gone">
 
+                <!-- Download icon (replaced by attachment icon after download) -->
                 <ImageView
+                    android:id="@+id/ivDocIcon"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
-                    android:src="@drawable/ic_attachment"
+                    android:src="@drawable/ic_download"
                     app:tint="?attr/colorOnPrimaryContainer"
                     android:importantForAccessibility="no" />
+
+                <!-- ProgressBar for document download -->
+                <ProgressBar
+                    android:id="@+id/pbDocDownload"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:indeterminateTint="?attr/colorOnPrimaryContainer"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/tvDocumentName"
@@ -68,6 +116,7 @@
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnPrimaryContainer"
                     android:text="document.pdf" />
+
             </LinearLayout>
 
             <TextView
@@ -94,4 +143,3 @@
     </com.google.android.material.card.MaterialCardView>
 
 </FrameLayout>
-

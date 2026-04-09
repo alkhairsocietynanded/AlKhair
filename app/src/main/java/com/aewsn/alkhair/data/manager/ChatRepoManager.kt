@@ -123,7 +123,18 @@ class ChatRepoManager @Inject constructor(
                                 }
                             }
                         }
-                        msg.copy(isSynced = true, senderName = user?.name ?: "Unknown")
+
+                        // ✅ Auto-detect if media is already cached locally (e.g., after DB wipe)
+                        var cachedUri = msg.localUri
+                        if (cachedUri == null && !msg.mediaUrl.isNullOrBlank()) {
+                            cachedUri = storageManager.findCachedFile(msg.mediaUrl!!)
+                        }
+
+                        msg.copy(
+                            isSynced = true, 
+                            senderName = user?.name ?: "Unknown",
+                            localUri = cachedUri
+                        )
                     }
                     localRepo.insertMessages(syncedMessages)
                     Log.d(TAG, "Synced ${syncedMessages.size} messages for group $groupId")
@@ -169,9 +180,16 @@ class ChatRepoManager @Inject constructor(
                             }
                         }
 
+                        // ✅ Auto-detect if media is already cached locally
+                        var cachedUri = message.localUri
+                        if (cachedUri == null && !message.mediaUrl.isNullOrBlank()) {
+                            cachedUri = storageManager.findCachedFile(message.mediaUrl!!)
+                        }
+
                         val syncedMessage = message.copy(
                             isSynced = true,
-                            senderName = user?.name ?: "Unknown"
+                            senderName = user?.name ?: "Unknown",
+                            localUri = cachedUri
                         )
                         localRepo.insertMessage(syncedMessage)
                     }
@@ -211,6 +229,42 @@ class ChatRepoManager @Inject constructor(
 
     suspend fun clearLocal() {
         localRepo.clearAll()
+    }
+
+    /* ============================================================
+       ⬇️ DOWNLOAD MEDIA — Download attachment to local cache
+       ============================================================ */
+
+    /**
+     * Download a chat media attachment (image or document) to app's local cache.
+     * Saves to `cacheDir/chat_media/<fileName>` and persists the path in Room
+     * so the UI can display it without re-downloading.
+     */
+    suspend fun downloadMedia(message: ChatMessage): Result<Unit> {
+        val mediaUrl = message.mediaUrl
+            ?: return Result.failure(Exception("No media URL for message ${message.id}"))
+
+        // Build a safe filename: use the last segment (includes timestamp prefix already)
+        val rawSegment = mediaUrl.substringAfterLast("/")
+        val safeFileName = if (rawSegment.isNotBlank()) rawSegment else "${message.id}.bin"
+
+        val result = storageManager.downloadPublicFile(
+            storageUrl = mediaUrl,
+            fileName = safeFileName
+        )
+
+        return result.fold(
+            onSuccess = { localPath ->
+                // Persist localUri in Room — UI observes via Flow and refreshes automatically
+                localRepo.updateLocalUri(message.id, localPath)
+                Log.d(TAG, "Media saved locally: $localPath")
+                Result.success(Unit)
+            },
+            onFailure = { e ->
+                Log.e(TAG, "downloadMedia failed for ${message.id}: ${e.message}")
+                Result.failure(e)
+            }
+        )
     }
 
     /* ============================================================

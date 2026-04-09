@@ -110,6 +110,17 @@
                 tools:node="remove" />
         </provider>
 
+        <!-- FileProvider for sharing downloaded chat media with external apps -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/chat_media_paths" />
+        </provider>
+
         <activity
             android:name=".ui.timetable.SubjectManagementActivity"
             android:exported="false"

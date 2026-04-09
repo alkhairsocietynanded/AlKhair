@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FileProvider paths for chat media downloads.
+    chat_media/ folder is inside app's internal cache directory.
+    This allows sharing cached files with external apps (e.g., image viewers, PDF readers)
+    using content:// URIs without exposing internal storage paths.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path
+        name="chat_media"
+        path="chat_media/" />
+</paths>

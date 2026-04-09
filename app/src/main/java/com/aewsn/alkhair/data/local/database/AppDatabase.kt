@@ -44,7 +44,7 @@ import com.aewsn.alkhair.data.models.PendingDeletion
         com.aewsn.alkhair.data.models.StudyMaterial::class,
         com.aewsn.alkhair.data.models.AppConfig::class
     ],
-    version = 17, // v17: Added ChatMessage entity for group chat feature
+    version = 18, // v18: Added local_uri column to ChatMessage for on-device media cache
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
