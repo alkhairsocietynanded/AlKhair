@@ -18,8 +18,9 @@ interface ChatMessageDao {
     suspend fun insertMessages(messages: List<ChatMessage>)
 
     // ✅ READ — Realtime Flow per group (for UI observation)
-    @Query("SELECT * FROM chat_messages WHERE group_id = :groupId ORDER BY updated_at_ms DESC")
-    fun observeMessagesByGroup(groupId: String): Flow<List<ChatMessage>>
+    // Orders pending (is_synced = 0) to the bottom, and chronologically within each group
+    @Query("SELECT * FROM chat_messages WHERE group_id = :groupId ORDER BY is_synced ASC, updated_at_ms DESC LIMIT :limit")
+    fun observeMessagesByGroup(groupId: String, limit: Int = 50): Flow<List<ChatMessage>>
 
     // ✅ READ — For WorkManager upload (unsynced messages)
     @Query("SELECT * FROM chat_messages WHERE is_synced = 0")

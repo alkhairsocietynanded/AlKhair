@@ -20,6 +20,7 @@ object NotificationHelper {
     const val CHANNEL_HOMEWORK = "alkhair_homework"
     const val CHANNEL_ANNOUNCEMENTS = "alkhair_announcements"
     const val CHANNEL_FEES = "alkhair_fees"
+    const val CHANNEL_CHAT = "alkhair_chat"
     const val CHANNEL_GENERAL = "alkhair_general"
 
     /**
@@ -54,6 +55,14 @@ object NotificationHelper {
                 description = "Fee payment updates and reminders"
             },
             NotificationChannel(
+                CHANNEL_CHAT,
+                "Chat Messages",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "New messages in groups and classes"
+                enableVibration(true)
+            },
+            NotificationChannel(
                 CHANNEL_GENERAL,
                 "General",
                 NotificationManager.IMPORTANCE_DEFAULT
@@ -83,6 +92,9 @@ object NotificationHelper {
             "HOMEWORK" -> Intent(context, HomeworkActivity::class.java)
             "ANNOUNCEMENT" -> Intent(context, com.aewsn.alkhair.ui.main.MainActivity::class.java)
             "FEES" -> Intent(context, com.aewsn.alkhair.ui.fees.FeesActivity::class.java)
+            "CHAT" -> Intent(context, com.aewsn.alkhair.ui.chat.ChatWindowActivity::class.java).apply {
+                putExtra("group_name", if (data["group_type"] == "teachers") "Teachers Chat" else "Class Chat")
+            }
             else -> context.packageManager.getLaunchIntentForPackage(context.packageName)
         }
 

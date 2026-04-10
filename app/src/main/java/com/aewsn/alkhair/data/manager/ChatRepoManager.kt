@@ -36,8 +36,8 @@ class ChatRepoManager @Inject constructor(
        📦 SSOT — ROOM (observe local DB)
        ============================================================ */
 
-    fun observeMessagesByGroup(groupId: String): Flow<List<ChatMessage>> =
-        localRepo.observeMessagesByGroup(groupId)
+    fun observeMessagesByGroup(groupId: String, limit: Int = 50): Flow<List<ChatMessage>> =
+        localRepo.observeMessagesByGroup(groupId, limit)
 
     /* ============================================================
        ✍️ SEND MESSAGE — Local First → Background Sync
@@ -57,10 +57,15 @@ class ChatRepoManager @Inject constructor(
         // 1️⃣ Upload media via StorageManager.uploadBytes() — bytes already read by Activity
         var resolvedMediaUrl: String? = null
         var resolvedMediaType: String? = null
+        var resolvedLocalUri: String? = null
         if (mediaBytes != null && mediaFileName != null) {
             val folder = "chat/$groupId"
             val uniqueName = "${System.currentTimeMillis()}_$mediaFileName"
             val resolvedMime = mimeType ?: "application/octet-stream"
+            
+            // ✅ Cache locally for instant preview!
+            resolvedLocalUri = storageManager.saveBytesToCache(mediaBytes, uniqueName)
+            
             storageManager.uploadBytes(
                 bytes = mediaBytes,
                 folder = folder,
@@ -84,6 +89,7 @@ class ChatRepoManager @Inject constructor(
             messageText = messageText,
             mediaUrl = resolvedMediaUrl,
             mediaType = resolvedMediaType,
+            localUri = resolvedLocalUri,
             updatedAt = System.currentTimeMillis(),
             isSynced = false
         )

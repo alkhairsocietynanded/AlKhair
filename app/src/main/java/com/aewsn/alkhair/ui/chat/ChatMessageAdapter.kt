@@ -29,7 +29,7 @@ import java.util.Locale
  * Clicking a DOWNLOADED file calls [onOpenMedia].
  */
 class ChatMessageAdapter(
-    private val currentUserId: String,
+    var currentUserId: String,
     private val isAdmin: Boolean = false,
     private val onSelectionChanged: (selectedCount: Int) -> Unit,
     private val onDownloadMedia: (ChatMessage) -> Unit,

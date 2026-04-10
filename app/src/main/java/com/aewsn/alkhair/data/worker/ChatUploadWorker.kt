@@ -24,10 +24,18 @@ class ChatUploadWorker @AssistedInject constructor(
             // Upload Unsynced Messages
             val unsyncedMessages = localChatRepository.getUnsyncedMessages()
             if (unsyncedMessages.isNotEmpty()) {
-                val result = supabaseChatRepository.saveMessageBatch(unsyncedMessages)
+                // IMPORTANT: WhatsApp logic. Update timestamp at the exact moment of successful 
+                // server delivery so delayed messages don't get inserted in the middle of history.
+                val now = System.currentTimeMillis()
+                val updatedMessages = unsyncedMessages.map { 
+                    it.copy(updatedAt = now, isSynced = true) 
+                }
+
+                val result = supabaseChatRepository.saveMessageBatch(updatedMessages)
                 if (result.isSuccess) {
-                    localChatRepository.markAsSynced(unsyncedMessages.map { it.id })
-                    android.util.Log.d("ChatUploadWorker", "✅ Successfully uploaded and marked ${unsyncedMessages.size} messages as synced in Room")
+                    // Overwrite the existing local message rows with the new timestamp and synced state
+                    localChatRepository.insertMessages(updatedMessages)
+                    android.util.Log.d("ChatUploadWorker", "✅ Successfully uploaded and updated timestamps for ${updatedMessages.size} messages in Room")
                 } else {
                     android.util.Log.e("ChatUploadWorker", "❌ Upload failed, retrying...")
                     return@withContext Result.retry()

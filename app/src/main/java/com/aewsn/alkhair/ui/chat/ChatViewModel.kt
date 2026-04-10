@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,8 +21,17 @@ class ChatViewModel @Inject constructor(
     private val authRepoManager: AuthRepoManager
 ) : ViewModel() {
 
+    private val _currentUserIdFlow = MutableStateFlow<String>("")
+    val currentUserIdFlow: StateFlow<String> = _currentUserIdFlow
+
     val currentUserId: String
-        get() = authRepoManager.getCurrentUserUid() ?: ""
+        get() = authRepoManager.getCurrentUserUid() ?: _currentUserIdFlow.value
+
+    init {
+        viewModelScope.launch {
+            _currentUserIdFlow.value = authRepoManager.getLocalLoginUid() ?: ""
+        }
+    }
 
     private val _messagesState = MutableStateFlow<UiState<List<ChatMessage>>>(UiState.Loading)
     val messagesState: StateFlow<UiState<List<ChatMessage>>> = _messagesState
@@ -29,25 +39,33 @@ class ChatViewModel @Inject constructor(
     private val _sendState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
     val sendState: StateFlow<UiState<Unit>> = _sendState
 
+    private val _messageLimit = MutableStateFlow(50)
+
     private var currentGroupId: String = ""
     private var currentGroupType: String = ""
+
+    fun loadMoreMessages() {
+        _messageLimit.value += 50
+    }
 
     /**
      * Start observing messages for a group + initial sync from Supabase
      */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun observeMessages(groupId: String, groupType: String) {
         currentGroupId = groupId
         currentGroupType = groupType
 
         // 1. Observe local DB (SSOT)
         viewModelScope.launch {
-            chatRepoManager.observeMessagesByGroup(groupId)
-                .catch { e ->
-                    _messagesState.value = UiState.Error(e.message ?: "Error loading messages")
-                }
-                .collectLatest { messages ->
-                    _messagesState.value = UiState.Success(messages)
-                }
+            _messageLimit.flatMapLatest { limit ->
+                chatRepoManager.observeMessagesByGroup(groupId, limit)
+            }.catch { e ->
+                _messagesState.value = UiState.Error(e.message ?: "Error loading messages")
+            }
+            .collectLatest { messages ->
+                _messagesState.value = UiState.Success(messages)
+            }
         }
 
         // 2. Initial sync from remote

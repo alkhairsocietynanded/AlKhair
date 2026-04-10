@@ -11,8 +11,8 @@ class LocalChatRepository @Inject constructor(
     private val chatMessageDao: ChatMessageDao
 ) {
 
-    fun observeMessagesByGroup(groupId: String): Flow<List<ChatMessage>> =
-        chatMessageDao.observeMessagesByGroup(groupId)
+    fun observeMessagesByGroup(groupId: String, limit: Int = 50): Flow<List<ChatMessage>> =
+        chatMessageDao.observeMessagesByGroup(groupId, limit)
 
     suspend fun insertMessage(message: ChatMessage) =
         chatMessageDao.insertMessage(message)

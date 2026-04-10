@@ -75,6 +75,24 @@ class StorageManager @Inject constructor(
         }
     }
 
+    /**
+     * Cache raw bytes locally so the sender doesn't have to re-download
+     * their own files. Returns the absolute local path.
+     */
+    fun saveBytesToCache(bytes: ByteArray, fileName: String): String? {
+        return try {
+            val cacheFolder = java.io.File(context.cacheDir, "chat_media")
+            if (!cacheFolder.exists()) cacheFolder.mkdirs()
+            
+            val destFile = java.io.File(cacheFolder, fileName)
+            destFile.writeBytes(bytes)
+            destFile.absolutePath
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save bytes to cache: ${e.message}", e)
+            null
+        }
+    }
+
 
     /**
      * Check if a media file (identified by its remote URL) is already cached locally.

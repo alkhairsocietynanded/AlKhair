@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.aewsn.alkhair.R
 import com.aewsn.alkhair.data.models.ChatMessage
 import com.aewsn.alkhair.databinding.ActivityChatWindowBinding
@@ -74,7 +75,7 @@ class ChatWindowActivity : AppCompatActivity() {
     ) { uri: Uri? ->
         if (uri != null) {
             val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
-            val fileName = getFileName(uri) ?: "image_${System.currentTimeMillis()}.jpg"
+            val fileName = uri.getOriginalFileName(contentResolver) ?: "image_${System.currentTimeMillis()}.jpg"
             setPendingMedia(uri, mimeType, fileName)
         }
     }
@@ -85,7 +86,7 @@ class ChatWindowActivity : AppCompatActivity() {
     ) { uri: Uri? ->
         if (uri != null) {
             val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
-            val fileName = getFileName(uri) ?: "file_${System.currentTimeMillis()}"
+            val fileName = uri.getOriginalFileName(contentResolver) ?: "file_${System.currentTimeMillis()}"
             setPendingMedia(uri, mimeType, fileName)
         }
     }
@@ -173,6 +174,20 @@ class ChatWindowActivity : AppCompatActivity() {
         val layoutManager = LinearLayoutManager(this).apply { reverseLayout = true }
         binding.rvMessages.layoutManager = layoutManager
         binding.rvMessages.adapter = adapter
+
+        // Pagination: Load more messages (older ones) when scrolling up
+        binding.rvMessages.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (dy < 0) { // dy < 0 means scrolling up towards older messages (reverse layout)
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+                    val totalItemCount = layoutManager.itemCount
+                    // Load more when user is 10 items away from the top (oldest loaded message)
+                    if (lastVisibleItem >= totalItemCount - 10) {
+                        viewModel.loadMoreMessages()
+                    }
+                }
+            }
+        })
     }
 
     // ─── Selection mode toolbar ───────────────────────────────────────────────
@@ -221,7 +236,7 @@ class ChatWindowActivity : AppCompatActivity() {
 
     private fun showAttachBottomSheet() {
         val sheet = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_attach, null)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_attach, binding.root, false)
         sheet.setContentView(view)
 
         view.findViewById<android.view.View>(R.id.optionGallery).setOnClickListener {
@@ -377,18 +392,39 @@ class ChatWindowActivity : AppCompatActivity() {
     private fun observeMessages() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.messagesState.collectLatest { state ->
-                    when (state) {
-                        is UiState.Success -> {
-                            val messages = state.data
-                            adapter.submitList(messages) {
-                                if (messages.isNotEmpty()) binding.rvMessages.scrollToPosition(0)
-                            }
-                            binding.rvMessages.isVisible = messages.isNotEmpty()
-                            binding.emptyState.isVisible = messages.isEmpty()
+                // Update adapter if the UID was loaded asynchronously (fixes early empty UID issue)
+                launch {
+                    viewModel.currentUserIdFlow.collectLatest { uid ->
+                        if (uid.isNotEmpty() && adapter.currentUserId != uid) {
+                            adapter.currentUserId = uid
+                            adapter.notifyDataSetChanged() // Re-evaluate sent/received layouts
                         }
-                        is UiState.Error -> { binding.emptyState.isVisible = true }
-                        else -> Unit
+                    }
+                }
+
+                launch {
+                    viewModel.messagesState.collectLatest { state ->
+                        when (state) {
+                            is UiState.Success -> {
+                                val messages = state.data
+                                val layoutManager = binding.rvMessages.layoutManager as LinearLayoutManager
+                                // Check if user is at the bottom before updating the list
+                                val wasAtBottom = layoutManager.findFirstVisibleItemPosition() <= 0
+
+                                adapter.submitList(messages) {
+                                    // Only scroll to 0 if user was already at bottom or list was empty
+                                    if (wasAtBottom) {
+                                        binding.rvMessages.scrollToPosition(0)
+                                    }
+                                }
+                                binding.rvMessages.isVisible = messages.isNotEmpty()
+                                binding.emptyState.isVisible = messages.isEmpty()
+                            }
+                            is UiState.Error -> {
+                                binding.emptyState.isVisible = true
+                            }
+                            else -> Unit
+                        }
                     }
                 }
             }
@@ -446,16 +482,15 @@ class ChatWindowActivity : AppCompatActivity() {
         }
     }
 
-    // ─── Helper ───────────────────────────────────────────────────────────────
+}
 
-    private fun getFileName(uri: Uri): String? {
-        var name: String? = null
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                if (idx >= 0) name = cursor.getString(idx)
-            }
+private fun Uri.getOriginalFileName(contentResolver: android.content.ContentResolver): String? {
+    var name: String? = null
+    contentResolver.query(this, null, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (idx >= 0) name = cursor.getString(idx)
         }
-        return name
     }
+    return name
 }
