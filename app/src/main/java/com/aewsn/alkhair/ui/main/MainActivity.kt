@@ -99,6 +99,40 @@ class MainActivity : AppCompatActivity() {
                 LoginActivity::class.java
             }
         }
-        startActivity(Intent(this, destination))
+        
+        // Start dashboard as base
+        val dashboardIntent = Intent(this, destination)
+        startActivity(dashboardIntent)
+
+        // Handle push notification routing
+        val notificationType = intent.getStringExtra("type")
+        if (notificationType != null) {
+            Log.d("MainActivity", "Handling FCM deep link for type: $notificationType")
+            when (notificationType) {
+                "CHAT" -> {
+                    val groupType = intent.getStringExtra("group_type")
+                    val chatIntent = Intent(this, com.aewsn.alkhair.ui.chat.ChatWindowActivity::class.java).apply {
+                        putExtras(intent.extras ?: Bundle())
+                        putExtra(com.aewsn.alkhair.ui.chat.ChatWindowActivity.EXTRA_GROUP_NAME, if (groupType == "teachers") "Teachers Chat" else "Class Chat")
+                        putExtra(com.aewsn.alkhair.ui.chat.ChatWindowActivity.EXTRA_SENDER_NAME, user.name)
+                        putExtra(com.aewsn.alkhair.ui.chat.ChatWindowActivity.EXTRA_USER_ROLE, user.role)
+                    }
+                    startActivity(chatIntent)
+                }
+                "HOMEWORK" -> {
+                    val hwIntent = Intent(this, com.aewsn.alkhair.ui.homework.HomeworkActivity::class.java).apply {
+                        putExtras(intent.extras ?: Bundle())
+                    }
+                    startActivity(hwIntent)
+                }
+                "FEES" -> {
+                    val feesIntent = Intent(this, com.aewsn.alkhair.ui.fees.FeesActivity::class.java).apply {
+                        putExtras(intent.extras ?: Bundle())
+                    }
+                    startActivity(feesIntent)
+                }
+                // Announcement is already handled by Dashboard's native flow
+            }
+        }
     }
 }

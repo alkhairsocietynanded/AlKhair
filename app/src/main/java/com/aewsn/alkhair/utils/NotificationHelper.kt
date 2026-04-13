@@ -87,18 +87,12 @@ object NotificationHelper {
         val channelId = data["channel_id"] ?: CHANNEL_GENERAL
         val notificationId = System.currentTimeMillis().toInt()
 
-        // Build PendingIntent based on notification type
-        val intent = when (type) {
-            "HOMEWORK" -> Intent(context, HomeworkActivity::class.java)
-            "ANNOUNCEMENT" -> Intent(context, com.aewsn.alkhair.ui.main.MainActivity::class.java)
-            "FEES" -> Intent(context, com.aewsn.alkhair.ui.fees.FeesActivity::class.java)
-            "CHAT" -> Intent(context, com.aewsn.alkhair.ui.chat.ChatWindowActivity::class.java).apply {
-                putExtra("group_name", if (data["group_type"] == "teachers") "Teachers Chat" else "Class Chat")
-            }
-            else -> context.packageManager.getLaunchIntentForPackage(context.packageName)
+        // Use MainActivity for all push clicks to ensure User Session is hydrated before routing
+        val intent = Intent(context, com.aewsn.alkhair.ui.main.MainActivity::class.java).apply {
+            putExtra("type", type)
         }
-
-        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
         // Put all data extras into the intent
         data.forEach { (key, value) ->

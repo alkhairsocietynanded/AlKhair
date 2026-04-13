@@ -228,6 +228,10 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
+                                    android:shadowColor="@color/info"
+                                    android:shadowDx="5"
+                                    android:shadowDy="5"
+                                    android:shadowRadius="2"
                                     android:text="Leave"
                                     android:textColor="#FFFFFF"
                                     android:textSize="20sp"
@@ -271,8 +275,9 @@
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
                                     android:layout_gravity="center"
+                                    android:alpha="0.4"
                                     android:src="@drawable/ic_chat"
-                                    app:tint="#FFFFFF" />
+                                    app:tint="@android:color/black" />
                             </FrameLayout>
 
                             <LinearLayout
@@ -285,7 +290,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="Join"
-                                    android:textColor="#CCFFFFFF"
+                                    android:textColor="#FFFFFF"
                                     android:textSize="14sp" />
 
                                 <TextView
@@ -294,7 +299,11 @@
                                     android:text="Chat Group"
                                     android:textColor="#FFFFFF"
                                     android:textSize="20sp"
-                                    android:textStyle="bold" />
+                                    android:textStyle="bold"
+                                    android:shadowDx="5"
+                                    android:shadowDy="5"
+                                    android:shadowRadius="2"
+                                    android:shadowColor="@android:color/darker_gray"/>
                             </LinearLayout>
                         </RelativeLayout>
                     </com.google.android.material.card.MaterialCardView>
