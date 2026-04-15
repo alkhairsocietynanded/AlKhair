@@ -126,8 +126,13 @@ class ChatWindowActivity : AppCompatActivity() {
         observeDeleteState()
         observeDownloadingIds()
 
-        viewModel.observeMessages(groupId, groupType)
+        viewModel.observeMessages(groupId, groupType, this)
         onBackPressedDispatcher.addCallback(this, backCallback)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.unregisterNetworkCallback(this)
     }
 
     private fun setupWindowInsets() {
@@ -315,26 +320,24 @@ class ChatWindowActivity : AppCompatActivity() {
             val mimeType = pendingMimeType
             val fileName = pendingFileName
 
-            // Bytes read in Activity — URI permission is valid here
-            val bytes: ByteArray? = if (uri != null) {
-                try {
-                    contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Media bytes read failed: ${e.message}")
-                    null
-                }
-            } else null
-
-            viewModel.sendMessage(
-                text = text,
-                senderName = senderName,
-                mediaBytes = bytes,
-                mimeType = mimeType,
-                mediaFileName = fileName
-            )
-
             binding.etMessage.text?.clear()
             clearPendingMedia()
+
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                val stagedUri = if (uri != null) {
+                    com.aewsn.alkhair.data.manager.StorageManager.stageUriToCache(this@ChatWindowActivity, uri)
+                } else null
+                
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    viewModel.sendMessage(
+                        text = text,
+                        senderName = senderName,
+                        mediaUri = stagedUri?.toString(),
+                        mimeType = mimeType,
+                        mediaFileName = fileName
+                    )
+                }
+            }
         }
 
         binding.btnCancelMediaPreview.setOnClickListener { clearPendingMedia() }

@@ -170,10 +170,11 @@ class ChatMessageAdapter(
                         ivMediaOverlay.isVisible = true
                         ivDownloadIcon.isVisible = false
                         pbImageDownload.isVisible = true
-                        // Blur placeholder using a low-res version
                         Glide.with(ivMedia.context)
                             .load(R.drawable.ic_image)
                             .into(ivMedia)
+                        flImageContainer.setOnClickListener(null)
+                        flImageContainer.setOnLongClickListener(null)
                     }
 
                     // STATE 2 — Downloaded: show actual image, no overlay
@@ -186,9 +187,16 @@ class ChatMessageAdapter(
                             .transition(DrawableTransitionOptions.withCrossFade())
                             .placeholder(R.drawable.ic_image)
                             .into(ivMedia)
-                        // Open on tap
                         flImageContainer.setOnClickListener {
-                            if (selectedMessageIds.isEmpty()) onOpenMedia(message)
+                            if (selectedMessageIds.isNotEmpty()) {
+                                toggleSelection(message.id)
+                            } else {
+                                onOpenMedia(message)
+                            }
+                        }
+                        flImageContainer.setOnLongClickListener {
+                            if (selectedMessageIds.isEmpty()) toggleSelection(message.id)
+                            true
                         }
                     }
 
@@ -197,15 +205,25 @@ class ChatMessageAdapter(
                         ivMediaOverlay.isVisible = true
                         ivDownloadIcon.isVisible = true
                         pbImageDownload.isVisible = false
-                        // Grey placeholder bg
                         ivMedia.setImageResource(R.drawable.ic_image)
                         ivMedia.scaleType = android.widget.ImageView.ScaleType.CENTER
-                        // Trigger download on overlay tap
-                        ivMediaOverlay.setOnClickListener {
-                            if (selectedMessageIds.isEmpty()) onDownloadMedia(message)
-                        }
                         flImageContainer.setOnClickListener {
-                            if (selectedMessageIds.isEmpty()) onDownloadMedia(message)
+                            if (selectedMessageIds.isNotEmpty()) {
+                                toggleSelection(message.id)
+                            } else {
+                                onDownloadMedia(message)
+                            }
+                        }
+                        flImageContainer.setOnLongClickListener {
+                            if (selectedMessageIds.isEmpty()) toggleSelection(message.id)
+                            true
+                        }
+                        ivMediaOverlay.setOnClickListener {
+                            if (selectedMessageIds.isNotEmpty()) {
+                                toggleSelection(message.id)
+                            } else {
+                                onDownloadMedia(message)
+                            }
                         }
                     }
                 }
@@ -230,6 +248,7 @@ class ChatMessageAdapter(
                         ivDocIcon.isVisible = false
                         pbDocDownload.isVisible = true
                         llDocument.setOnClickListener(null)
+                        llDocument.setOnLongClickListener(null)
                     }
 
                     // STATE 2 — Downloaded
@@ -238,7 +257,15 @@ class ChatMessageAdapter(
                         ivDocIcon.setImageResource(R.drawable.ic_attachment)
                         pbDocDownload.isVisible = false
                         llDocument.setOnClickListener {
-                            if (selectedMessageIds.isEmpty()) onOpenMedia(message)
+                            if (selectedMessageIds.isNotEmpty()) {
+                                toggleSelection(message.id)
+                            } else {
+                                onOpenMedia(message)
+                            }
+                        }
+                        llDocument.setOnLongClickListener {
+                            if (selectedMessageIds.isEmpty()) toggleSelection(message.id)
+                            true
                         }
                     }
 
@@ -248,7 +275,15 @@ class ChatMessageAdapter(
                         ivDocIcon.setImageResource(R.drawable.ic_download)
                         pbDocDownload.isVisible = false
                         llDocument.setOnClickListener {
-                            if (selectedMessageIds.isEmpty()) onDownloadMedia(message)
+                            if (selectedMessageIds.isNotEmpty()) {
+                                toggleSelection(message.id)
+                            } else {
+                                onDownloadMedia(message)
+                            }
+                        }
+                        llDocument.setOnLongClickListener {
+                            if (selectedMessageIds.isEmpty()) toggleSelection(message.id)
+                            true
                         }
                     }
                 }

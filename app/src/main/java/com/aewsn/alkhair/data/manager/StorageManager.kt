@@ -16,30 +16,85 @@ class StorageManager @Inject constructor(
     companion object {
         private const val TAG = "StorageManager"
         private const val BUCKET_NAME = "alkhair_assets" // Ensure this bucket is public in Supabase
+
+        /**
+         * Copy a temporary content URI to a internal cache file so that 
+         * background repositories can read it without permission issues.
+         */
+        fun stageUriToCache(callerContext: android.content.Context, uri: Uri): Uri? {
+            return try {
+                val cacheFolder = java.io.File(callerContext.cacheDir, "staged_uploads")
+                if (!cacheFolder.exists()) cacheFolder.mkdirs()
+                
+                val fileName = "staged_${System.currentTimeMillis()}_${uri.lastPathSegment ?: "file"}"
+                val tempFile = java.io.File(cacheFolder, fileName)
+                
+                callerContext.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                Uri.fromFile(tempFile)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to stage URI: ${e.message}", e)
+                null
+            }
+        }
     }
 
-    /**
-     * Upload a file to Supabase Storage from URI.
-     * NOTE: URI must be readable by the context (use application context or pass bytes directly).
-     */
+    suspend fun processMediaUriToBytes(fileUri: Uri, originalMimeType: String? = null): Pair<ByteArray, String> {
+        var mimeType = originalMimeType ?: context.contentResolver.getType(fileUri)
+        
+        if (mimeType == null || mimeType == "application/octet-stream") {
+             val extension = android.webkit.MimeTypeMap.getFileExtensionFromUrl(fileUri.toString())
+             if (!extension.isNullOrEmpty()) {
+                 mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
+             }
+        }
+        val safeMimeType = mimeType ?: "application/octet-stream"
+        
+        var finalBytes: ByteArray? = null
+        var finalMimeType = safeMimeType
+
+        if (safeMimeType.startsWith("image/") && safeMimeType != "image/gif") {
+            com.aewsn.alkhair.utils.ImageCompressor.compressImageFromUri(context, fileUri)?.let { compressedBytes ->
+                finalBytes = compressedBytes
+                finalMimeType = "image/webp"
+            }
+        }
+        
+        if (finalBytes == null) {
+             finalBytes = context.contentResolver.openInputStream(fileUri)?.use { it.readBytes() }
+                 ?: throw Exception("Could not read file from URI")
+        }
+
+        // Cleanup staged file if any
+        if (fileUri.scheme == "file" && fileUri.path?.contains("staged_uploads") == true) {
+             try { java.io.File(fileUri.path!!).delete() } catch (e: Exception) {}
+        }
+        
+        return Pair(finalBytes!!, finalMimeType)
+    }
+
     suspend fun uploadFile(
         fileUri: Uri,
         folder: String = "uploads",
         fileName: String? = null
     ): Result<String> {
         return try {
-            val name = fileName
-                ?: fileUri.lastPathSegment
-                ?: "file_${System.currentTimeMillis()}"
+            val (bytes, finalMimeType) = processMediaUriToBytes(fileUri)
             
-            val path = "$folder/$name"
-            val bucket = supabaseClient.storage.from(BUCKET_NAME)
+            var finalName = fileName ?: fileUri.lastPathSegment ?: "file_${System.currentTimeMillis()}"
+            if (finalMimeType == "image/webp") {
+                val lastDotIndex = finalName.lastIndexOf('.')
+                if (lastDotIndex != -1) {
+                    finalName = finalName.substring(0, lastDotIndex) + ".webp"
+                } else {
+                    finalName += ".webp"
+                }
+            }
 
-            // Read bytes from URI
-            val bytes = context.contentResolver.openInputStream(fileUri)?.use { it.readBytes() }
-                ?: return Result.failure(Exception("Could not read file from URI"))
-
-            uploadBytes(bytes = bytes, folder = folder, fileName = name)
+            uploadBytes(bytes = bytes, folder = folder, fileName = finalName, contentType = finalMimeType)
         } catch (e: Exception) {
             Log.e(TAG, "Upload failed", e)
             Result.failure(e)

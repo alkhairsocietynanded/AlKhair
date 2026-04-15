@@ -83,6 +83,23 @@ class SupabaseChatRepository @Inject constructor(
     }
 
     /**
+     * Delete multiple messages from Supabase by IDs.
+     */
+    suspend fun deleteMessages(messageIds: List<String>): Result<Unit> {
+        return try {
+            if (messageIds.isEmpty()) return Result.success(Unit)
+            supabase.from(TABLE).delete {
+                filter { isIn("id", messageIds) }
+            }
+            Log.d(TAG, "Messages deleted from Supabase: $messageIds")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting messages $messageIds from Supabase", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Tombstone sync — fetch IDs of messages deleted after a given timestamp.
      * Used when device comes back online to catch up on missed deletions.
      */

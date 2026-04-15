@@ -49,56 +49,58 @@ class ChatRepoManager @Inject constructor(
         groupType: String,
         senderId: String,
         senderName: String,
-        mediaBytes: ByteArray? = null,
+        mediaUri: String? = null,
         mimeType: String? = null,
         mediaFileName: String? = null
     ): Result<Unit> {
+        val messageId = UUID.randomUUID().toString()
 
-        // 1️⃣ Upload media via StorageManager.uploadBytes() — bytes already read by Activity
-        var resolvedMediaUrl: String? = null
         var resolvedMediaType: String? = null
         var resolvedLocalUri: String? = null
-        if (mediaBytes != null && mediaFileName != null) {
-            val folder = "chat/$groupId"
-            val uniqueName = "${System.currentTimeMillis()}_$mediaFileName"
-            val resolvedMime = mimeType ?: "application/octet-stream"
-            
-            // ✅ Cache locally for instant preview!
-            resolvedLocalUri = storageManager.saveBytesToCache(mediaBytes, uniqueName)
-            
-            storageManager.uploadBytes(
-                bytes = mediaBytes,
-                folder = folder,
-                fileName = uniqueName,
-                contentType = resolvedMime
-            ).onSuccess { url ->
-                resolvedMediaUrl = url
+
+        // 1️⃣ Process and compress media offline, save to cache
+        if (mediaUri != null && mediaFileName != null) {
+            val uri = android.net.Uri.parse(mediaUri)
+            try {
+                val (mediaBytes, resolvedMime) = storageManager.processMediaUriToBytes(uri, mimeType)
+
+                var safeFileName = mediaFileName
+                if (resolvedMime == "image/webp") {
+                     val dotIdx = safeFileName.lastIndexOf('.')
+                     if (dotIdx != -1) {
+                          safeFileName = safeFileName.substring(0, dotIdx) + ".webp"
+                     } else safeFileName += ".webp"
+                }
+                val cacheFileName = "${System.currentTimeMillis()}_$safeFileName"
+                
+                // ✅ Cache locally for instant preview!
+                resolvedLocalUri = storageManager.saveBytesToCache(mediaBytes, cacheFileName)
                 resolvedMediaType = if (resolvedMime.startsWith("image/")) "image" else "document"
-                Log.d(TAG, "Chat media uploaded: $url")
-            }.onFailure { e ->
-                Log.e(TAG, "Chat media upload failed: ${e.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to process media URI: ${e.message}", e)
+                return Result.failure(e)
             }
         }
 
-        val message = ChatMessage(
-            id = UUID.randomUUID().toString(),
+        var message = ChatMessage(
+            id = messageId,
             senderId = senderId,
             senderName = senderName,
             groupId = groupId,
             groupType = groupType,
             messageText = messageText,
-            mediaUrl = resolvedMediaUrl,
+            mediaUrl = null, // Wait for upload
             mediaType = resolvedMediaType,
             localUri = resolvedLocalUri,
             updatedAt = System.currentTimeMillis(),
             isSynced = false
         )
 
-        // 2️⃣ Save to Local immediately (UI auto-update via Flow)
+        // 2️⃣ Save to Local immediately (UI auto-updates via Flow -> Instant Feedback!)
         localRepo.insertMessage(message)
         Log.d(TAG, "Message saved locally: ${message.id}")
 
-        // 3️⃣ Schedule Background Upload to Supabase table
+        // 3️⃣ Schedule Background Upload to Supabase table safely! (Now Handles Media Files Offline)
         scheduleUploadWorker()
 
         return Result.success(Unit)
@@ -229,6 +231,42 @@ class ChatRepoManager @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting message $messageId", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteMessages(messageIds: List<String>): Result<Unit> {
+        return try {
+            if (messageIds.isEmpty()) return Result.success(Unit)
+
+            // 0️⃣ Fetch messages before deletion to get their mediaUrls
+            val messagesToDelete = localRepo.getMessagesByIds(messageIds)
+
+            // 1️⃣ Delete from local DB immediately (UI updates via Flow)
+            localRepo.deleteByIds(messageIds)
+            Log.d(TAG, "Messages deleted locally: $messageIds")
+
+            // 2️⃣ Delete from Supabase DB (tombstone pattern)
+            remoteRepo.deleteMessages(messageIds)
+
+            // 3️⃣ Delete media files from Supabase Storage (best effort)
+            messagesToDelete.forEach { msg ->
+                val mediaUrl = msg.mediaUrl
+                if (!mediaUrl.isNullOrBlank()) {
+                    storageManager.deleteFile(mediaUrl).onFailure { e ->
+                        Log.w(TAG, "Storage delete failed for ${msg.id}: ${e.message}")
+                    }
+                }
+                // Also delete local cache file
+                val localPath = msg.localUri
+                if (!localPath.isNullOrBlank()) {
+                    try { java.io.File(localPath).delete() } catch (e: Exception) {}
+                }
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting messages $messageIds", e)
             Result.failure(e)
         }
     }

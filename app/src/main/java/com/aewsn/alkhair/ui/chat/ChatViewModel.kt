@@ -52,7 +52,7 @@ class ChatViewModel @Inject constructor(
      * Start observing messages for a group + initial sync from Supabase
      */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    fun observeMessages(groupId: String, groupType: String) {
+    fun observeMessages(groupId: String, groupType: String, context: android.content.Context) {
         currentGroupId = groupId
         currentGroupType = groupType
 
@@ -73,11 +73,60 @@ class ChatViewModel @Inject constructor(
             chatRepoManager.syncGroupMessages(groupId, after = 0L)
         }
 
-        // 3. Subscribe to real-time events
+        // 3. Subscribe to real-time events (SDK handles its own heartbeat + reconnect)
         viewModelScope.launch {
             chatRepoManager.startRealtimeSubscription(groupId)
         }
+
+        // 4. Network-aware re-sync: jab network wapas aaye missed messages fetch karo
+        registerNetworkCallback(context, groupId)
     }
+
+    // ─── Network Callback ────────────────────────────────────────────────────
+
+    private var networkCallback: android.net.ConnectivityManager.NetworkCallback? = null
+    private var lastSyncTimestamp: Long = 0L
+
+    private fun registerNetworkCallback(context: android.content.Context, groupId: String) {
+        val connectivityManager = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+            as android.net.ConnectivityManager
+
+        // Unregister any previous callback to avoid duplicates
+        unregisterNetworkCallback(context)
+
+        networkCallback = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: android.net.Network) {
+                android.util.Log.d("ChatViewModel", "✅ Network restored — re-syncing missed messages")
+                viewModelScope.launch {
+                    // Fetch messages since last known sync time to catch up on missed messages
+                    chatRepoManager.syncGroupMessages(groupId, after = lastSyncTimestamp)
+                    lastSyncTimestamp = System.currentTimeMillis()
+                }
+            }
+        }
+
+        val request = android.net.NetworkRequest.Builder()
+            .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+
+        connectivityManager.registerNetworkCallback(request, networkCallback!!)
+        lastSyncTimestamp = System.currentTimeMillis()
+        android.util.Log.d("ChatViewModel", "NetworkCallback registered for group $groupId")
+    }
+
+    fun unregisterNetworkCallback(context: android.content.Context) {
+        networkCallback?.let {
+            try {
+                val cm = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+                cm.unregisterNetworkCallback(it)
+            } catch (e: Exception) {
+                android.util.Log.w("ChatViewModel", "NetworkCallback already unregistered")
+            }
+            networkCallback = null
+        }
+    }
+
 
     /**
      * Send a text message
@@ -85,11 +134,11 @@ class ChatViewModel @Inject constructor(
     fun sendMessage(
         text: String,
         senderName: String,
-        mediaBytes: ByteArray? = null,
+        mediaUri: String? = null,
         mimeType: String? = null,
         mediaFileName: String? = null
     ) {
-        if (text.isBlank() && mediaBytes == null) return
+        if (text.isBlank() && mediaUri == null) return
 
         viewModelScope.launch {
             var senderId = authRepoManager.getCurrentUserUid()
@@ -105,7 +154,7 @@ class ChatViewModel @Inject constructor(
                 groupType = currentGroupType,
                 senderId = senderId,
                 senderName = senderName,
-                mediaBytes = mediaBytes,
+                mediaUri = mediaUri,
                 mimeType = mimeType,
                 mediaFileName = mediaFileName
             )
@@ -125,21 +174,14 @@ class ChatViewModel @Inject constructor(
     val deleteState: StateFlow<UiState<Unit>> = _deleteState
 
     fun deleteMessages(messageIds: List<String>) {
+        if (messageIds.isEmpty()) return
         viewModelScope.launch {
             _deleteState.value = UiState.Loading
-            var allSuccess = true
-            var errorMsg = ""
-            for (id in messageIds) {
-                val result = chatRepoManager.deleteMessage(id)
-                if (!result.isSuccess) {
-                    allSuccess = false
-                    errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
-                }
-            }
-            _deleteState.value = if (allSuccess) {
+            val result = chatRepoManager.deleteMessages(messageIds)
+            _deleteState.value = if (result.isSuccess) {
                 UiState.Success(Unit)
             } else {
-                UiState.Error("Failed to delete some messages: $errorMsg")
+                UiState.Error("Failed to delete messages: ${result.exceptionOrNull()?.message ?: "Unknown error"}")
             }
         }
     }

@@ -29,6 +29,12 @@ class LocalChatRepository @Inject constructor(
     suspend fun deleteById(id: String) =
         chatMessageDao.deleteById(id)
 
+    suspend fun deleteByIds(ids: List<String>) =
+        chatMessageDao.deleteByIds(ids)
+
+    suspend fun getMessagesByIds(ids: List<String>): List<ChatMessage> =
+        chatMessageDao.getMessagesByIds(ids)
+
     suspend fun updateLocalUri(messageId: String, localUri: String) =
         chatMessageDao.updateLocalUri(messageId, localUri)
 
